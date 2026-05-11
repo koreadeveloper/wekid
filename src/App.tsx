@@ -1251,8 +1251,6 @@ const initialScores: ScoreMap = {
   flex: 0,
 };
 
-const fallbackCareerPattern: CareerPattern = 'together_observe_care_plan';
-
 const swapChoice = (choice: ChoiceKey): ChoiceKey => {
   const swaps: Record<ChoiceKey, ChoiceKey> = {
     together: 'focus',
@@ -1335,21 +1333,26 @@ function App() {
 
   const scores = useMemo(() => getScores(answers), [answers]);
   const careerPattern = useMemo(() => getCareerPattern(scores), [scores]);
-  const profile = careerProfiles[careerPattern] ?? careerProfiles[fallbackCareerPattern];
+  const profile = careerProfiles[careerPattern];
   const answeredCount = Object.keys(answers).length;
   const progress = Math.round((answeredCount / questions.length) * 100);
   const currentQuestion = questions[currentIndex];
   const currentAnswer = answers[currentQuestion.id];
-  const careerMatches = useMemo(() => getCareerMatches(careerPattern, profile), [careerPattern, profile]);
-  const highlightedCareers = useMemo(
-    () =>
-      new Set([
-        profile.topCareer.name,
-        ...careerMatches.primary.map((career) => career.name),
-        ...careerMatches.explore.map((career) => career.name),
-      ]),
-    [careerMatches, profile.topCareer.name],
+  const careerMatches = useMemo(
+    () => (profile ? getCareerMatches(careerPattern, profile) : { primary: [], explore: [] }),
+    [careerPattern, profile],
   );
+  const highlightedCareers = useMemo(() => {
+    if (!profile) {
+      return new Set<string>();
+    }
+
+    return new Set([
+      profile.topCareer.name,
+      ...careerMatches.primary.map((career) => career.name),
+      ...careerMatches.explore.map((career) => career.name),
+    ]);
+  }, [careerMatches, profile]);
   const totalCareerCount = useMemo(
     () => new Set(careerCategories.flatMap((category) => category.careers)).size,
     [],
@@ -1377,9 +1380,10 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const goBack = () => {
+  const editLastAnswer = () => {
     setShowResult(false);
-    setCurrentIndex((index) => Math.max(0, index - 1));
+    setCurrentIndex(questions.length - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -1490,6 +1494,30 @@ function App() {
                   />
                 ))}
               </div>
+            </div>
+          </section>
+        </section>
+      ) : !profile ? (
+        <section className="result-layout">
+          <section className="empty-result-panel" role="status" aria-live="polite">
+            <div className="empty-result-icon">
+              <Compass size={42} />
+            </div>
+            <p className="section-kicker">결과를 찾지 못했어요</p>
+            <h1>이번 답변에 딱 맞는 직업 결과가 아직 없어요</h1>
+            <p>
+              선택이 잘못된 것은 아니에요. 아직 이 조합에 맞는 추천 직업 카드가 준비되지 않았어요. 답변을 조금
+              바꿔보거나 처음부터 다시 테스트하면 다른 직업 결과를 확인할 수 있어요.
+            </p>
+            <div className="empty-result-actions">
+              <button className="ghost-button" type="button" onClick={editLastAnswer}>
+                <ArrowLeft size={18} />
+                답변 고치기
+              </button>
+              <button className="primary-button" type="button" onClick={reset}>
+                <Wand2 size={18} />
+                다시 테스트
+              </button>
             </div>
           </section>
         </section>
@@ -1635,7 +1663,7 @@ function App() {
           </section>
 
           <div className="result-actions">
-            <button className="ghost-button" type="button" onClick={goBack}>
+            <button className="ghost-button" type="button" onClick={editLastAnswer}>
               <ArrowLeft size={18} />
               답변 고치기
             </button>
