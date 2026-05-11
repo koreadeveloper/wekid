@@ -1251,6 +1251,8 @@ const initialScores: ScoreMap = {
   flex: 0,
 };
 
+const fallbackCareerPattern: CareerPattern = 'together_observe_care_plan';
+
 const swapChoice = (choice: ChoiceKey): ChoiceKey => {
   const swaps: Record<ChoiceKey, ChoiceKey> = {
     together: 'focus',
@@ -1310,6 +1312,10 @@ function getNeighborPatterns(pattern: CareerPattern) {
 function getCareerMatches(pattern: CareerPattern, profile: CareerProfile) {
   const neighborCareers = getNeighborPatterns(pattern).flatMap((neighbor) => {
     const neighborProfile = careerProfiles[neighbor];
+    if (!neighborProfile) {
+      return [];
+    }
+
     return [neighborProfile.topCareer, ...neighborProfile.recommendations.slice(0, 2)];
   });
   const explore = dedupeRecommendations([profile.topCareer, ...profile.recommendations, ...neighborCareers]).filter(
@@ -1329,7 +1335,7 @@ function App() {
 
   const scores = useMemo(() => getScores(answers), [answers]);
   const careerPattern = useMemo(() => getCareerPattern(scores), [scores]);
-  const profile = careerProfiles[careerPattern];
+  const profile = careerProfiles[careerPattern] ?? careerProfiles[fallbackCareerPattern];
   const answeredCount = Object.keys(answers).length;
   const progress = Math.round((answeredCount / questions.length) * 100);
   const currentQuestion = questions[currentIndex];
@@ -1358,7 +1364,10 @@ function App() {
       return;
     }
 
-    window.setTimeout(() => setShowResult(true), 180);
+    window.setTimeout(() => {
+      setShowResult(true);
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }, 180);
   };
 
   const reset = () => {
