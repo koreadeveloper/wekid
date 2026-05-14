@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Check,
   Code2,
   Compass,
+  Download,
   HeartHandshake,
   HeartPulse,
   Microscope,
@@ -280,6 +281,222 @@ const questions: Question[] = [
         label: '더 재미있는 표현을 끝까지 바꾸기',
         choice: 'flex',
         helper: '새로운 생각이 떠오르면 바로 반영해요.',
+      },
+    ],
+  },
+  {
+    id: 13,
+    axis: 'energy',
+    eyebrow: '방과 후 시간',
+    text: '오늘 하루 제일 기억에 남는 순간은?',
+    options: [
+      {
+        label: '친구들과 같이 웃고 떠든 순간',
+        choice: 'together',
+        helper: '함께하면 시간이 빨리 가요.',
+      },
+      {
+        label: '혼자 무언가에 푹 빠져든 순간',
+        choice: 'focus',
+        helper: '집중하다 보면 시간이 사라져요.',
+      },
+    ],
+  },
+  {
+    id: 14,
+    axis: 'information',
+    eyebrow: '역사 수업',
+    text: '역사를 배울 때 더 끌리는 것은?',
+    options: [
+      {
+        label: '그때 실제로 어떤 일이 벌어졌는지',
+        choice: 'observe',
+        helper: '사실과 증거를 알면 이해가 쉬워요.',
+      },
+      {
+        label: '왜 그런 일이 생겼는지 연결 고리',
+        choice: 'imagine',
+        helper: '숨어 있는 이유를 찾는 게 재미있어요.',
+      },
+    ],
+  },
+  {
+    id: 15,
+    axis: 'decision',
+    eyebrow: '모둠 발표',
+    text: '발표 주제가 마음에 안 들 때 나는?',
+    options: [
+      {
+        label: '더 좋은 주제를 찾아 근거를 제시한다',
+        choice: 'solve',
+        helper: '논리적으로 더 나은 방법을 제안해요.',
+      },
+      {
+        label: '친구들 의견을 먼저 들어본다',
+        choice: 'care',
+        helper: '모두의 마음을 살피며 결정해요.',
+      },
+    ],
+  },
+  {
+    id: 16,
+    axis: 'pace',
+    eyebrow: '방학 계획',
+    text: '방학 첫 날 내 모습은?',
+    options: [
+      {
+        label: '할 일 목록을 만들고 날짜를 정한다',
+        choice: 'plan',
+        helper: '계획이 있으면 방학이 알차게 느껴져요.',
+      },
+      {
+        label: '그날그날 하고 싶은 걸 한다',
+        choice: 'flex',
+        helper: '흐름에 따라 움직이면 즐거운 일이 생겨요.',
+      },
+    ],
+  },
+  {
+    id: 17,
+    axis: 'energy',
+    eyebrow: '새 동아리',
+    text: '동아리에 처음 갔을 때 나는?',
+    options: [
+      {
+        label: '먼저 말 걸고 친해지려고 노력한다',
+        choice: 'together',
+        helper: '새로운 사람을 만나는 게 설레요.',
+      },
+      {
+        label: '상황을 먼저 파악하고 천천히 다가간다',
+        choice: 'focus',
+        helper: '차분히 살펴보면 더 편안해져요.',
+      },
+    ],
+  },
+  {
+    id: 18,
+    axis: 'information',
+    eyebrow: '독서 시간',
+    text: '책을 고를 때 더 당기는 건?',
+    options: [
+      {
+        label: '실제 사건이나 인물 이야기',
+        choice: 'observe',
+        helper: '사실에 가까울수록 더 흥미로워요.',
+      },
+      {
+        label: '상상 속 세계나 미래 이야기',
+        choice: 'imagine',
+        helper: '새로운 세계를 그려보는 게 좋아요.',
+      },
+    ],
+  },
+  {
+    id: 19,
+    axis: 'decision',
+    eyebrow: '학급 행사',
+    text: '행사 종목을 정할 때 내 기준은?',
+    options: [
+      {
+        label: '가장 많이 이길 수 있는 종목',
+        choice: 'solve',
+        helper: '결과를 분석해서 유리한 선택을 해요.',
+      },
+      {
+        label: '모두가 즐겁게 참여할 수 있는 종목',
+        choice: 'care',
+        helper: '함께 즐거운 게 더 중요해요.',
+      },
+    ],
+  },
+  {
+    id: 20,
+    axis: 'pace',
+    eyebrow: '모둠 프로젝트',
+    text: '프로젝트 마감 일주일 전 나는?',
+    options: [
+      {
+        label: '남은 분량을 나눠 일정대로 끝낸다',
+        choice: 'plan',
+        helper: '체계적으로 하면 마감이 무섭지 않아요.',
+      },
+      {
+        label: '완성도를 높일 새 아이디어를 찾는다',
+        choice: 'flex',
+        helper: '마지막까지 더 좋은 방법을 찾아요.',
+      },
+    ],
+  },
+  {
+    id: 21,
+    axis: 'energy',
+    eyebrow: '긴 연휴',
+    text: '연휴가 끝났을 때 활력이 생기는 경우는?',
+    options: [
+      {
+        label: '친구, 가족과 함께 신나게 논 날',
+        choice: 'together',
+        helper: '사람들과 함께하면 에너지가 충전돼요.',
+      },
+      {
+        label: '혼자 조용히 하고 싶던 걸 마음껏 한 날',
+        choice: 'focus',
+        helper: '나만의 시간이 있어야 기운이 나요.',
+      },
+    ],
+  },
+  {
+    id: 22,
+    axis: 'information',
+    eyebrow: '과학 실험',
+    text: '실험 결과가 예상과 다를 때 나는?',
+    options: [
+      {
+        label: '어디서 틀렸는지 단계별로 확인한다',
+        choice: 'observe',
+        helper: '사실을 하나씩 확인하면 답이 보여요.',
+      },
+      {
+        label: '다른 이유가 있지 않을까 상상해본다',
+        choice: 'imagine',
+        helper: '예상 밖 결과가 새로운 발견일 수 있어요.',
+      },
+    ],
+  },
+  {
+    id: 23,
+    axis: 'decision',
+    eyebrow: '의견 충돌',
+    text: '친구와 다른 의견이 생겼을 때 나는?',
+    options: [
+      {
+        label: '어느 쪽이 더 맞는지 사실로 확인한다',
+        choice: 'solve',
+        helper: '근거가 있으면 해결이 빠르게 돼요.',
+      },
+      {
+        label: '서로 기분이 상하지 않게 이야기한다',
+        choice: 'care',
+        helper: '관계를 지키는 게 먼저예요.',
+      },
+    ],
+  },
+  {
+    id: 24,
+    axis: 'pace',
+    eyebrow: '자유 시간',
+    text: '갑자기 두 시간이 생겼을 때 나는?',
+    options: [
+      {
+        label: '미리 해두고 싶었던 일을 꺼낸다',
+        choice: 'plan',
+        helper: '준비된 목록이 있으면 바로 시작할 수 있어요.',
+      },
+      {
+        label: '지금 하고 싶은 걸 바로 시작한다',
+        choice: 'flex',
+        helper: '그 순간의 감각을 따라가면 즐거워요.',
       },
     ],
   },
@@ -1330,6 +1547,8 @@ function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [showResult, setShowResult] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   const scores = useMemo(() => getScores(answers), [answers]);
   const careerPattern = useMemo(() => getCareerPattern(scores), [scores]);
@@ -1371,6 +1590,27 @@ function App() {
       setShowResult(true);
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }, 180);
+  };
+
+  const handleSaveImage = async () => {
+    if (!shareCardRef.current || !profile) return;
+    setIsSaving(true);
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#58cc02',
+      });
+      const link = document.createElement('a');
+      link.download = `위키드_직업탐험_${profile.topCareer.name}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      alert('이미지 저장에 실패했어요. 다시 시도해 주세요.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const reset = () => {
@@ -1429,7 +1669,7 @@ function App() {
             </div>
 
             <div className="intro-copy">
-              <p className="section-kicker">12문항</p>
+              <p className="section-kicker">24문항</p>
               <h1>나와 잘 맞는 미래 직업 찾기</h1>
               <p>마음에 더 가까운 선택지를 누르면 마지막에 대표 추천 직업과 이유가 열립니다.</p>
             </div>
@@ -1523,7 +1763,7 @@ function App() {
         </section>
       ) : (
         <section className="result-layout">
-          <section className="result-hero career-result-hero">
+          <section className="result-hero career-result-hero" ref={shareCardRef}>
             <div>
               <p className="section-kicker">추천 결과</p>
               <h1>가장 잘 맞는 직업은 {profile.topCareer.name}예요</h1>
@@ -1542,6 +1782,17 @@ function App() {
               <span>대표 추천</span>
               <strong>{profile.topCareer.name}</strong>
             </article>
+            <div className="share-row">
+              <button
+                className="share-button"
+                type="button"
+                onClick={handleSaveImage}
+                disabled={isSaving}
+              >
+                <Download size={18} />
+                {isSaving ? '저장 중...' : '결과 이미지 저장'}
+              </button>
+            </div>
           </section>
 
           <section className="why-panel">

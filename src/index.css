@@ -863,6 +863,46 @@ button {
   backdrop-filter: blur(14px);
 }
 
+.share-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 18px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 15px;
+  font-weight: 1000;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 150ms ease, transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+}
+
+.share-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.share-button:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.share-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (min-width: 760px) {
   .app {
     width: min(100%, 1040px);
