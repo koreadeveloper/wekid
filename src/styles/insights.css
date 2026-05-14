@@ -1,0 +1,53 @@
+.insight-grid,
+.career-insights {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.insight-panel,
+.category-panel,
+.career-card {
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  background: var(--canvas);
+  box-shadow: var(--shadow-card);
+}
+
+.insight-panel {
+  padding: 20px;
+}
+
+.panel-title,
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.panel-title h2,
+.category-title h3,
+.section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 1000;
+  line-height: 1.2;
+}
+
+.panel-title svg,
+.category-title svg {
+  color: var(--duo-green);
+}
+
+.mission-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 21px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+}
