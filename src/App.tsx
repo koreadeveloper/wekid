@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 import { TopBar } from './components/layout/TopBar';
 import { getCareerDetail } from './data/careerDetails';
 import { careerCategories } from './data/careerCategories';
-import { careerProfiles } from './data/careerProfiles';
 import { questions } from './data/questions';
-import { getCareerMatches, getCareerPattern, getScores } from './lib/careerScoring';
+import { getCareerResult, getScores } from './lib/careerScoring';
 import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
 import { ResultPage } from './pages/result/ResultPage';
@@ -21,16 +20,14 @@ function App() {
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
 
   const scores = useMemo(() => getScores(answers), [answers]);
-  const careerPattern = useMemo(() => getCareerPattern(scores), [scores]);
-  const profile = careerProfiles[careerPattern];
   const answeredCount = Object.keys(answers).length;
+  const isComplete = answeredCount === questions.length;
+  const result = useMemo(() => (isComplete ? getCareerResult(scores) : undefined), [isComplete, scores]);
+  const profile = result?.profile;
   const progress = Math.round((answeredCount / questions.length) * 100);
   const currentQuestion = questions[currentIndex];
   const currentAnswer = answers[currentQuestion.id];
-  const careerMatches = useMemo(
-    () => (profile ? getCareerMatches(careerPattern, profile) : { primary: [], explore: [] }),
-    [careerPattern, profile],
-  );
+  const careerMatches = result?.matches ?? { primary: [], explore: [] };
   const highlightedCareers = useMemo(() => {
     if (!profile) {
       return new Set<string>();
@@ -49,10 +46,19 @@ function App() {
 
   const chooseAnswer = (choice: ChoiceKey) => {
     const nextAnswers = { ...answers, [currentQuestion.id]: choice };
+    const nextAnsweredCount = Object.keys(nextAnswers).length;
     setAnswers(nextAnswers);
 
     if (currentIndex < questions.length - 1) {
+      setShowResult(false);
       window.setTimeout(() => setCurrentIndex((index) => index + 1), 160);
+      return;
+    }
+
+    if (nextAnsweredCount < questions.length) {
+      const firstUnansweredIndex = questions.findIndex((question) => !(question.id in nextAnswers));
+      setShowResult(false);
+      setCurrentIndex(firstUnansweredIndex === -1 ? currentIndex : firstUnansweredIndex);
       return;
     }
 
@@ -102,19 +108,7 @@ function App() {
       <TopBar totalCareerCount={totalCareerCount} onReset={reset} />
       {nameStep ? (
         <StartPage nameInput={nameInput} onNameChange={setNameInput} onStart={startWithName} onSkip={skipName} />
-      ) : !showResult ? (
-        <QuizPage
-          answers={answers}
-          answeredCount={answeredCount}
-          currentAnswer={currentAnswer}
-          currentIndex={currentIndex}
-          currentQuestion={currentQuestion}
-          progress={progress}
-          userName={userName}
-          onChooseAnswer={chooseAnswer}
-          onPrevious={() => setCurrentIndex((index) => Math.max(0, index - 1))}
-        />
-      ) : (
+      ) : showResult && profile ? (
         <ResultPage
           careerMatches={careerMatches}
           highlightedCareers={highlightedCareers}
@@ -125,6 +119,18 @@ function App() {
           onCareerSelect={selectCareer}
           onEditLastAnswer={editLastAnswer}
           onReset={reset}
+        />
+      ) : (
+        <QuizPage
+          answers={answers}
+          answeredCount={answeredCount}
+          currentAnswer={currentAnswer}
+          currentIndex={currentIndex}
+          currentQuestion={currentQuestion}
+          progress={progress}
+          userName={userName}
+          onChooseAnswer={chooseAnswer}
+          onPrevious={() => setCurrentIndex((index) => Math.max(0, index - 1))}
         />
       )}
     </main>

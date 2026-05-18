@@ -11,6 +11,9 @@ dist/
 dev-server*.log
 *.log
 
+# Office temporary lock files
+~$*.docx
+
 # Local environment files
 .env
 .env.*

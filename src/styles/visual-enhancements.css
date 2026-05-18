@@ -57,30 +57,6 @@
 .result-hero {
   background: linear-gradient(145deg, #65d400 0%, #58cc02 40%, #4ab800 100%);
   box-shadow: var(--shadow-green), 0 16px 48px rgba(88,204,2,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
-  position: relative;
-  overflow: hidden;
-}
-.result-hero::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  pointer-events: none;
-}
-.result-hero::after {
-  content: '';
-  position: absolute;
-  bottom: -40px;
-  left: -40px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.05);
-  pointer-events: none;
 }
 
 /* ===== 이름 입력 화면 ===== */

@@ -5,17 +5,43 @@
 .result-hero {
   display: grid;
   gap: 18px;
-  padding: 22px;
+  padding: 30px;
   overflow: hidden;
   border-color: var(--duo-green-dark);
   background: var(--duo-green);
   box-shadow: var(--shadow-green);
 }
 
+.result-hero.is-exporting {
+  padding: 48px;
+  background: var(--duo-green);
+  box-shadow: none;
+}
+
+.result-hero.is-exporting .share-row,
+.result-hero.is-exporting .career-tap-hint {
+  display: none;
+}
+
 .result-hero h1,
 .result-hero .result-subtitle,
 .result-hero .result-description {
   color: #ffffff;
+}
+
+.result-title span,
+.result-description span,
+.why-panel p span {
+  display: block;
+}
+
+.result-title span + span {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.result-description span + span,
+.why-panel p span + span {
+  margin-top: 5px;
 }
 
 .career-result-hero {

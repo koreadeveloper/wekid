@@ -46,6 +46,7 @@ export const careerCategoryGroupTwo: CareerCategory[] = [
       '회계사',
       '세무사',
       '물류관리자',
+      '품질관리 전문가',
       '호텔리어',
       '쇼호스트',
       '고객경험 매니저',

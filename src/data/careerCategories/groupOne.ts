@@ -15,6 +15,7 @@ export const careerCategoryGroupOne: CareerCategory[] = [
       '신약개발 연구원',
       '유전공학자',
       '로봇공학자',
+      '로봇 기술자',
       '우주공학자',
       '생태연구원',
       '고고학자',
@@ -88,6 +89,7 @@ export const careerCategoryGroupOne: CareerCategory[] = [
       '콘텐츠 프로듀서',
       '콘텐츠 진행자',
       '문화콘텐츠 기획자',
+      '이벤트 플래너',
     ],
   },
   {
@@ -115,6 +117,7 @@ export const careerCategoryGroupOne: CareerCategory[] = [
       '어린이 방송 진행자',
       '학교 상담 프로그램 기획자',
       '커뮤니티 리더',
+      '기록관리사',
     ],
   },
 ];

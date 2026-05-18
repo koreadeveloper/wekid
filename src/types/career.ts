@@ -4,15 +4,25 @@ export type EnergyKey = 'together' | 'focus';
 export type InfoKey = 'observe' | 'imagine';
 export type DecisionKey = 'solve' | 'care';
 export type PaceKey = 'plan' | 'flex';
+export type InterestKey =
+  | 'realistic'
+  | 'investigative'
+  | 'artistic'
+  | 'social'
+  | 'enterprising'
+  | 'conventional';
 export type ExplorationAxis = 'energy' | 'information' | 'decision' | 'pace';
-export type ChoiceKey = EnergyKey | InfoKey | DecisionKey | PaceKey;
+export type QuestionAxis = ExplorationAxis | 'interest';
+export type StyleKey = EnergyKey | InfoKey | DecisionKey | PaceKey;
+export type ChoiceKey = StyleKey | InterestKey;
 export type CareerPattern = `${EnergyKey}_${InfoKey}_${DecisionKey}_${PaceKey}`;
 export type AnswerMap = Record<number, ChoiceKey>;
 export type ScoreMap = Record<ChoiceKey, number>;
 
 export type Question = {
   id: number;
-  axis: ExplorationAxis;
+  kind: 'interest' | 'style';
+  axis: QuestionAxis;
   eyebrow: string;
   text: string;
   options: [
@@ -34,6 +44,20 @@ export type CareerProfile = {
   recommendations: CareerRecommendation[];
   strengths: string[];
   missions: string[];
+  interestHighlights?: string[];
+};
+
+export type CareerFit = {
+  name: string;
+  interestFit: Partial<Record<InterestKey, number>>;
+  styleFit: Record<ExplorationAxis, StyleKey>;
+  reasonTemplate: string;
+  fitTags: string[];
+  missions: string[];
+};
+
+export type ScoredCareer = CareerRecommendation & {
+  score: number;
 };
 
 export type CareerCategory = {
@@ -48,8 +72,12 @@ export type CareerDetail = {
   emoji: string;
   tagline: string;
   description: string;
+  fitReason?: string;
   dailyTasks: string[];
+  workPlaces?: string[];
   skills: string[];
+  schoolActivities?: string[];
+  growthSteps?: string[];
   funFact: string;
 };
 

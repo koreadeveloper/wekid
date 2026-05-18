@@ -31,6 +31,7 @@ export function QuizPage({
       <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} userName={userName} />
       <QuestionPanel
         answers={answers}
+        answeredCount={answeredCount}
         currentAnswer={currentAnswer}
         currentIndex={currentIndex}
         currentQuestion={currentQuestion}

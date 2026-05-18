@@ -5,7 +5,11 @@ type WhyPanelProps = {
   profile: CareerProfile;
 };
 
+const getSentenceLines = (text: string) => text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((line) => line.trim()) ?? [text];
+
 export function WhyPanel({ profile }: WhyPanelProps) {
+  const reasonLines = getSentenceLines(`${profile.summary} ${profile.topCareer.reason}`);
+
   return (
     <section className="why-panel">
       <div className="panel-title">
@@ -13,7 +17,9 @@ export function WhyPanel({ profile }: WhyPanelProps) {
         <h2>왜 잘 맞나요?</h2>
       </div>
       <p>
-        {profile.summary} {profile.topCareer.reason}
+        {reasonLines.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
       </p>
     </section>
   );

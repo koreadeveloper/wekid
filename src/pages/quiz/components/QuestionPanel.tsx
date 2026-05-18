@@ -3,6 +3,7 @@ import type { AnswerMap, ChoiceKey, Question } from '../../../types/career';
 
 type QuestionPanelProps = {
   answers: AnswerMap;
+  answeredCount: number;
   currentAnswer?: ChoiceKey;
   currentIndex: number;
   currentQuestion: Question;
@@ -12,7 +13,7 @@ type QuestionPanelProps = {
 };
 
 export function QuestionPanel({
-  answers,
+  answeredCount,
   currentAnswer,
   currentIndex,
   currentQuestion,
@@ -58,7 +59,7 @@ export function QuestionPanel({
         <div className="question-dots" aria-hidden="true">
           {questions.map((question, index) => (
             <span
-              className={`${answers[question.id] ? 'done' : ''} ${index === currentIndex ? 'active' : ''}`}
+              className={`${index < answeredCount ? 'done' : ''} ${index === currentIndex ? 'active' : ''}`}
               key={question.id}
             />
           ))}

@@ -16,6 +16,9 @@ export function InsightPanels({ axisLabels, profile, scores }: InsightPanelsProp
           <h2>나의 강점 힌트</h2>
         </div>
         <div className="strength-list">
+          {profile.interestHighlights?.map((highlight) => (
+            <span key={highlight}>{highlight}</span>
+          ))}
           {profile.strengths.map((strength) => (
             <span key={strength}>{strength}</span>
           ))}

@@ -185,7 +185,11 @@
   background: #d9d9d9;
 }
 
-.question-dots .done,
-.question-dots .active {
+.question-dots .done {
   background: var(--duo-green);
+}
+
+.question-dots .active {
+  box-shadow: 0 0 0 3px var(--duo-green-soft);
+  transform: scale(1.12);
 }

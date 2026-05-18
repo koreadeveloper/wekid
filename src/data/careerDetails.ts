@@ -1,4 +1,7 @@
 import type { CareerDetail } from '../types/career';
+import { careerCategories } from './careerCategories';
+import { buildFallbackCareerDetail, enrichCareerDetail } from './careerDetailContext';
+import { careerFits } from './careerFits';
 
 export const careerDetails: Record<string, CareerDetail> = {
   '경찰관': { name: '경찰관', emoji: '👮', tagline: '정의를 지키는 사람', description: '사람들이 안전하게 살 수 있도록 범죄를 예방하고 질서를 유지해요. 현장에서 빠른 판단력이 중요한 직업이에요.', dailyTasks: ['순찰하며 지역 안전 확인', '신고 접수 및 현장 출동', '범죄 수사 및 기록 작성', '교통 정리 및 사고 처리'], skills: ['공정한 판단력', '체력과 순발력', '의사소통 능력', '침착함'], funFact: '우리나라 경찰관은 약 12만 명이에요!' },
@@ -23,4 +26,18 @@ export const careerDetails: Record<string, CareerDetail> = {
   '패션 디자이너': { name: '패션 디자이너', emoji: '👗', tagline: '스타일로 세상을 물들이는 사람', description: '옷, 가방, 신발 등을 디자인하는 직업이에요. 트렌드를 읽고 사람들이 입고 싶어 하는 스타일을 만들어요.', dailyTasks: ['트렌드 리서치', '디자인 스케치', '원단 선택', '샘플 제작 감수'], skills: ['색감과 조형 감각', '트렌드 감각', '스케치 실력', '소통 능력'], funFact: '파리 패션위크에서 선보이는 옷은 1년 전부터 준비해요!' },
 };
 
-export const getCareerDetail = (careerName: string) => careerDetails[careerName] ?? null;
+export const getCareerDetail = (careerName: string) => {
+  const detail = careerDetails[careerName];
+  const fit = careerFits.find((career) => career.name === careerName);
+  const category = careerCategories.find((careerCategory) => careerCategory.careers.includes(careerName));
+
+  if (detail) {
+    return enrichCareerDetail(detail, fit, category?.title);
+  }
+
+  if (fit || category) {
+    return buildFallbackCareerDetail(careerName, fit, category?.title);
+  }
+
+  return null;
+};
