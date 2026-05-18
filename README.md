@@ -4,6 +4,7 @@
 ![Mobile First](https://img.shields.io/badge/Mobile--first-말랑한%20진로%20테스트-FFC800?style=for-the-badge&labelColor=FFB000)
 ![React](https://img.shields.io/badge/React-19-1CB0F6?style=for-the-badge&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-검증된%20데이터-2B70C9?style=for-the-badge&logo=typescript&logoColor=white)
+![Vercel Ready](https://img.shields.io/badge/Vercel-ready-FF4B4B?style=for-the-badge&labelColor=2B2B2B)
 
 # 위키드 직업 탐험
 
@@ -14,6 +15,43 @@
 대표 직업 1개, 추가 추천 직업, 추천 이유, 직업별 상세 설명, 결과 이미지 저장, PDF 결과지 저장까지 제공합니다.
 
 </div>
+
+---
+
+## 화면 미리보기
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="./docs/readme/01-start.png" alt="위키드 직업 탐험 시작 화면" width="100%" />
+      <br />
+      <strong>시작 화면</strong>
+      <br />
+      <sub>이름 입력 또는 이름 없이 시작</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./docs/readme/02-result.png" alt="위키드 직업 탐험 결과 화면" width="100%" />
+      <br />
+      <strong>결과 화면</strong>
+      <br />
+      <sub>대표 직업, 추천 이유, 저장 버튼</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./docs/readme/03-career-detail.png" alt="직업 상세 설명 모달" width="100%" />
+      <br />
+      <strong>직업 상세 보기</strong>
+      <br />
+      <sub>하는 일, 일하는 곳, 필요한 능력</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/30문항-선택형%20검사-58CC02?style=flat-square&labelColor=1F8F00" alt="30문항" />
+  <img src="https://img.shields.io/badge/178직업-상세%20설명-FFC800?style=flat-square&labelColor=FFB000" alt="178직업" />
+  <img src="https://img.shields.io/badge/48직업-추천%20매칭-1CB0F6?style=flat-square&labelColor=1779C5" alt="48추천직업" />
+  <img src="https://img.shields.io/badge/PDF-결과지%20저장-FF4B4B?style=flat-square&labelColor=D63B3B" alt="PDF저장" />
+</p>
 
 ---
 
@@ -29,6 +67,25 @@
 | 결과 방식 | 대표 추천 직업 1개 + 추가 추천 직업 + 추천 이유 + 상세 직업 모달 |
 | 디자인 방향 | 듀오링고에서 영감을 받은 초록/노랑 중심, 둥글고 말랑한 모바일 우선 UI |
 | 기술 스택 | React, TypeScript, Vite, CSS, lucide-react, html2canvas, jsPDF |
+
+---
+
+## 서비스 흐름
+
+```mermaid
+flowchart LR
+    A["시작 화면"] --> B["이름 입력 또는 건너뛰기"]
+    B --> C["30문항 선택"]
+    C --> D["흥미 점수 70%"]
+    C --> E["성향 점수 30%"]
+    D --> F["직업 추천 계산"]
+    E --> F
+    F --> G["대표 추천 직업"]
+    F --> H["추가 추천 직업"]
+    G --> I["이미지 저장"]
+    G --> J["PDF 결과지 저장"]
+    H --> K["직업 상세 모달"]
+```
 
 ---
 
@@ -51,6 +108,33 @@
 ---
 
 ## 핵심 기능
+
+<table>
+  <tr>
+    <td width="50%">
+      <strong>말랑한 모바일 테스트</strong>
+      <br />
+      <sub>휴대폰에서 바로 누르기 좋은 큰 버튼, 둥근 카드, 선명한 진행 표시를 사용합니다.</sub>
+    </td>
+    <td width="50%">
+      <strong>직업 중심 결과</strong>
+      <br />
+      <sub>성격 유형 이름 대신 아이가 바로 이해할 수 있는 직업과 추천 이유를 보여줍니다.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>178개 상세 직업 카드</strong>
+      <br />
+      <sub>전체 직업 지도에 있는 모든 직업을 눌러 하는 일, 일하는 곳, 필요한 능력을 확인할 수 있습니다.</sub>
+    </td>
+    <td width="50%">
+      <strong>저장 가능한 결과지</strong>
+      <br />
+      <sub>결과 이미지를 저장하거나 상담 현장에서 쓰기 좋은 PDF 결과지로 출력할 수 있습니다.</sub>
+    </td>
+  </tr>
+</table>
 
 ### 1. 이름 입력 또는 이름 없이 시작
 
@@ -159,6 +243,26 @@
 
 웹사이트는 듀오링고에서 영감을 받은 친근한 학습 앱 느낌을 목표로 합니다.
 
+### 디자인 토큰
+
+| 토큰 | 값 | 쓰임 |
+| --- | --- | --- |
+| `--duo-green` | `#58CC02` | 결과 카드, 강조 배경, 주요 브랜드 색 |
+| `--duo-green-dark` | `#1F8F00` | 테두리, 그림자, 강한 강조 |
+| `--duo-yellow` | `#FFC800` | 대표 추천 직업 카드 |
+| `--duo-blue` | `#1CB0F6` | 보조 포인트, 정보성 강조 |
+| `--duo-red` | `#FF4B4B` | 강한 액션과 포인트 |
+
+### 화면 구성 원칙
+
+```text
+큰 카드
++ 둥근 버튼
++ 선명한 초록/노랑 대비
++ 모바일에서 먼저 읽히는 줄바꿈
++ 아이가 이해할 수 있는 짧은 행동 문장
+```
+
 | 디자인 요소 | 적용 방향 |
 | --- | --- |
 | 색상 | 선명한 초록, 따뜻한 노랑, 하늘색 포인트 |
@@ -178,6 +282,20 @@
 | 파랑 포인트 | `#1CB0F6` |
 | 빨강 포인트 | `#FF4B4B` |
 | 배경 흰색 | `#FFFFFF` |
+
+---
+
+## README 이미지 갱신 방법
+
+README의 화면 이미지는 `docs/readme/` 폴더에 들어 있습니다.
+
+| 이미지 | 설명 |
+| --- | --- |
+| `docs/readme/01-start.png` | 시작 화면 |
+| `docs/readme/02-result.png` | 결과 화면 |
+| `docs/readme/03-career-detail.png` | 직업 상세 모달 |
+
+디자인을 크게 수정했다면 같은 이름으로 이미지를 다시 캡처하면 README의 미리보기도 자동으로 최신 화면을 보여줍니다.
 
 ---
 
@@ -312,6 +430,22 @@ Vercel에서 가져올 때는 GitHub 저장소를 연결하고, 기본 설정을
 ---
 
 ## 데이터 수정 가이드
+
+<details>
+<summary><strong>데이터를 수정할 때 가장 중요한 규칙</strong></summary>
+
+직업 이름은 여러 데이터 파일에서 연결 키로 사용됩니다.  
+따라서 직업명을 바꾸거나 추가할 때는 아래 세 위치를 함께 확인해야 합니다.
+
+| 위치 | 확인할 내용 |
+| --- | --- |
+| `src/data/careerFits/` | 추천 알고리즘에 참여하는 대표 직업인지 |
+| `src/data/careerCategories/` | 전체 직업 지도에 노출되는지 |
+| `src/data/careerDetailGroups/` | 상세 설명 모달에 필요한 데이터가 있는지 |
+
+누락이 있으면 `npm run check:data`가 실패하도록 되어 있습니다.
+
+</details>
 
 ### 질문을 수정할 때
 
