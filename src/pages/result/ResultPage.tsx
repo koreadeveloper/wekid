@@ -15,6 +15,9 @@ type ResultPageProps = {
   highlightedCareers: Set<string>;
   profile?: CareerProfile;
   scores: ScoreMap;
+  userName: string;
+  hasCareerDetail: (careerName: string) => boolean;
+  onCareerSelect: (careerName: string) => void;
   onEditLastAnswer: () => void;
   onReset: () => void;
 };
@@ -24,6 +27,9 @@ export function ResultPage({
   highlightedCareers,
   profile,
   scores,
+  userName,
+  hasCareerDetail,
+  onCareerSelect,
   onEditLastAnswer,
   onReset,
 }: ResultPageProps) {
@@ -33,12 +39,30 @@ export function ResultPage({
 
   return (
     <section className="result-layout">
-      <ResultHero profile={profile} />
+      <ResultHero
+        profile={profile}
+        userName={userName}
+        hasCareerDetail={hasCareerDetail}
+        onCareerSelect={onCareerSelect}
+      />
       <WhyPanel profile={profile} />
       <InsightPanels axisLabels={axisLabels} profile={profile} scores={scores} />
-      <CareerRecommendations careers={careerMatches.primary} />
-      <CareerExplorer careers={careerMatches.explore} />
-      <CareerLibrary categories={careerCategories} highlightedCareers={highlightedCareers} />
+      <CareerRecommendations
+        careers={careerMatches.primary}
+        hasCareerDetail={hasCareerDetail}
+        onCareerSelect={onCareerSelect}
+      />
+      <CareerExplorer
+        careers={careerMatches.explore}
+        hasCareerDetail={hasCareerDetail}
+        onCareerSelect={onCareerSelect}
+      />
+      <CareerLibrary
+        categories={careerCategories}
+        highlightedCareers={highlightedCareers}
+        hasCareerDetail={hasCareerDetail}
+        onCareerSelect={onCareerSelect}
+      />
       <ResultActions onEditLastAnswer={onEditLastAnswer} onReset={onReset} />
     </section>
   );

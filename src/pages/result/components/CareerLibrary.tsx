@@ -6,9 +6,11 @@ type AccentStyle = CSSProperties & { '--accent': string };
 type CareerLibraryProps = {
   categories: CareerCategory[];
   highlightedCareers: Set<string>;
+  hasCareerDetail: (careerName: string) => boolean;
+  onCareerSelect: (careerName: string) => void;
 };
 
-export function CareerLibrary({ categories, highlightedCareers }: CareerLibraryProps) {
+export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail, onCareerSelect }: CareerLibraryProps) {
   return (
     <section className="library-section">
       <div className="section-heading">
@@ -25,11 +27,18 @@ export function CareerLibrary({ categories, highlightedCareers }: CareerLibraryP
                 <h3>{category.title}</h3>
               </div>
               <div className="career-chip-grid compact">
-                {category.careers.map((career) => (
-                  <span className={`career-chip ${highlightedCareers.has(career) ? 'matched' : ''}`} key={career}>
-                    {career}
-                  </span>
-                ))}
+                {category.careers.map((career) => {
+                  const hasDetail = hasCareerDetail(career);
+                  return (
+                    <span
+                      className={`career-chip ${highlightedCareers.has(career) ? 'matched' : ''} ${hasDetail ? 'has-detail' : ''}`}
+                      key={career}
+                      onClick={() => hasDetail && onCareerSelect(career)}
+                    >
+                      {career}
+                    </span>
+                  );
+                })}
               </div>
             </article>
           );

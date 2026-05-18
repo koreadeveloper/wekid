@@ -4,9 +4,10 @@ type QuizIntroProps = {
   answeredCount: number;
   totalQuestions: number;
   progress: number;
+  userName: string;
 };
 
-export function QuizIntro({ answeredCount, totalQuestions, progress }: QuizIntroProps) {
+export function QuizIntro({ answeredCount, totalQuestions, progress, userName }: QuizIntroProps) {
   return (
     <aside className="intro-panel" aria-label="테스트 정보">
       <div className="visual-board">
@@ -30,7 +31,7 @@ export function QuizIntro({ answeredCount, totalQuestions, progress }: QuizIntro
 
       <div className="intro-copy">
         <p className="section-kicker">{totalQuestions}문항</p>
-        <h1>나에게 잘 맞는 미래 직업 찾기</h1>
+        <h1>{userName ? `${userName}의 미래 직업 찾기` : '나에게 잘 맞는 미래 직업 찾기'}</h1>
         <p>마음에 더 가까운 선택지를 고르면 마지막에 대표 추천 직업과 이유가 열립니다.</p>
       </div>
 

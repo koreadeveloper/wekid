@@ -4,11 +4,15 @@ import type { CareerProfile } from '../../../types/career';
 
 type ResultHeroProps = {
   profile: CareerProfile;
+  userName: string;
+  hasCareerDetail: (careerName: string) => boolean;
+  onCareerSelect: (careerName: string) => void;
 };
 
-export function ResultHero({ profile }: ResultHeroProps) {
+export function ResultHero({ profile, userName, hasCareerDetail, onCareerSelect }: ResultHeroProps) {
   const [isSaving, setIsSaving] = useState(false);
   const shareCardRef = useRef<HTMLElement>(null);
+  const hasTopCareerDetail = hasCareerDetail(profile.topCareer.name);
 
   const handleSaveImage = async () => {
     if (!shareCardRef.current) {
@@ -37,7 +41,7 @@ export function ResultHero({ profile }: ResultHeroProps) {
   return (
     <section className="result-hero career-result-hero" ref={shareCardRef}>
       <div>
-        <p className="section-kicker">추천 결과</p>
+        <p className="section-kicker">{userName ? `${userName}의 탐험 결과` : '추천 결과'}</p>
         <h1>가장 잘 맞는 직업은 {profile.topCareer.name}예요</h1>
         <p className="result-subtitle">{profile.headline}</p>
         <p className="result-description">{profile.summary}</p>
@@ -47,12 +51,16 @@ export function ResultHero({ profile }: ResultHeroProps) {
           ))}
         </div>
       </div>
-      <article className="top-career-card">
+      <article
+        className={`top-career-card ${hasTopCareerDetail ? 'clickable' : ''}`}
+        onClick={() => hasTopCareerDetail && onCareerSelect(profile.topCareer.name)}
+      >
         <div className="top-career-icon">
           <PartyPopper size={36} />
         </div>
         <span>대표 추천</span>
         <strong>{profile.topCareer.name}</strong>
+        {hasTopCareerDetail && <small className="career-tap-hint">탭해서 자세히 보기 →</small>}
       </article>
       <div className="share-row">
         <button className="share-button" type="button" onClick={handleSaveImage} disabled={isSaving}>

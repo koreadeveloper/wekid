@@ -10,6 +10,7 @@ type QuizPageProps = {
   currentIndex: number;
   currentQuestion: Question;
   progress: number;
+  userName: string;
   onChooseAnswer: (choice: ChoiceKey) => void;
   onPrevious: () => void;
 };
@@ -21,12 +22,13 @@ export function QuizPage({
   currentIndex,
   currentQuestion,
   progress,
+  userName,
   onChooseAnswer,
   onPrevious,
 }: QuizPageProps) {
   return (
     <section className="quiz-layout">
-      <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} />
+      <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} userName={userName} />
       <QuestionPanel
         answers={answers}
         currentAnswer={currentAnswer}

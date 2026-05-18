@@ -43,6 +43,16 @@ export type CareerCategory = {
   careers: string[];
 };
 
+export type CareerDetail = {
+  name: string;
+  emoji: string;
+  tagline: string;
+  description: string;
+  dailyTasks: string[];
+  skills: string[];
+  funFact: string;
+};
+
 export type AxisLabels = Record<
   ExplorationAxis,
   { left: ChoiceKey; right: ChoiceKey; title: string; leftLabel: string; rightLabel: string }

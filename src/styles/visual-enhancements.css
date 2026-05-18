@@ -1,0 +1,86 @@
+:root {
+  --depth-1: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --depth-2: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  --depth-3: 0 20px 48px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* 카드 입체감 강화 */
+.intro-panel {
+  background: linear-gradient(145deg, #65d400 0%, #58cc02 50%, #4ab800 100%);
+  box-shadow: var(--shadow-green), 0 12px 32px rgba(88,204,2,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.visual-card {
+  transform-style: preserve-3d;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.visual-card:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.option-card {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.option-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #e5e5e5;
+}
+.option-card.selected {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 var(--duo-green-dark);
+  background: linear-gradient(160deg, #f0ffe5 0%, #e8ffda 100%);
+}
+
+.top-career-card {
+  background: linear-gradient(145deg, #ffd200 0%, #ffc800 60%, #e5a100 100%);
+  box-shadow: 0 8px 0 var(--duo-yellow-dark), 0 16px 32px rgba(255,200,0,0.3);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.top-career-card.clickable:hover {
+  transform: translateY(-4px) rotate(-0.5deg);
+  box-shadow: 0 12px 0 var(--duo-yellow-dark), 0 24px 40px rgba(255,200,0,0.4);
+  cursor: pointer;
+}
+
+.career-card {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  background: linear-gradient(160deg, #ffffff 0%, #fafafa 100%);
+}
+.career-card.clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 #d5d5d5;
+  cursor: pointer;
+  border-color: var(--duo-blue);
+}
+
+/* 결과 히어로 3D 강화 */
+.result-hero {
+  background: linear-gradient(145deg, #65d400 0%, #58cc02 40%, #4ab800 100%);
+  box-shadow: var(--shadow-green), 0 16px 48px rgba(88,204,2,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  position: relative;
+  overflow: hidden;
+}
+.result-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.result-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.05);
+  pointer-events: none;
+}
+
+/* ===== 이름 입력 화면 ===== */
