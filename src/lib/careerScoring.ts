@@ -66,6 +66,13 @@ const styleStrengths: Record<StyleKey, string> = {
 
 const unique = (items: string[]) => [...new Set(items)].filter(Boolean);
 
+const fallbackCareer: ScoredCareer = {
+  name: '진로 탐험가',
+  reason: '아직 여러 직업을 넓게 탐색하며 나에게 맞는 활동을 찾아가는 중이에요.',
+  fitTags: ['탐색', '경험', '호기심'],
+  score: 0,
+};
+
 export function getScores(answers: AnswerMap) {
   const scores: ScoreMap = { ...initialScores };
 
@@ -117,7 +124,7 @@ export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; mat
   const ranked = careerFits
     .map((_, index) => scoreCareer(scores, index))
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'ko'));
-  const topCareer = ranked[0];
+  const topCareer = ranked[0] ?? fallbackCareer;
   const topInterests = getTopInterests(scores);
   const mainInterest = topInterests[0];
   const thirdInterest = topInterests[2];

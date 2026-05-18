@@ -91,9 +91,15 @@ const hasFinalConsonant = (value: string) => {
 
 const topicParticle = (value: string) => (hasFinalConsonant(value) ? '은' : '는');
 
+const isInterestKey = (value?: string): value is InterestKey =>
+  Boolean(value && Object.prototype.hasOwnProperty.call(interestFallbacks, value));
+
 const getMainInterest = (fit?: CareerFit, categoryTitle?: string): InterestKey => {
   if (fit) {
-    return Object.entries(fit.interestFit).sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0]?.[0] as InterestKey;
+    const mainInterest = Object.entries(fit.interestFit).sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0]?.[0];
+    if (isInterestKey(mainInterest)) {
+      return mainInterest;
+    }
   }
 
   return categoryInterest[categoryTitle ?? ''] ?? 'social';
@@ -108,12 +114,11 @@ export const enrichCareerDetail = (detail: CareerDetail, fit?: CareerFit, catego
   const mainInterest = getMainInterest(fit, categoryTitle);
   const fallback = interestFallbacks[mainInterest];
   const fitTags = fit?.fitTags.slice(0, 3).join(', ') ?? detail.skills.slice(0, 3).join(', ');
+  const baseReason = fit?.reasonTemplate ?? `${detail.name}은 ${fitTags} 같은 강점을 자주 쓰는 직업이에요.`;
 
   return {
     ...detail,
-    fitReason:
-      detail.fitReason ??
-      `${fit?.reasonTemplate ?? detail.description} 특히 ${fitTags} 같은 강점을 자주 쓰며, ${fallback.lens}을 실제 일로 연결할 수 있어요.`,
+    fitReason: detail.fitReason ?? `${baseReason} ${fallback.lens}을 실제 일로 연결할 수 있어요.`,
     workPlaces: detail.workPlaces ?? fallback.workPlaces,
     schoolActivities: detail.schoolActivities ?? unique([...(fit?.missions ?? []), ...fallback.activities]).slice(0, 4),
     growthSteps: detail.growthSteps ?? getGrowthSteps(fit),

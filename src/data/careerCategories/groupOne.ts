@@ -111,6 +111,7 @@ export const careerCategoryGroupOne: CareerCategory[] = [
       '심리상담사',
       '교육 콘텐츠 기획자',
       '독서지도사',
+      '사서',
       '박물관 교육사',
       '문화기획자',
       '창의교육가',
