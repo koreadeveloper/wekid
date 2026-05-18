@@ -20,6 +20,10 @@ import {
   Sprout,
   Users,
   Wand2,
+  X,
+  Star,
+  Lightbulb,
+  MapPin,
 } from 'lucide-react';
 
 type EnergyKey = 'together' | 'focus';
@@ -66,6 +70,43 @@ type CareerCategory = {
 };
 
 type AccentStyle = CSSProperties & { '--accent': string };
+
+type CareerDetail = {
+  name: string;
+  emoji: string;
+  tagline: string;
+  description: string;
+  dailyTasks: string[];
+  skills: string[];
+  funFact: string;
+};
+
+const careerDetails: Record<string, CareerDetail> = {
+  '경찰관': { name: '경찰관', emoji: '👮', tagline: '정의를 지키는 사람', description: '사람들이 안전하게 살 수 있도록 범죄를 예방하고 질서를 유지해요. 현장에서 빠른 판단력이 중요한 직업이에요.', dailyTasks: ['순찰하며 지역 안전 확인', '신고 접수 및 현장 출동', '범죄 수사 및 기록 작성', '교통 정리 및 사고 처리'], skills: ['공정한 판단력', '체력과 순발력', '의사소통 능력', '침착함'], funFact: '우리나라 경찰관은 약 12만 명이에요!' },
+  '소방관': { name: '소방관', emoji: '🚒', tagline: '불꽃 속 영웅', description: '화재를 진압하고 사고 현장에서 사람들을 구조해요. 위험한 상황에서도 용감하게 움직이는 힘이 필요해요.', dailyTasks: ['화재 진압 훈련', '구조 장비 점검', '응급 구조 출동', '안전 교육 진행'], skills: ['체력과 용기', '팀워크', '빠른 상황 판단', '장비 조작'], funFact: '소방관 헬멧의 무게는 약 1.5kg이에요!' },
+  '초등교사': { name: '초등교사', emoji: '📚', tagline: '꿈을 키워주는 선생님', description: '아이들이 세상을 배우는 첫 관문이 되는 직업이에요. 지식뿐 아니라 올바른 생활 습관과 감정도 함께 가르쳐요.', dailyTasks: ['수업 계획 및 진행', '학생 생활지도', '학부모 상담', '교육 자료 제작'], skills: ['인내심', '창의적 설명 능력', '공감 능력', '계획성'], funFact: '선생님 한 명이 평생 약 3,000명의 학생을 만나요!' },
+  '방송 진행자': { name: '방송 진행자', emoji: '🎤', tagline: '화면 속 에너지 메이커', description: 'TV나 라디오에서 시청자와 소통하며 정보와 재미를 전달해요. 즉흥적인 상황 대처 능력이 핵심이에요.', dailyTasks: ['대본 검토 및 준비', '생방송 진행', '게스트 인터뷰', '시청자 소통'], skills: ['말하기 능력', '순발력', '표현력', '외모 관리'], funFact: '생방송 중에는 귀에 이어폰을 끼고 PD의 지시를 받아요!' },
+  '창업가': { name: '창업가', emoji: '🚀', tagline: '새로운 세상을 만드는 사람', description: '아무도 생각하지 못한 아이디어로 새로운 회사나 서비스를 만들어요. 실패를 두려워하지 않는 용기가 필요해요.', dailyTasks: ['아이디어 검증', '팀 구성 및 관리', '투자자 미팅', '제품 개발 방향 결정'], skills: ['도전 정신', '리더십', '문제 해결력', '설득력'], funFact: '카카오톡도 처음엔 작은 스타트업으로 시작했어요!' },
+  '게임 기획자': { name: '게임 기획자', emoji: '🎮', tagline: '재미를 설계하는 마법사', description: '사람들이 즐길 게임의 규칙, 캐릭터, 이야기를 만드는 일을 해요. 수천만 명이 내가 만든 세계에서 놀게 돼요.', dailyTasks: ['게임 기획서 작성', '개발팀과 협업', '밸런스 테스트', '유저 피드백 분석'], skills: ['창의력', '논리적 사고', '커뮤니케이션', '게임 이해도'], funFact: '마인크래프트는 단 한 명이 처음 만들기 시작했어요!' },
+  'AI 연구원': { name: 'AI 연구원', emoji: '🤖', tagline: '미래 지능을 만드는 사람', description: '인공지능이 더 똑똑해지도록 연구하는 직업이에요. 로봇, 번역기, 챗봇 같은 AI 기술의 핵심을 만들어요.', dailyTasks: ['알고리즘 설계', '데이터 분석', '논문 읽기/쓰기', '모델 성능 테스트'], skills: ['수학과 통계', '코딩', '영어 독해', '호기심'], funFact: 'ChatGPT를 만든 OpenAI에는 한국인 연구원도 있어요!' },
+  '과학자': { name: '과학자', emoji: '🔬', tagline: '세상의 원리를 밝히는 탐험가', description: '아직 아무도 모르는 질문에 답을 찾는 일을 해요. 실험과 관찰을 반복하며 새로운 사실을 발견해요.', dailyTasks: ['실험 설계 및 진행', '데이터 분석', '논문 작성', '학회 발표'], skills: ['호기심', '꼼꼼함', '인내심', '논리적 사고'], funFact: '노벨 과학상 수상자 중에는 10대에 연구를 시작한 사람도 있어요!' },
+  '웹툰 작가': { name: '웹툰 작가', emoji: '✏️', tagline: '이야기로 세상을 물들이는 예술가', description: '매주 독자들이 기다리는 이야기를 그림으로 만들어요. 상상한 세계를 직접 눈앞에 보이도록 표현하는 일이에요.', dailyTasks: ['스토리 구성', '콘티(장면 설계) 작업', '디지털 드로잉', '독자 댓글 확인'], skills: ['그림 실력', '스토리텔링', '꾸준함', '개성 있는 표현'], funFact: '네이버 웹툰 인기 작품은 하루 조회수가 100만을 넘기도 해요!' },
+  '심리상담사': { name: '심리상담사', emoji: '💬', tagline: '마음의 짐을 함께 드는 사람', description: '힘들어하는 사람의 이야기를 듣고 마음이 나아질 수 있도록 도와줘요. 판단 없이 듣는 능력이 가장 중요해요.', dailyTasks: ['상담 세션 진행', '심리 검사 실시', '상담 기록 작성', '사례 연구'], skills: ['공감 능력', '경청', '감정 조절', '전문 지식'], funFact: '상담사는 자신도 정기적으로 슈퍼비전(지도받기)을 받아요!' },
+  '간호사': { name: '간호사', emoji: '🩺', tagline: '치유의 손길을 가진 사람', description: '환자 곁에서 가장 가까이 있는 의료 전문가예요. 의사의 처방을 실행하고 환자 상태를 24시간 관찰해요.', dailyTasks: ['환자 활력징후 측정', '약물 투여', '의사와 협진', '보호자 교육'], skills: ['세심한 관찰력', '체력', '공감 능력', '전문 의료 지식'], funFact: '간호사는 의사보다 환자와 함께하는 시간이 훨씬 더 많아요!' },
+  '약사': { name: '약사', emoji: '💊', tagline: '안전한 치료를 책임지는 전문가', description: '의사가 처방한 약을 확인하고 환자에게 올바른 복용 방법을 알려줘요. 작은 실수도 큰 영향을 미칠 수 있어요.', dailyTasks: ['처방전 검토 및 조제', '약물 상호작용 확인', '복약 상담', '재고 관리'], skills: ['정확성', '집중력', '의사소통', '화학 지식'], funFact: '약국에 있는 약의 종류는 보통 2,000가지가 넘어요!' },
+  '소프트웨어 개발자': { name: '소프트웨어 개발자', emoji: '💻', tagline: '코드로 세상을 바꾸는 사람', description: '앱, 웹사이트, 게임 등 우리가 매일 쓰는 디지털 세상을 만드는 직업이에요. 아이디어를 코드로 실제로 만들어요.', dailyTasks: ['코드 작성 및 수정', '버그 수정', '코드 리뷰', '기술 문서 작성'], skills: ['논리적 사고', '문제 해결력', '코딩 언어', '꾸준한 학습'], funFact: '전 세계에서 가장 많이 쓰이는 앱 중 하나인 유튜브도 코드로 만들어졌어요!' },
+  '플로리스트': { name: '플로리스트', emoji: '🌸', tagline: '꽃으로 감정을 표현하는 예술가', description: '꽃을 이용해 아름다운 꽃다발, 화환, 공간 장식을 만들어요. 색과 향기로 사람들의 감정을 전달하는 일이에요.', dailyTasks: ['꽃 재료 구입 및 정리', '꽃다발 제작', '웨딩·행사 장식', '꽃 관리 및 보관'], skills: ['색감 감각', '손재주', '고객 소통', '창의성'], funFact: '한 송이 장미가 꽃집에 오기까지 평균 3개국을 거쳐요!' },
+  '건축가': { name: '건축가', emoji: '🏛️', tagline: '공간에 생명을 불어넣는 사람', description: '건물의 모양, 구조, 기능을 설계하는 직업이에요. 사람들이 편안하고 아름답게 살 수 있는 공간을 만들어요.', dailyTasks: ['건축 도면 설계', '현장 감리', '건축주 미팅', '법규 검토'], skills: ['공간 감각', '드로잉', '수학', '소통 능력'], funFact: '세계에서 가장 높은 건물 버즈 칼리파 설계에는 100명 이상의 건축가가 참여했어요!' },
+  '수의사': { name: '수의사', emoji: '🐾', tagline: '동물의 말을 듣는 의사', description: '말을 못 하는 동물들의 건강을 지키는 의사예요. 강아지, 고양이부터 소, 말, 야생동물까지 돌봐요.', dailyTasks: ['동물 진료 및 수술', '예방접종', '보호자 상담', '동물 건강 검진'], skills: ['동물 사랑', '의료 지식', '침착함', '체력'], funFact: '수의사가 되려면 6년간 수의대를 다녀야 해요!' },
+  '영양사': { name: '영양사', emoji: '🥗', tagline: '음식으로 건강을 설계하는 사람', description: '사람들이 건강하게 먹을 수 있도록 식단을 계획하고 영양 정보를 알려줘요. 학교, 병원, 기업 등 다양한 곳에서 일해요.', dailyTasks: ['식단 설계', '영양 상담', '급식 메뉴 개발', '위생 관리'], skills: ['영양학 지식', '계획성', '소통 능력', '꼼꼼함'], funFact: '학교 급식 메뉴는 영양사가 매달 새로 설계해요!' },
+  '진로상담가': { name: '진로상담가', emoji: '🧭', tagline: '꿈의 지도를 그려주는 사람', description: '사람들이 자신에게 맞는 직업과 진로를 찾을 수 있도록 도와줘요. 여러분처럼 진로를 고민하는 학생들을 주로 만나요.', dailyTasks: ['진로 탐색 상담', '심리검사 해석', '진로 프로그램 운영', '정보 제공'], skills: ['공감 능력', '다양한 직업 지식', '경청', '분석력'], funFact: '진로상담가는 자신의 진로도 끊임없이 탐색하는 직업이에요!' },
+  '데이터 과학자': { name: '데이터 과학자', emoji: '📊', tagline: '숫자 속에서 이야기를 찾는 탐정', description: '엄청난 양의 데이터를 분석해서 사람들이 더 좋은 결정을 할 수 있도록 도와줘요. 미래를 예측하는 일도 해요.', dailyTasks: ['데이터 수집 및 정제', '통계 분석', '시각화 자료 제작', '보고서 작성'], skills: ['통계학', '코딩', '논리적 사고', '시각화 능력'], funFact: '넷플릭스의 추천 알고리즘도 데이터 과학자들이 만들어요!' },
+  '패션 디자이너': { name: '패션 디자이너', emoji: '👗', tagline: '스타일로 세상을 물들이는 사람', description: '옷, 가방, 신발 등을 디자인하는 직업이에요. 트렌드를 읽고 사람들이 입고 싶어 하는 스타일을 만들어요.', dailyTasks: ['트렌드 리서치', '디자인 스케치', '원단 선택', '샘플 제작 감수'], skills: ['색감과 조형 감각', '트렌드 감각', '스케치 실력', '소통 능력'], funFact: '파리 패션위크에서 선보이는 옷은 1년 전부터 준비해요!' },
+};
+
+const getCareerDetail = (careerName: string): CareerDetail | null => {
+  return careerDetails[careerName] ?? null;
+};
 
 const questions: Question[] = [
   {
@@ -1548,6 +1589,10 @@ function App() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [showResult, setShowResult] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [nameStep, setNameStep] = useState(true);
+  const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   const scores = useMemo(() => getScores(answers), [answers]);
@@ -1617,6 +1662,9 @@ function App() {
     setAnswers({});
     setCurrentIndex(0);
     setShowResult(false);
+    setNameStep(true);
+    setNameInput('');
+    setUserName('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1628,6 +1676,41 @@ function App() {
 
   return (
     <main className="app">
+      {/* 직업 상세 모달 */}
+      {selectedCareer && (
+        <div className="modal-overlay" onClick={() => setSelectedCareer(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedCareer(null)} aria-label="닫기">
+              <X size={20} />
+            </button>
+            <div className="modal-emoji">{selectedCareer.emoji}</div>
+            <p className="modal-tagline">{selectedCareer.tagline}</p>
+            <h2 className="modal-title">{selectedCareer.name}</h2>
+            <p className="modal-desc">{selectedCareer.description}</p>
+            <div className="modal-section">
+              <div className="modal-section-title"><Star size={15} />하는 일</div>
+              <ul className="modal-task-list">
+                {selectedCareer.dailyTasks.map((task) => (
+                  <li key={task}>{task}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="modal-section">
+              <div className="modal-section-title"><Lightbulb size={15} />필요한 능력</div>
+              <div className="modal-skill-chips">
+                {selectedCareer.skills.map((skill) => (
+                  <span key={skill}>{skill}</span>
+                ))}
+              </div>
+            </div>
+            <div className="modal-funfact">
+              <MapPin size={14} />
+              <span>{selectedCareer.funFact}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="topbar" aria-label="상단 정보">
         <div className="brand">
           <div className="brand-mark">
@@ -1646,7 +1729,54 @@ function App() {
         </div>
       </section>
 
-      {!showResult ? (
+      {/* 이름 입력 화면 */}
+      {nameStep ? (
+        <section className="name-step-layout">
+          <div className="name-step-card">
+            <div className="name-step-emoji">🧭</div>
+            <p className="section-kicker">탐험 시작 전</p>
+            <h1>이름을 알려줘요!</h1>
+            <p className="name-step-sub">결과지에 이름을 넣어드려요</p>
+            <input
+              className="name-input"
+              type="text"
+              placeholder="예) 김탐험"
+              value={nameInput}
+              maxLength={10}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && nameInput.trim()) {
+                  setUserName(nameInput.trim());
+                  setNameStep(false);
+                }
+              }}
+              autoFocus
+            />
+            <button
+              className="primary-button name-start-btn"
+              type="button"
+              disabled={!nameInput.trim()}
+              onClick={() => {
+                setUserName(nameInput.trim());
+                setNameStep(false);
+              }}
+            >
+              <Sparkles size={18} />
+              탐험 시작!
+            </button>
+            <button
+              className="ghost-button name-skip-btn"
+              type="button"
+              onClick={() => {
+                setUserName('');
+                setNameStep(false);
+              }}
+            >
+              이름 없이 시작하기
+            </button>
+          </div>
+        </section>
+      ) : !showResult ? (
         <section className="quiz-layout">
           <aside className="intro-panel" aria-label="테스트 정보">
             <div className="visual-board">
@@ -1670,7 +1800,7 @@ function App() {
 
             <div className="intro-copy">
               <p className="section-kicker">24문항</p>
-              <h1>나와 잘 맞는 미래 직업 찾기</h1>
+              <h1>{userName ? `${userName}의 미래 직업 찾기` : '나와 잘 맞는 미래 직업 찾기'}</h1>
               <p>마음에 더 가까운 선택지를 누르면 마지막에 대표 추천 직업과 이유가 열립니다.</p>
             </div>
 
@@ -1765,7 +1895,9 @@ function App() {
         <section className="result-layout">
           <section className="result-hero career-result-hero" ref={shareCardRef}>
             <div>
-              <p className="section-kicker">추천 결과</p>
+              <p className="section-kicker">
+                {userName ? `${userName}의 탐험 결과` : '추천 결과'}
+              </p>
               <h1>가장 잘 맞는 직업은 {profile.topCareer.name}예요</h1>
               <p className="result-subtitle">{profile.headline}</p>
               <p className="result-description">{profile.summary}</p>
@@ -1775,12 +1907,21 @@ function App() {
                 ))}
               </div>
             </div>
-            <article className="top-career-card">
+            <article
+              className={`top-career-card ${getCareerDetail(profile.topCareer.name) ? 'clickable' : ''}`}
+              onClick={() => {
+                const detail = getCareerDetail(profile.topCareer.name);
+                if (detail) setSelectedCareer(detail);
+              }}
+            >
               <div className="top-career-icon">
                 <PartyPopper size={36} />
               </div>
               <span>대표 추천</span>
               <strong>{profile.topCareer.name}</strong>
+              {getCareerDetail(profile.topCareer.name) && (
+                <small className="career-tap-hint">탭해서 자세히 보기 →</small>
+              )}
             </article>
             <div className="share-row">
               <button
@@ -1857,18 +1998,26 @@ function App() {
               <h2>추천 직업과 이유</h2>
             </div>
             <div className="career-grid primary career-reason-grid">
-              {careerMatches.primary.map((career, index) => (
-                <article className="career-card reason-card" key={career.name}>
-                  <span>{String(index + 1).padStart(2, '0')}</span>
-                  <strong>{career.name}</strong>
-                  <p>{career.reason}</p>
-                  <div className="fit-tag-row">
-                    {career.fitTags.map((tag) => (
-                      <small key={tag}>{tag}</small>
-                    ))}
-                  </div>
-                </article>
-              ))}
+              {careerMatches.primary.map((career, index) => {
+                const detail = getCareerDetail(career.name);
+                return (
+                  <article
+                    className={`career-card reason-card ${detail ? 'clickable' : ''}`}
+                    key={career.name}
+                    onClick={() => { if (detail) setSelectedCareer(detail); }}
+                  >
+                    <span>{String(index + 1).padStart(2, '0')}</span>
+                    <strong>{career.name}</strong>
+                    <p>{career.reason}</p>
+                    <div className="fit-tag-row">
+                      {career.fitTags.map((tag) => (
+                        <small key={tag}>{tag}</small>
+                      ))}
+                    </div>
+                    {detail && <div className="career-detail-hint">자세히 보기 →</div>}
+                  </article>
+                );
+              })}
             </div>
           </section>
 
@@ -1878,11 +2027,20 @@ function App() {
               <h2>함께 탐험할 직업</h2>
             </div>
             <div className="career-chip-grid">
-              {careerMatches.explore.map((career) => (
-                <span className="career-chip strong" key={career.name} title={career.reason}>
-                  {career.name}
-                </span>
-              ))}
+              {careerMatches.explore.map((career) => {
+                const detail = getCareerDetail(career.name);
+                return (
+                  <span
+                    className={`career-chip strong ${detail ? 'has-detail' : ''}`}
+                    key={career.name}
+                    title={career.reason}
+                    onClick={() => { if (detail) setSelectedCareer(detail); }}
+                    style={detail ? { cursor: 'pointer' } : {}}
+                  >
+                    {career.name}{detail ? ' ✦' : ''}
+                  </span>
+                );
+              })}
             </div>
           </section>
 
@@ -1901,11 +2059,19 @@ function App() {
                       <h3>{category.title}</h3>
                     </div>
                     <div className="career-chip-grid compact">
-                      {category.careers.map((career) => (
-                        <span className={`career-chip ${highlightedCareers.has(career) ? 'matched' : ''}`} key={career}>
-                          {career}
-                        </span>
-                      ))}
+                      {category.careers.map((career) => {
+                        const detail = getCareerDetail(career);
+                        return (
+                          <span
+                            className={`career-chip ${highlightedCareers.has(career) ? 'matched' : ''} ${detail ? 'has-detail' : ''}`}
+                            key={career}
+                            onClick={() => { if (detail) setSelectedCareer(detail); }}
+                            style={detail ? { cursor: 'pointer' } : {}}
+                          >
+                            {career}
+                          </span>
+                        );
+                      })}
                     </div>
                   </article>
                 );
@@ -1927,6 +2093,7 @@ function App() {
       )}
     </main>
   );
+
 }
 
 export default App;
