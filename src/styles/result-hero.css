@@ -37,8 +37,9 @@
 
 .result-title span + span {
   margin-top: 4px;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
+
 .result-description span + span,
 .why-panel p span + span {
   margin-top: 5px;
@@ -47,7 +48,6 @@
 .career-result-hero {
   grid-template-columns: 1fr;
 }
-
 .empty-result-panel {
   display: flex;
   flex-direction: column;

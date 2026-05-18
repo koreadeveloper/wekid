@@ -61,8 +61,8 @@ export function ResultHero({
       <div>
         <p className="section-kicker">{userName ? `${userName}의 탐험 결과` : '추천 결과'}</p>
         <h1 className="result-title">
-          <span>가장 잘 맞는 직업은</span>
-          <span>{profile.topCareer.name}입니다</span>
+          <span className="result-title-prefix">가장 잘 맞는 직업은</span>
+          <span className="result-title-career">{profile.topCareer.name}입니다</span>
         </h1>
         <p className="result-subtitle">{profile.headline}</p>
         <p className="result-description">

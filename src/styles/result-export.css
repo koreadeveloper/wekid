@@ -1,0 +1,39 @@
+.result-title {
+  word-break: keep-all;
+}
+
+.result-hero.is-exporting .result-title-prefix {
+  white-space: nowrap;
+}
+
+.result-hero.is-exporting .result-title-career {
+  word-break: keep-all;
+}
+
+@media (max-width: 480px) {
+  .result-hero.is-exporting {
+    padding: clamp(28px, 10vw, 42px);
+  }
+
+  .result-hero.is-exporting .result-title {
+    font-size: clamp(23px, 6.8vw, 31px);
+    line-height: 1.14;
+  }
+
+  .result-hero.is-exporting .result-subtitle {
+    font-size: clamp(17px, 5vw, 19px);
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .result-hero.is-exporting .result-description {
+    font-size: clamp(15px, 4.4vw, 17px);
+    line-height: 1.6;
+    word-break: keep-all;
+  }
+
+  .result-hero.is-exporting .top-career-card strong {
+    font-size: clamp(31px, 9vw, 40px);
+    word-break: keep-all;
+  }
+}
