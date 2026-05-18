@@ -1,0 +1,127 @@
+.career-section,
+.library-section {
+  padding: 38px 0 0;
+}
+
+.section-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.career-grid,
+.career-reason-grid,
+.category-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.career-card {
+  min-height: 170px;
+  padding: 20px;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.career-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 18px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--duo-blue);
+  box-shadow: 0 3px 0 var(--duo-blue-dark);
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.career-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 1000;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.reason-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+}
+
+.reason-card p {
+  margin: 12px 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.fit-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.fit-tag-row small {
+  padding: 7px 10px;
+  border: 2px solid #84d8ff;
+  border-radius: 999px;
+  color: var(--duo-blue-dark);
+  background: #ddf4ff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.career-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.career-chip.strong {
+  border-color: #84d8ff;
+  color: var(--duo-blue-dark);
+  background: #ddf4ff;
+}
+
+.career-chip.matched {
+  border-color: var(--duo-green-dark);
+  color: #ffffff;
+  background: var(--duo-green);
+}
+
+.category-panel {
+  padding: 20px;
+}
+
+.career-chip-grid.compact {
+  gap: 7px;
+}
+
+.career-chip-grid.compact .career-chip {
+  min-height: 32px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.result-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px -14px -82px;
+  padding: 14px 14px 18px;
+  background: rgba(247, 247, 247, 0.94);
+  border-top: 2px solid var(--line);
+  backdrop-filter: blur(14px);
+}
