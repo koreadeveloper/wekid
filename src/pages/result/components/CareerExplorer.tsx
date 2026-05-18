@@ -17,15 +17,17 @@ export function CareerExplorer({ careers, hasCareerDetail, onCareerSelect }: Car
         {careers.map((career) => {
           const hasDetail = hasCareerDetail(career.name);
           return (
-            <span
+            <button
               className={`career-chip strong ${hasDetail ? 'has-detail' : ''}`}
               key={career.name}
+              type="button"
               title={career.reason}
               onClick={() => hasDetail && onCareerSelect(career.name)}
+              disabled={!hasDetail}
             >
               {career.name}
               {hasDetail ? ' →' : ''}
-            </span>
+            </button>
           );
         })}
       </div>

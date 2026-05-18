@@ -30,13 +30,15 @@ export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail,
                 {category.careers.map((career) => {
                   const hasDetail = hasCareerDetail(career);
                   return (
-                    <span
+                    <button
                       className={`career-chip ${highlightedCareers.has(career) ? 'matched' : ''} ${hasDetail ? 'has-detail' : ''}`}
                       key={career}
+                      type="button"
                       onClick={() => hasDetail && onCareerSelect(career)}
+                      disabled={!hasDetail}
                     >
                       {career}
-                    </span>
+                    </button>
                   );
                 })}
               </div>

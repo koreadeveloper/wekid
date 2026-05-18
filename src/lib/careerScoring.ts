@@ -1,10 +1,10 @@
 import { careerFits } from '../data/careerFits';
 import { interestLabels } from '../data/interestLabels';
+import { questions } from '../data/questions';
 import type {
   AnswerMap,
   CareerMatches,
   CareerProfile,
-  ChoiceKey,
   ExplorationAxis,
   InterestKey,
   ScoreMap,
@@ -45,6 +45,14 @@ export const initialScores: ScoreMap = {
   conventional: 0,
 };
 
+const scoreCeilings = questions.reduce<ScoreMap>((ceilings, question) => {
+  question.options.forEach(({ choice }) => {
+    ceilings[choice] += 1;
+  });
+
+  return ceilings;
+}, { ...initialScores });
+
 const styleStrengths: Record<StyleKey, string> = {
   together: '함께 움직이기',
   focus: '혼자 깊게 집중하기',
@@ -82,14 +90,19 @@ const getTopInterests = (scores: ScoreMap) =>
 
 const scoreCareer = (scores: ScoreMap, careerNameOrder: number): ScoredCareer => {
   const career = careerFits[careerNameOrder];
-  const interestWeightTotal = Object.values(career.interestFit).reduce((sum, weight) => sum + (weight ?? 0), 0);
   const interestRaw = Object.entries(career.interestFit).reduce(
-    (sum, [interest, weight]) => sum + scores[interest as ChoiceKey] * (weight ?? 0),
+    (sum, [interest, weight]) => sum + scores[interest as InterestKey] * (weight ?? 0),
     0,
   );
-  const interestScore = interestWeightTotal ? interestRaw / (6 * interestWeightTotal) : 0;
-  const styleScore =
-    Object.values(career.styleFit).reduce((sum, style) => sum + scores[style], 0) / (Object.keys(styleAxes).length * 3);
+  const interestMax = Object.entries(career.interestFit).reduce(
+    (sum, [interest, weight]) => sum + scoreCeilings[interest as InterestKey] * (weight ?? 0),
+    0,
+  );
+  const styleEntries = Object.values(career.styleFit);
+  const styleRaw = styleEntries.reduce((sum, style) => sum + scores[style], 0);
+  const styleMax = styleEntries.reduce((sum, style) => sum + scoreCeilings[style], 0);
+  const interestScore = interestMax ? interestRaw / interestMax : 0;
+  const styleScore = styleMax ? styleRaw / styleMax : 0;
   const score = interestScore * 0.7 + styleScore * 0.3;
 
   return {

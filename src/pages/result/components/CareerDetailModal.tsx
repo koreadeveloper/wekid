@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { BookOpen, Building2, Lightbulb, MapPin, Route, Sparkles, Star, X } from 'lucide-react';
 import type { CareerDetail } from '../../../types/career';
 
@@ -25,15 +26,41 @@ function DetailList({ items }: DetailListProps) {
 }
 
 export function CareerDetailModal({ detail, onClose }: CareerDetailModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="닫기">
+      <div
+        className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="career-detail-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button className="modal-close" type="button" onClick={onClose} aria-label="닫기" ref={closeButtonRef}>
           <X size={20} />
         </button>
         <div className="modal-emoji">{detail.emoji}</div>
         <p className="modal-tagline">{detail.tagline}</p>
-        <h2 className="modal-title">{detail.name}</h2>
+        <h2 className="modal-title" id="career-detail-title">{detail.name}</h2>
         <p className="modal-desc">{detail.description}</p>
         {detail.fitReason && (
           <div className="modal-fit-note">

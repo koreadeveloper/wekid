@@ -1,12 +1,12 @@
 import { ArrowLeft, Check } from 'lucide-react';
-import type { AnswerMap, ChoiceKey, Question } from '../../../types/career';
+import type { ChoiceKey, Question } from '../../../types/career';
 
 type QuestionPanelProps = {
-  answers: AnswerMap;
   answeredCount: number;
   currentAnswer?: ChoiceKey;
   currentIndex: number;
   currentQuestion: Question;
+  isAdvancing: boolean;
   questions: Question[];
   onChooseAnswer: (choice: ChoiceKey) => void;
   onPrevious: () => void;
@@ -17,6 +17,7 @@ export function QuestionPanel({
   currentAnswer,
   currentIndex,
   currentQuestion,
+  isAdvancing,
   questions,
   onChooseAnswer,
   onPrevious,
@@ -40,6 +41,7 @@ export function QuestionPanel({
               type="button"
               onClick={() => onChooseAnswer(option.choice)}
               aria-pressed={selected}
+              disabled={isAdvancing}
             >
               <span className="option-check">
                 {selected ? <Check size={18} /> : <span className="empty-dot" aria-hidden="true" />}
@@ -52,7 +54,7 @@ export function QuestionPanel({
       </div>
 
       <div className="question-footer">
-        <button className="ghost-button" type="button" onClick={onPrevious} disabled={currentIndex === 0}>
+        <button className="ghost-button" type="button" onClick={onPrevious} disabled={currentIndex === 0 || isAdvancing}>
           <ArrowLeft size={18} />
           이전
         </button>

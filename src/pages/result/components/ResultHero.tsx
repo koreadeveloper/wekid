@@ -76,9 +76,11 @@ export function ResultHero({
           ))}
         </div>
       </div>
-      <article
+      <button
         className={`top-career-card ${hasTopCareerDetail ? 'clickable' : ''}`}
+        type="button"
         onClick={() => hasTopCareerDetail && onCareerSelect(profile.topCareer.name)}
+        disabled={!hasTopCareerDetail}
       >
         <div className="top-career-icon">
           <PartyPopper size={36} />
@@ -86,7 +88,7 @@ export function ResultHero({
         <span>대표 추천</span>
         <strong>{profile.topCareer.name}</strong>
         {hasTopCareerDetail && <small className="career-tap-hint">탭해서 자세히 보기</small>}
-      </article>
+      </button>
       <div className="share-row">
         <button
           className="share-button"

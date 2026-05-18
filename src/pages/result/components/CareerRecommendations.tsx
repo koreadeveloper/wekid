@@ -17,10 +17,12 @@ export function CareerRecommendations({ careers, hasCareerDetail, onCareerSelect
         {careers.map((career, index) => {
           const hasDetail = hasCareerDetail(career.name);
           return (
-            <article
+            <button
               className={`career-card reason-card ${hasDetail ? 'clickable' : ''}`}
               key={career.name}
+              type="button"
               onClick={() => hasDetail && onCareerSelect(career.name)}
+              disabled={!hasDetail}
             >
               <span>{String(index + 1).padStart(2, '0')}</span>
               <strong>{career.name}</strong>
@@ -31,7 +33,7 @@ export function CareerRecommendations({ careers, hasCareerDetail, onCareerSelect
                 ))}
               </div>
               {hasDetail && <div className="career-detail-hint">자세히 보기 →</div>}
-            </article>
+            </button>
           );
         })}
       </div>
