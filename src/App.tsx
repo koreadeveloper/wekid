@@ -4,13 +4,17 @@ import { getCareerDetail } from './data/careerDetails';
 import { careerCategories } from './data/careerCategories';
 import { questions } from './data/questions';
 import { getCareerResult, getScores } from './lib/careerScoring';
+import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
 import { ResultPage } from './pages/result/ResultPage';
 import { StartPage } from './pages/start/StartPage';
 import type { AnswerMap, CareerDetail, ChoiceKey } from './types/career';
 
+type AppMode = 'career' | 'business-card';
+
 function App() {
+  const [mode, setMode] = useState<AppMode>('career');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [showResult, setShowResult] = useState(false);
@@ -143,10 +147,14 @@ function App() {
   };
 
   return (
-    <main className="app">
-      {selectedCareer && <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />}
-      <TopBar totalCareerCount={totalCareerCount} onReset={reset} />
-      {nameStep ? (
+    <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''}`}>
+      {mode === 'career' && selectedCareer && (
+        <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
+      )}
+      <TopBar mode={mode} totalCareerCount={totalCareerCount} onModeChange={setMode} onReset={reset} />
+      {mode === 'business-card' ? (
+        <BusinessCardMakerPage />
+      ) : nameStep ? (
         <StartPage nameInput={nameInput} onNameChange={setNameInput} onStart={startWithName} onSkip={skipName} />
       ) : showResult && profile ? (
         <ResultPage
