@@ -125,8 +125,9 @@ export function filterResults(results: StoredTestResultRecord[], filters: AdminR
 
   return results.filter((result) => {
     const createdAt = toDateValue(result.createdAt);
+    const resultCenterKey = result.centerKey ?? 'none';
 
-    if (filters.centerKey && result.centerKey !== filters.centerKey) {
+    if (filters.centerKey && resultCenterKey !== filters.centerKey) {
       return false;
     }
 

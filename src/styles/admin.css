@@ -5,6 +5,7 @@
 }
 
 .admin-card {
+  min-width: 0;
   padding: 20px;
   border: 2px solid var(--line);
   border-radius: 24px;
@@ -324,6 +325,9 @@
 }
 
 .admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   margin-top: 12px;
 }
@@ -538,6 +542,19 @@
   font-weight: 700;
 }
 
+.admin-report-filter-summary {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 12px 14px;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  color: #3c4043;
+  background: #f8fafd;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .admin-report-stats,
 .admin-report-grid {
   display: grid;
@@ -615,7 +632,7 @@
 
 @media (min-width: 760px) {
   .admin-stats-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .admin-grid,
@@ -640,12 +657,16 @@
   }
 
   .admin-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: stretch;
     width: 100%;
   }
 
   .admin-actions .ghost-button {
-    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    padding-inline: 10px;
   }
 
   .admin-card-heading,

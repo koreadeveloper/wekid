@@ -117,6 +117,10 @@ function getAnswerDetail(answer: TestResultAnswer) {
 }
 
 function safeFileNamePart(value: string) {
+  if (value.trim() === '전체 센터') {
+    return 'all';
+  }
+
   return value.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_') || 'all';
 }
 
@@ -370,6 +374,10 @@ export function AdminPage() {
           <strong>{summary.totalCount}</strong>
         </article>
         <article className="admin-stat-card">
+          <span>최근 7일 검사</span>
+          <strong>{summary.recentCount}</strong>
+        </article>
+        <article className="admin-stat-card">
           <span>평균 소요 시간</span>
           <strong>{formatDuration(analysis.averageDurationMinutes)}</strong>
         </article>
@@ -586,6 +594,14 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
             <strong>{getCareerName(result.topCareer)}</strong>
           </div>
           <div>
+            <span>검사 시작</span>
+            <strong>{formatDate(result.startedAt)}</strong>
+          </div>
+          <div>
+            <span>검사 완료</span>
+            <strong>{formatDate(result.completedAt)}</strong>
+          </div>
+          <div>
             <span>소요 시간</span>
             <strong>{formatDuration(getResultDurationMinutes(result))}</strong>
           </div>
@@ -653,10 +669,14 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
     <div className="admin-report-print" ref={ref} aria-hidden="true">
       <div className="admin-report-page">
         <p className="admin-report-kicker">WEKID 직업탐험</p>
-        <h1>관리자 분석 보고서</h1>
+        <h1>WEKID 직업탐험 관리자 분석 보고서</h1>
         <p className="admin-report-meta">
           {activeCenterLabel} · {dateRangeLabel} · 생성일 {new Date().toLocaleDateString('ko-KR')}
         </p>
+        <div className="admin-report-filter-summary">
+          <span>적용 센터 필터: {activeCenterLabel}</span>
+          <span>적용 날짜 필터: {dateRangeLabel}</span>
+        </div>
 
         <div className="admin-report-stats">
           <div>
