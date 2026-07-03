@@ -124,12 +124,20 @@ function safeFileNamePart(value: string) {
   return value.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_') || 'all';
 }
 
+function getLocalDateStamp(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 function downloadCsv(results: StoredTestResultRecord[], centerLabel: string) {
   const blob = new Blob([toResultsCsv(results)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `wekid-results-${safeFileNamePart(centerLabel)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `wekid-results-${safeFileNamePart(centerLabel)}-${getLocalDateStamp()}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -274,7 +282,7 @@ export function AdminPage() {
         remainingHeight -= pageHeight;
       }
 
-      pdf.save(`wekid-report-${safeFileNamePart(activeCenterLabel)}-${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`wekid-report-${safeFileNamePart(activeCenterLabel)}-${getLocalDateStamp()}.pdf`);
     } catch {
       setResultsError('PDF 보고서를 만들지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {

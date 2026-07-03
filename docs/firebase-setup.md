@@ -67,7 +67,7 @@ admins/{uid}
 Fields:
 
 ```text
-email: "koreaprogrammer@naver.com"
+email: "admin@example.com"
 role: "owner"
 createdAt: Firestore server timestamp
 ```
