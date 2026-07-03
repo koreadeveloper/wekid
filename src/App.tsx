@@ -3,7 +3,10 @@ import { TopBar } from './components/layout/TopBar';
 import { getCareerDetail } from './data/careerDetails';
 import { careerCategories } from './data/careerCategories';
 import { questions } from './data/questions';
+import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
 import { getCareerResult, getScores } from './lib/careerScoring';
+import { saveTestResult } from './lib/resultStorage';
+import { AdminPage } from './pages/admin/AdminPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
@@ -11,20 +14,35 @@ import { ResultPage } from './pages/result/ResultPage';
 import { StartPage } from './pages/start/StartPage';
 import type { AnswerMap, CareerDetail, ChoiceKey } from './types/career';
 
-type AppMode = 'career' | 'business-card';
+type AppMode = 'career' | 'business-card' | 'admin';
+
+type ResultSaveStatus =
+  | { status: 'idle' | 'saving' }
+  | { status: 'saved'; resultId: string }
+  | { status: 'skipped'; reason: 'firebase-not-configured' }
+  | { status: 'failed'; error: unknown };
 
 function App() {
   const [mode, setMode] = useState<AppMode>('career');
+  const initialUrlCenterName = useMemo(
+    () => getCenterNameFromSearch(typeof window === 'undefined' ? '' : window.location.search),
+    [],
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [showResult, setShowResult] = useState(false);
   const [nameStep, setNameStep] = useState(true);
   const [nameInput, setNameInput] = useState('');
+  const [centerInput, setCenterInput] = useState(initialUrlCenterName ?? '');
+  const [isCenterManual, setIsCenterManual] = useState(false);
   const [userName, setUserName] = useState('');
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>({ status: 'idle' });
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
   const [isAdvancing, setIsAdvancingState] = useState(false);
   const advanceTimerRef = useRef<number | undefined>(undefined);
   const advancingRef = useRef(false);
+  const savedResultSignatureRef = useRef<string | null>(null);
 
   const setIsAdvancing = (value: boolean) => {
     advancingRef.current = value;
@@ -50,6 +68,10 @@ function App() {
   const currentQuestion = questions[safeCurrentIndex];
   const currentAnswer = answers[currentQuestion.id];
   const careerMatches = result?.matches ?? { primary: [], explore: [] };
+  const centerContext = useMemo(
+    () => resolveCenterContext({ centerInput, initialUrlCenterName, isManual: isCenterManual }),
+    [centerInput, initialUrlCenterName, isCenterManual],
+  );
   const highlightedCareers = useMemo(() => {
     if (!profile) {
       return new Set<string>();
@@ -65,6 +87,51 @@ function App() {
     () => new Set(careerCategories.flatMap((category) => category.careers)).size,
     [],
   );
+
+  useEffect(() => {
+    if (!showResult || !profile || !isComplete) {
+      return;
+    }
+
+    const resultSignature = JSON.stringify({ answers, centerContext, topCareer: profile.topCareer.name, userName });
+    if (savedResultSignatureRef.current === resultSignature) {
+      return;
+    }
+
+    savedResultSignatureRef.current = resultSignature;
+    setResultSaveStatus({ status: 'saving' });
+
+    const completedAt = new Date();
+    const resultStartedAt = startedAt ?? completedAt;
+
+    void saveTestResult({
+      participantName: userName || null,
+      centerName: centerContext.centerName,
+      centerKey: centerContext.centerKey,
+      centerSource: centerContext.centerSource,
+      startedAt: resultStartedAt,
+      completedAt,
+      answers: questions
+        .map((question) => ({ questionId: question.id, choice: answers[question.id] }))
+        .filter((answer) => Boolean(answer.choice)),
+      scores,
+      topCareer: profile.topCareer,
+      recommendedCareers: profile.recommendations,
+      resultSummary: profile.summary,
+    }).then((saveResult) => {
+      if (saveResult.ok) {
+        setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
+        return;
+      }
+
+      if (saveResult.reason === 'firebase-not-configured') {
+        setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
+        return;
+      }
+
+      setResultSaveStatus({ status: 'failed', error: saveResult.error });
+    });
+  }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName]);
 
   const chooseAnswer = (choice: ChoiceKey) => {
     if (advancingRef.current) {
@@ -113,6 +180,9 @@ function App() {
     setNameStep(true);
     setNameInput('');
     setUserName('');
+    setStartedAt(null);
+    setResultSaveStatus({ status: 'idle' });
+    savedResultSignatureRef.current = null;
     setSelectedCareer(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -122,6 +192,8 @@ function App() {
     setIsAdvancing(false);
     setShowResult(false);
     setCurrentIndex(questions.length - 1);
+    setResultSaveStatus({ status: 'idle' });
+    savedResultSignatureRef.current = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -130,6 +202,8 @@ function App() {
     setIsAdvancing(false);
     setUserName(nameInput.trim());
     setNameStep(false);
+    setStartedAt(new Date());
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
   const skipName = () => {
@@ -137,6 +211,8 @@ function App() {
     setIsAdvancing(false);
     setUserName('');
     setNameStep(false);
+    setStartedAt(new Date());
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
   const selectCareer = (careerName: string) => {
@@ -146,22 +222,43 @@ function App() {
     }
   };
 
+  const handleModeChange = (nextMode: AppMode) => {
+    setMode(nextMode);
+    setSelectedCareer(null);
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  };
+
   return (
     <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''}`}>
       {mode === 'career' && selectedCareer && (
         <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
       )}
-      <TopBar mode={mode} totalCareerCount={totalCareerCount} onModeChange={setMode} onReset={reset} />
-      {mode === 'business-card' ? (
+      <TopBar mode={mode} totalCareerCount={totalCareerCount} onModeChange={handleModeChange} onReset={reset} />
+      {mode === 'admin' ? (
+        <AdminPage />
+      ) : mode === 'business-card' ? (
         <BusinessCardMakerPage />
       ) : nameStep ? (
-        <StartPage nameInput={nameInput} onNameChange={setNameInput} onStart={startWithName} onSkip={skipName} />
+        <StartPage
+          centerInput={centerInput}
+          centerSource={centerContext.centerSource}
+          initialUrlCenterName={initialUrlCenterName}
+          nameInput={nameInput}
+          onCenterChange={(value) => {
+            setCenterInput(value);
+            setIsCenterManual(true);
+          }}
+          onNameChange={setNameInput}
+          onStart={startWithName}
+          onSkip={skipName}
+        />
       ) : showResult && profile ? (
         <ResultPage
           careerMatches={careerMatches}
           highlightedCareers={highlightedCareers}
           profile={profile}
           scores={scores}
+          resultSaveStatus={resultSaveStatus}
           userName={userName}
           hasCareerDetail={(careerName) => Boolean(getCareerDetail(careerName))}
           onCareerSelect={selectCareer}

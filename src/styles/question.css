@@ -1,7 +1,7 @@
 .question-panel {
   display: flex;
   flex-direction: column;
-  min-height: 560px;
+  min-height: min(560px, calc(100vh - 130px));
   padding: 20px;
   box-shadow: var(--shadow-card);
 }
@@ -134,6 +134,12 @@
   padding-top: 22px;
 }
 
+.question-footer .ghost-button {
+  flex: 0 0 auto;
+  min-width: 86px;
+  white-space: nowrap;
+}
+
 .ghost-button,
 .primary-button {
   display: inline-flex;
@@ -183,6 +189,26 @@
   height: 9px;
   border-radius: 999px;
   background: #d9d9d9;
+}
+
+@media (max-width: 620px) {
+  .question-panel {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .question-panel h2 {
+    margin: 22px 0 18px;
+    font-size: 31px;
+  }
+
+  .option-card {
+    min-height: 126px;
+  }
+
+  .question-dots {
+    max-width: 210px;
+  }
 }
 
 .question-dots .done {

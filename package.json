@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "test": "vitest run",
     "check:data": "node scripts/validate-data.mjs",
     "check:business-card": "node scripts/verify-business-card.mjs",
     "build": "npm run check:data && npm run check:business-card && tsc && vite build",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.1",
+    "firebase": "^12.15.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.561.0",
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
   }
 }

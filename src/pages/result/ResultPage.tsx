@@ -15,6 +15,11 @@ type ResultPageProps = {
   careerMatches: CareerMatches;
   highlightedCareers: Set<string>;
   profile: CareerProfile;
+  resultSaveStatus:
+    | { status: 'idle' | 'saving' }
+    | { status: 'saved'; resultId: string }
+    | { status: 'skipped'; reason: 'firebase-not-configured' }
+    | { status: 'failed'; error: unknown };
   scores: ScoreMap;
   userName: string;
   hasCareerDetail: (careerName: string) => boolean;
@@ -39,6 +44,7 @@ export function ResultPage({
   careerMatches,
   highlightedCareers,
   profile,
+  resultSaveStatus,
   scores,
   userName,
   hasCareerDetail,
@@ -83,6 +89,7 @@ export function ResultPage({
         onSavePdf={handleSavePdf}
         isPdfSaving={isPdfSaving}
       />
+      <ResultSaveNotice resultSaveStatus={resultSaveStatus} />
       <WhyPanel profile={profile} />
       <InsightPanels axisLabels={axisLabels} profile={profile} scores={scores} />
       <CareerRecommendations
@@ -111,4 +118,24 @@ export function ResultPage({
       />
     </section>
   );
+}
+
+function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSaveStatus'>) {
+  if (resultSaveStatus.status === 'idle') {
+    return null;
+  }
+
+  if (resultSaveStatus.status === 'saving') {
+    return <p className="result-save-notice">결과를 안전하게 저장하는 중이에요.</p>;
+  }
+
+  if (resultSaveStatus.status === 'saved') {
+    return <p className="result-save-notice success">결과가 저장됐어요.</p>;
+  }
+
+  if (resultSaveStatus.status === 'skipped') {
+    return <p className="result-save-notice muted">Firebase 연결 전이라 이 결과는 이 기기에서만 확인돼요.</p>;
+  }
+
+  return <p className="result-save-notice warning">결과 저장에 실패했어요. 화면은 계속 사용할 수 있어요.</p>;
 }
