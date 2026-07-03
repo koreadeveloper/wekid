@@ -14,6 +14,11 @@
     align-items: stretch;
   }
 
+  .quiz-layout .intro-panel,
+  .quiz-layout .question-panel {
+    order: initial;
+  }
+
   .intro-panel,
   .question-panel {
     min-height: 650px;
