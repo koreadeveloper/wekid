@@ -11,7 +11,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 460px;
+  max-width: 500px;
   padding: clamp(24px, 5vw, 34px) clamp(20px, 5vw, 28px) clamp(22px, 5vw, 30px);
   border: 2px solid var(--line);
   border-radius: 32px;
@@ -45,7 +45,7 @@
 
 .name-step-card h1 {
   margin: 0 0 8px;
-  font-size: clamp(28px, 8vw, 36px);
+  font-size: clamp(30px, 8vw, 40px);
   font-weight: 1000;
   line-height: 1.12;
   color: var(--ink);
@@ -60,7 +60,7 @@
 
 .name-input {
   width: 100%;
-  min-height: 58px;
+  min-height: 62px;
   padding: 0 18px;
   border: 2.5px solid var(--line);
   border-radius: 18px;
@@ -98,7 +98,7 @@
 
 .center-input {
   width: 100%;
-  min-height: 54px;
+  min-height: 58px;
   padding: 0 16px;
   border: 2.5px solid var(--line);
   border-radius: 18px;
@@ -133,11 +133,14 @@
   font-size: 17px;
 }
 .name-start-btn:disabled {
-  opacity: 0.45;
+  border-color: #b6d8a6;
+  color: #6b8c5e;
+  background: #dff2d4;
+  opacity: 0.72;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
-  filter: grayscale(0.3);
+  filter: grayscale(0.15);
 }
 
 .name-helper {
@@ -158,3 +161,24 @@
 }
 
 /* ===== 직업 상세 모달 ===== */
+
+@media (min-width: 760px) {
+  .name-step-card {
+    max-width: 540px;
+    padding: 40px 36px 34px;
+  }
+
+  .name-step-sub {
+    font-size: 16px;
+  }
+
+  .name-input {
+    min-height: 66px;
+    font-size: 22px;
+  }
+
+  .center-input {
+    min-height: 60px;
+    font-size: 18px;
+  }
+}

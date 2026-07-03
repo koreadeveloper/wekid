@@ -181,14 +181,15 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 5px;
 }
 
 .question-dots span {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   background: #d9d9d9;
+  opacity: 0.72;
 }
 
 @media (max-width: 620px) {
@@ -207,15 +208,17 @@
   }
 
   .question-dots {
-    max-width: 210px;
+    max-width: 178px;
   }
 }
 
 .question-dots .done {
   background: var(--duo-green);
+  opacity: 0.78;
 }
 
 .question-dots .active {
-  box-shadow: 0 0 0 3px var(--duo-green-soft);
-  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--duo-green-soft);
+  opacity: 1;
+  transform: scale(1.18);
 }

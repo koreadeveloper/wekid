@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createAdminResultSummary, filterResults, toResultsCsv } from './adminResults';
+import {
+  CSV_UTF8_BOM,
+  createAdminResultAnalysis,
+  createAdminResultSummary,
+  filterResults,
+  getResultDurationMinutes,
+  toResultsCsv,
+} from './adminResults';
 import type { StoredTestResultRecord } from '../types/firestore';
 
 const records: StoredTestResultRecord[] = [
@@ -66,9 +73,30 @@ describe('filterResults', () => {
   });
 });
 
+describe('createAdminResultAnalysis', () => {
+  it('calculates duration, answer, center, career, and score analysis', () => {
+    const analysis = createAdminResultAnalysis(records);
+
+    expect(analysis.averageDurationMinutes).toBe(5);
+    expect(analysis.averageAnsweredCount).toBe(0);
+    expect(analysis.topCenter).toEqual({ centerName: '강남 청소년센터', count: 1, ratio: 0.5 });
+    expect(analysis.topCareer).toEqual({ careerName: '사진작가', count: 1, ratio: 0.5 });
+    expect(analysis.scoreAverages[0]).toEqual({ scoreKey: 'artistic', average: 2.5, total: 5 });
+  });
+});
+
+describe('getResultDurationMinutes', () => {
+  it('returns the elapsed minutes between start and completion', () => {
+    expect(getResultDurationMinutes(records[0])).toBe(5);
+  });
+});
+
 describe('toResultsCsv', () => {
-  it('exports stable CSV headers and escaped values', () => {
-    expect(toResultsCsv(records)).toContain('id,createdAt,participantName,centerName,centerKey,centerSource,topCareer,resultSummary');
-    expect(toResultsCsv(records)).toContain('1,2026-07-04T00:05:01.000Z,김탐험,강남 청소년센터,강남 청소년센터,manual,사진작가,관찰을 좋아해요.');
+  it('exports UTF-8 BOM, Korean headers, and expanded result fields', () => {
+    const csv = toResultsCsv(records);
+
+    expect(csv.startsWith(CSV_UTF8_BOM)).toBe(true);
+    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON');
+    expect(csv).toContain('1,2026-07-04T00:05:01.000Z,2026-07-04T00:00:00.000Z,2026-07-04T00:05:00.000Z,5.0,김탐험,강남 청소년센터,강남 청소년센터,manual,사진작가,목공예가,0,관찰을 좋아해요.');
   });
 });
