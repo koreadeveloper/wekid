@@ -168,3 +168,31 @@
   background: linear-gradient(180deg, #ffdf4a 0%, var(--duo-yellow) 100%);
   transition: width 220ms ease;
 }
+
+@media (min-width: 1180px) {
+  .intro-panel {
+    justify-content: space-between;
+    padding: 28px;
+  }
+
+  .visual-board {
+    grid-auto-rows: 100px;
+    gap: 14px;
+  }
+
+  .visual-card {
+    padding: 16px;
+  }
+
+  .visual-card-large span {
+    font-size: 36px;
+  }
+
+  .intro-copy h1 {
+    font-size: 48px;
+  }
+
+  .progress-block {
+    padding: 18px;
+  }
+}

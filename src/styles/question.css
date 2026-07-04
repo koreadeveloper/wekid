@@ -222,3 +222,32 @@
   opacity: 1;
   transform: scale(1.18);
 }
+
+@media (min-width: 1180px) {
+  .question-panel {
+    padding: 28px;
+  }
+
+  .question-panel h2 {
+    margin: 32px 0 24px;
+    font-size: 44px;
+  }
+
+  .options-grid {
+    gap: 18px;
+  }
+
+  .option-card {
+    min-height: 166px;
+    padding: 22px;
+  }
+
+  .option-card strong {
+    max-width: 22ch;
+    font-size: 22px;
+  }
+
+  .option-card small {
+    font-size: 15px;
+  }
+}

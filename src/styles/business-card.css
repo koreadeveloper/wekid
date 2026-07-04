@@ -27,7 +27,7 @@
 }
 
 .business-card-app {
-  width: min(100%, 1180px);
+  width: min(100%, 1320px);
 }
 
 .business-card-maker {
@@ -496,6 +496,30 @@
   .business-card-preview-grid {
     grid-template-columns: minmax(0, 450px);
     justify-content: center;
+  }
+}
+
+@media (min-width: 1180px) {
+  .business-card-maker {
+    padding-top: 24px;
+  }
+
+  .business-card-editor {
+    grid-template-columns: minmax(430px, 0.9fr) minmax(570px, 1.15fr);
+    gap: 22px;
+  }
+
+  .business-card-form-panel,
+  .business-card-preview-panel {
+    padding: 24px;
+  }
+
+  .business-card-preview-grid {
+    grid-template-columns: minmax(0, 520px);
+  }
+
+  .business-card-face {
+    width: min(100%, 520px);
   }
 }
 

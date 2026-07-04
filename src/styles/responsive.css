@@ -1,6 +1,6 @@
 @media (min-width: 760px) {
   .app {
-    width: min(100%, 1040px);
+    width: min(100%, 1180px);
     padding-inline: 20px;
   }
 
@@ -10,8 +10,9 @@
   }
 
   .quiz-layout {
-    grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(340px, 0.85fr) minmax(0, 1.25fr);
     align-items: stretch;
+    gap: 18px;
   }
 
   .quiz-layout .intro-panel,
@@ -21,7 +22,7 @@
 
   .intro-panel,
   .question-panel {
-    min-height: 650px;
+    min-height: clamp(650px, calc(100vh - 150px), 760px);
   }
 
   .options-grid,
@@ -58,6 +59,18 @@
   .result-actions {
     grid-template-columns: auto auto;
     justify-content: center;
+  }
+}
+
+@media (min-width: 1180px) {
+  .app {
+    width: min(100%, 1320px);
+  }
+
+  .quiz-layout {
+    grid-template-columns: minmax(390px, 0.86fr) minmax(0, 1.28fr);
+    gap: 22px;
+    padding-top: 18px;
   }
 }
 
