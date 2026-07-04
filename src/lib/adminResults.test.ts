@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   CSV_UTF8_BOM,
+  buildAdminExportFileName,
   createAdminResultAnalysis,
   createAdminResultSummary,
+  detectSimilarCenterGroups,
   filterResults,
   getResultDurationMinutes,
+  isSuspectedTestResult,
+  paginateAdminResults,
+  sanitizeAdminFileNamePart,
+  sortAdminResults,
   toResultsCsv,
 } from './adminResults';
 import type { StoredTestResultRecord } from '../types/firestore';
@@ -140,6 +146,88 @@ describe('filterResults', () => {
   it('filters null center values under the no-center bucket', () => {
     expect(filterResults(edgeRecords, { centerKey: 'none' }).map((record) => record.id)).toEqual(['no-center']);
   });
+
+  it('searches inside current filter results by name, center, career, summary, and document id', () => {
+    expect(filterResults([...records, ...edgeRecords], { searchTerm: '  사진  ' }).map((record) => record.id)).toEqual([
+      '1',
+    ]);
+    expect(filterResults([...records, ...edgeRecords], { searchTerm: '쉼표 센터' }).map((record) => record.id)).toEqual([
+      'comma-quote-newline',
+      'invalid-duration',
+    ]);
+    expect(filterResults([...records, ...edgeRecords], { searchTerm: 'NEWLINE' }).map((record) => record.id)).toEqual([
+      'comma-quote-newline',
+    ]);
+  });
+
+  it('hides suspected test results when requested', () => {
+    expect(filterResults(edgeRecords, { hideTestResults: true }).map((record) => record.id)).toEqual([
+      'no-center',
+      'invalid-duration',
+    ]);
+  });
+});
+
+describe('isSuspectedTestResult', () => {
+  it('detects test-like names and centers without mutating data', () => {
+    expect(isSuspectedTestResult(edgeRecords[0])).toBe(true);
+    expect(isSuspectedTestResult(edgeRecords[1])).toBe(false);
+    expect(isSuspectedTestResult({ ...edgeRecords[1], centerName: 'MCP 배포센터' })).toBe(true);
+  });
+});
+
+describe('sortAdminResults', () => {
+  it('sorts by date, text fields, career, and duration with stable fallback', () => {
+    expect(sortAdminResults(records, { key: 'createdAt', direction: 'desc' }).map((record) => record.id)).toEqual([
+      '2',
+      '1',
+    ]);
+    expect(sortAdminResults(records, { key: 'participantName', direction: 'asc' }).map((record) => record.id)).toEqual([
+      '1',
+      '2',
+    ]);
+    expect(sortAdminResults(edgeRecords, { key: 'durationMinutes', direction: 'desc' }).map((record) => record.id)).toEqual([
+      'comma-quote-newline',
+      'no-center',
+      'invalid-duration',
+    ]);
+  });
+});
+
+describe('paginateAdminResults', () => {
+  it('calculates bounded pages and supports all rows', () => {
+    expect(paginateAdminResults(edgeRecords, { page: 2, pageSize: 2 })).toMatchObject({
+      currentPage: 2,
+      totalPages: 2,
+      totalResults: 3,
+      pageResults: [edgeRecords[2]],
+    });
+    expect(paginateAdminResults(edgeRecords, { page: 99, pageSize: 2 }).currentPage).toBe(2);
+    expect(paginateAdminResults(edgeRecords, { page: 1, pageSize: 'all' }).pageResults).toHaveLength(3);
+  });
+});
+
+describe('detectSimilarCenterGroups', () => {
+  it('groups center variants by normalized key', () => {
+    const variants: StoredTestResultRecord[] = [
+      { ...records[0], id: 'a', centerName: '강남청소년센터', centerKey: '강남청소년센터' },
+      { ...records[0], id: 'b', centerName: '강남 청소년센터', centerKey: '강남 청소년센터' },
+      { ...records[0], id: 'c', centerName: '강남 청소년 센터', centerKey: '강남 청소년 센터' },
+      { ...records[1], id: 'd', centerName: '서초 청소년센터', centerKey: '서초 청소년센터' },
+    ];
+
+    expect(detectSimilarCenterGroups(variants)).toEqual([
+      {
+        normalizedKey: '강남청소년센터',
+        totalCount: 3,
+        variants: [
+          { centerName: '강남청소년센터', centerKey: '강남청소년센터', count: 1 },
+          { centerName: '강남 청소년센터', centerKey: '강남 청소년센터', count: 1 },
+          { centerName: '강남 청소년 센터', centerKey: '강남 청소년 센터', count: 1 },
+        ],
+      },
+    ]);
+  });
 });
 
 describe('createAdminResultAnalysis', () => {
@@ -178,7 +266,7 @@ describe('toResultsCsv', () => {
     const csv = toResultsCsv(records);
 
     expect(csv.startsWith(CSV_UTF8_BOM)).toBe(true);
-    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON');
+    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON,테스트의심여부,필터메모,소요시간초,대표직업Raw,추천직업Raw');
     expect(csv).toContain('1,2026-07-04T00:05:01.000Z,2026-07-04T00:00:00.000Z,2026-07-04T00:05:00.000Z,5.0,김탐험,강남 청소년센터,강남 청소년센터,manual,사진작가,목공예가,0,관찰을 좋아해요.');
   });
 
@@ -190,6 +278,32 @@ describe('toResultsCsv', () => {
     expect(csv).toContain(',교사 / 사회복지사,');
     expect(csv).toContain('"쉼표, 따옴표 ""테스트""\n줄바꿈 포함"');
     expect(csv).toContain('no-center,2026-07-01T00:02:01.000Z,2026-07-01T00:00:00.000Z,2026-07-01T00:02:00.000Z,2.0,,,,none,작가');
-    expect(csv).toContain('"{""social"":5,""care"":3}"');
+    expect(csv).toContain('"{""social"":5,""care"":3}",예,,270,"{""name"":""상담가""}"');
+  });
+
+  it('stores a filter memo and raw career values for filtered exports', () => {
+    const csv = toResultsCsv([records[1]], { filterMemo: '센터: 전체 / 검색: 음악 / 테스트 제외' });
+
+    expect(csv).toContain('센터: 전체 / 검색: 음악 / 테스트 제외');
+    expect(csv).toContain('음악가');
+    expect(csv).toContain(',[]');
+  });
+});
+
+describe('export file names', () => {
+  it('sanitizes file name parts and includes search/test filter hints', () => {
+    expect(sanitizeAdminFileNamePart(' 강남/청소년센터: A반 검색어가 아주 긴 문자열입니다 ')).toBe(
+      '강남청소년센터_A반_검색어가_아주_긴_문자열입니다',
+    );
+    expect(
+      buildAdminExportFileName({
+        kind: 'results',
+        extension: 'csv',
+        centerLabel: '전체 센터',
+        dateStamp: '2026-07-04',
+        hideTestResults: true,
+        searchTerm: '목공예가/테스트',
+      }),
+    ).toBe('wekid-results-all-no-test-목공예가테스트-2026-07-04.csv');
   });
 });

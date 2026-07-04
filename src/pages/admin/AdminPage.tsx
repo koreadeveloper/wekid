@@ -1,18 +1,42 @@
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
-import { BarChart3, Download, Eye, FileText, Lock, RefreshCw, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+  Eye,
+  FileText,
+  Lock,
+  RefreshCw,
+  Search,
+  X,
+} from 'lucide-react';
 import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { questions } from '../../data/questions';
 import { auth } from '../../lib/firebase';
 import { getAdminProfile, isOwnerAdmin } from '../../lib/adminAuth';
 import {
+  buildAdminExportFileName,
   createAdminResultAnalysis,
   createAdminResultSummary,
+  detectSimilarCenterGroups,
   fetchAdminResults,
   filterResults,
   getCareerName,
+  getRecommendedCareerNames,
   getResultDurationMinutes,
+  isSuspectedTestResult,
+  paginateAdminResults,
+  sortAdminResults,
   toAdminDate,
   toResultsCsv,
+  type AdminPageSize,
+  type AdminSortDirection,
+  type AdminSortKey,
+  type SimilarCenterGroup,
 } from '../../lib/adminResults';
 import type { AdminProfile, StoredTestResultRecord, TestResultAnswer } from '../../types/firestore';
 
@@ -27,7 +51,12 @@ type AdminReportDocumentProps = {
   activeCenterLabel: string;
   analysis: ReturnType<typeof createAdminResultAnalysis>;
   dateRangeLabel: string;
+  filterMemo: string;
+  hideTestResults: boolean;
   results: StoredTestResultRecord[];
+  searchTerm: string;
+  similarCenterGroups: SimilarCenterGroup[];
+  sortLabel: string;
   summary: ReturnType<typeof createAdminResultSummary>;
 };
 
@@ -48,6 +77,108 @@ const scoreLabels: Record<string, string> = {
   flex: '탐험형',
 };
 const questionMap = new Map(questions.map((question) => [String(question.id), question]));
+const interestScoreKeys = new Set(['realistic', 'investigative', 'artistic', 'social', 'enterprising', 'conventional']);
+const pageSizeOptions: AdminPageSize[] = [25, 50, 100, 'all'];
+const sortLabels: Record<AdminSortKey, string> = {
+  centerName: '센터명',
+  createdAt: '저장일',
+  durationMinutes: '소요 시간',
+  participantName: '이름',
+  topCareer: '대표 직업',
+};
+
+type AdminUiState = {
+  centerFilter: string;
+  fromDate: string;
+  hideTestResults: boolean;
+  pageSize: AdminPageSize;
+  searchTerm: string;
+  sortDirection: AdminSortDirection;
+  sortKey: AdminSortKey;
+  toDate: string;
+};
+
+const isAdminSortKey = (value: string | null): value is AdminSortKey =>
+  value === 'createdAt' ||
+  value === 'participantName' ||
+  value === 'centerName' ||
+  value === 'topCareer' ||
+  value === 'durationMinutes';
+
+const isAdminSortDirection = (value: string | null): value is AdminSortDirection => value === 'asc' || value === 'desc';
+
+function parsePageSize(value: string | null): AdminPageSize {
+  if (value === 'all') {
+    return 'all';
+  }
+
+  const parsed = Number(value);
+  return parsed === 25 || parsed === 50 || parsed === 100 ? parsed : 25;
+}
+
+function readInitialAdminUiState(): AdminUiState {
+  if (typeof window === 'undefined') {
+    return {
+      centerFilter: '',
+      fromDate: '',
+      hideTestResults: false,
+      pageSize: 25,
+      searchTerm: '',
+      sortDirection: 'desc',
+      sortKey: 'createdAt',
+      toDate: '',
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const sortKey = params.get('adminSort');
+  const sortDirection = params.get('adminDir');
+
+  return {
+    centerFilter: params.get('adminCenter') ?? '',
+    fromDate: params.get('adminFrom') ?? '',
+    hideTestResults: params.get('adminHideTest') === '1',
+    pageSize: parsePageSize(params.get('adminPageSize')),
+    searchTerm: params.get('adminQ') ?? '',
+    sortDirection: isAdminSortDirection(sortDirection) ? sortDirection : 'desc',
+    sortKey: isAdminSortKey(sortKey) ? sortKey : 'createdAt',
+    toDate: params.get('adminTo') ?? '',
+  };
+}
+
+function syncAdminUiStateToUrl(state: AdminUiState) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const setOrDelete = (key: string, value: string, defaultValue = '') => {
+    if (value && value !== defaultValue) {
+      params.set(key, value);
+      return;
+    }
+
+    params.delete(key);
+  };
+
+  setOrDelete('adminCenter', state.centerFilter);
+  setOrDelete('adminFrom', state.fromDate);
+  setOrDelete('adminTo', state.toDate);
+  setOrDelete('adminQ', state.searchTerm.trim());
+  setOrDelete('adminSort', state.sortKey, 'createdAt');
+  setOrDelete('adminDir', state.sortDirection, 'desc');
+  setOrDelete('adminPageSize', String(state.pageSize), '25');
+
+  if (state.hideTestResults) {
+    params.set('adminHideTest', '1');
+  } else {
+    params.delete('adminHideTest');
+  }
+
+  const query = params.toString();
+  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+  window.history.replaceState(null, '', nextUrl);
+}
 
 function formatDate(value: StoredTestResultRecord['createdAt']) {
   const date = toAdminDate(value);
@@ -91,18 +222,6 @@ function getSourceLabel(source: StoredTestResultRecord['centerSource']) {
   return '센터 없음';
 }
 
-function getRecommendedCareerNames(result: StoredTestResultRecord) {
-  return result.recommendedCareers
-    .map((career) => {
-      if (typeof career === 'string') {
-        return career;
-      }
-
-      return typeof career.name === 'string' ? career.name : '';
-    })
-    .filter(Boolean);
-}
-
 function getAnswerDetail(answer: TestResultAnswer) {
   const question = questionMap.get(String(answer.questionId));
   const option = question?.options.find((candidate) => candidate.choice === answer.choice);
@@ -116,14 +235,6 @@ function getAnswerDetail(answer: TestResultAnswer) {
   };
 }
 
-function safeFileNamePart(value: string) {
-  if (value.trim() === '전체 센터') {
-    return 'all';
-  }
-
-  return value.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_') || 'all';
-}
-
 function getLocalDateStamp(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -132,17 +243,60 @@ function getLocalDateStamp(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-function downloadCsv(results: StoredTestResultRecord[], centerLabel: string) {
-  const blob = new Blob([toResultsCsv(results)], { type: 'text/csv;charset=utf-8' });
+function getSortLabel(sortKey: AdminSortKey, sortDirection: AdminSortDirection) {
+  return `${sortLabels[sortKey]} ${sortDirection === 'asc' ? '오름차순' : '내림차순'}`;
+}
+
+function createFilterMemo({
+  activeCenterLabel,
+  dateRangeLabel,
+  hideTestResults,
+  searchTerm,
+  sortLabel,
+}: {
+  activeCenterLabel: string;
+  dateRangeLabel: string;
+  hideTestResults: boolean;
+  searchTerm: string;
+  sortLabel: string;
+}) {
+  const searchLabel = searchTerm.trim() ? `검색: ${searchTerm.trim()}` : '검색: 없음';
+  const testLabel = hideTestResults ? '테스트 의심 결과 제외' : '테스트 의심 결과 포함';
+
+  return `센터: ${activeCenterLabel} / 기간: ${dateRangeLabel} / ${searchLabel} / ${testLabel} / 정렬: ${sortLabel}`;
+}
+
+function downloadCsv({
+  centerLabel,
+  filterMemo,
+  hideTestResults,
+  results,
+  searchTerm,
+}: {
+  centerLabel: string;
+  filterMemo: string;
+  hideTestResults: boolean;
+  results: StoredTestResultRecord[];
+  searchTerm: string;
+}) {
+  const blob = new Blob([toResultsCsv(results, { filterMemo })], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `wekid-results-${safeFileNamePart(centerLabel)}-${getLocalDateStamp()}.csv`;
+  anchor.download = buildAdminExportFileName({
+    centerLabel,
+    dateStamp: getLocalDateStamp(),
+    extension: 'csv',
+    hideTestResults,
+    kind: 'results',
+    searchTerm,
+  });
   anchor.click();
   URL.revokeObjectURL(url);
 }
 
 export function AdminPage() {
+  const initialAdminUiState = useMemo(readInitialAdminUiState, []);
   const [adminStatus, setAdminStatus] = useState<AdminStatus>(auth ? { status: 'checking' } : { status: 'firebase-missing' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -152,9 +306,15 @@ export function AdminPage() {
   const [isPdfSaving, setIsPdfSaving] = useState(false);
   const [resultsError, setResultsError] = useState('');
   const [results, setResults] = useState<StoredTestResultRecord[]>([]);
-  const [centerFilter, setCenterFilter] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [centerFilter, setCenterFilter] = useState(initialAdminUiState.centerFilter);
+  const [fromDate, setFromDate] = useState(initialAdminUiState.fromDate);
+  const [hideTestResults, setHideTestResults] = useState(initialAdminUiState.hideTestResults);
+  const [pageSize, setPageSize] = useState<AdminPageSize>(initialAdminUiState.pageSize);
+  const [searchTerm, setSearchTerm] = useState(initialAdminUiState.searchTerm);
+  const [sortDirection, setSortDirection] = useState<AdminSortDirection>(initialAdminUiState.sortDirection);
+  const [sortKey, setSortKey] = useState<AdminSortKey>(initialAdminUiState.sortKey);
+  const [toDate, setToDate] = useState(initialAdminUiState.toDate);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedResult, setSelectedResult] = useState<StoredTestResultRecord | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -214,19 +374,59 @@ export function AdminPage() {
     }
   }, [adminStatus.status]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [centerFilter, fromDate, hideTestResults, pageSize, searchTerm, sortDirection, sortKey, toDate]);
+
+  useEffect(() => {
+    syncAdminUiStateToUrl({
+      centerFilter,
+      fromDate,
+      hideTestResults,
+      pageSize,
+      searchTerm,
+      sortDirection,
+      sortKey,
+      toDate,
+    });
+  }, [centerFilter, fromDate, hideTestResults, pageSize, searchTerm, sortDirection, sortKey, toDate]);
+
   const filteredResults = useMemo(
-    () => filterResults(results, { centerKey: centerFilter || undefined, fromDate, toDate }),
-    [centerFilter, fromDate, results, toDate],
+    () =>
+      filterResults(results, {
+        centerKey: centerFilter || undefined,
+        fromDate,
+        hideTestResults,
+        searchTerm,
+        toDate,
+      }),
+    [centerFilter, fromDate, hideTestResults, results, searchTerm, toDate],
+  );
+  const sortedResults = useMemo(
+    () => sortAdminResults(filteredResults, { direction: sortDirection, key: sortKey }),
+    [filteredResults, sortDirection, sortKey],
+  );
+  const paginatedResults = useMemo(
+    () => paginateAdminResults(sortedResults, { page: currentPage, pageSize }),
+    [currentPage, pageSize, sortedResults],
   );
   const summary = useMemo(() => createAdminResultSummary(filteredResults), [filteredResults]);
   const analysis = useMemo(() => createAdminResultAnalysis(filteredResults), [filteredResults]);
   const allCenters = useMemo(() => createAdminResultSummary(results).byCenter, [results]);
+  const similarCenterGroups = useMemo(() => detectSimilarCenterGroups(results), [results]);
   const activeCenterLabel = centerFilter
     ? allCenters.find((center) => center.centerKey === centerFilter)?.centerName ?? '선택 센터'
     : '전체 센터';
   const dateRangeLabel =
     fromDate || toDate ? `${fromDate || '처음'} - ${toDate || '오늘'}` : '전체 기간';
   const topScoreMax = Math.max(...analysis.scoreAverages.slice(0, 8).map((score) => score.average), 1);
+  const sortLabel = getSortLabel(sortKey, sortDirection);
+  const filterMemo = createFilterMemo({ activeCenterLabel, dateRangeLabel, hideTestResults, searchTerm, sortLabel });
+  const visibleStart = paginatedResults.totalResults === 0 || pageSize === 'all' ? 0 : (paginatedResults.currentPage - 1) * Number(pageSize) + 1;
+  const visibleEnd =
+    pageSize === 'all'
+      ? paginatedResults.totalResults
+      : Math.min(paginatedResults.currentPage * Number(pageSize), paginatedResults.totalResults);
 
   const handleSignIn = async (event: FormEvent) => {
     event.preventDefault();
@@ -282,7 +482,16 @@ export function AdminPage() {
         remainingHeight -= pageHeight;
       }
 
-      pdf.save(`wekid-report-${safeFileNamePart(activeCenterLabel)}-${getLocalDateStamp()}.pdf`);
+      pdf.save(
+        buildAdminExportFileName({
+          centerLabel: activeCenterLabel,
+          dateStamp: getLocalDateStamp(),
+          extension: 'pdf',
+          hideTestResults,
+          kind: 'report',
+          searchTerm,
+        }),
+      );
     } catch {
       setResultsError('PDF 보고서를 만들지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -345,7 +554,12 @@ export function AdminPage() {
         activeCenterLabel={activeCenterLabel}
         analysis={analysis}
         dateRangeLabel={dateRangeLabel}
-        results={filteredResults}
+        filterMemo={filterMemo}
+        hideTestResults={hideTestResults}
+        results={sortedResults}
+        searchTerm={searchTerm}
+        similarCenterGroups={similarCenterGroups}
+        sortLabel={sortLabel}
         summary={summary}
       />
 
@@ -355,6 +569,7 @@ export function AdminPage() {
           <h1>검사 결과 모아보기</h1>
           <p>
             {adminStatus.admin.email} 계정으로 로그인 중이에요. 현재 보기: {activeCenterLabel} · {dateRangeLabel}
+            {searchTerm.trim() ? ` · 검색 "${searchTerm.trim()}"` : ''}{hideTestResults ? ' · 테스트 의심 제외' : ''}
           </p>
         </div>
         <div className="admin-actions">
@@ -362,9 +577,21 @@ export function AdminPage() {
             <RefreshCw size={17} />
             새로고침
           </button>
-          <button className="ghost-button" type="button" onClick={() => downloadCsv(filteredResults, activeCenterLabel)}>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() =>
+              downloadCsv({
+                centerLabel: activeCenterLabel,
+                filterMemo,
+                hideTestResults,
+                results: sortedResults,
+                searchTerm,
+              })
+            }
+          >
             <Download size={17} />
-            CSV
+            필터 전체 CSV
           </button>
           <button className="ghost-button" type="button" onClick={handleDownloadReportPdf} disabled={isPdfSaving}>
             <FileText size={17} />
@@ -425,6 +652,27 @@ export function AdminPage() {
       </section>
 
       <div className="admin-card admin-filters">
+        <label className="admin-search-field">
+          <span>검색</span>
+          <div className="admin-search-box">
+            <Search size={17} />
+            <input
+              type="search"
+              value={searchTerm}
+              placeholder="이름, 센터, 직업, 요약, 문서 ID"
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+            {searchTerm && (
+              <button type="button" onClick={() => setSearchTerm('')} aria-label="검색어 지우기">
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <small>
+            검색/필터 결과 {filteredResults.length}건
+            {results.length !== filteredResults.length ? ` · 전체 ${results.length}건 중` : ''}
+          </small>
+        </label>
         <label>
           <span>센터</span>
           <select value={centerFilter} onChange={(event) => setCenterFilter(event.target.value)}>
@@ -444,12 +692,54 @@ export function AdminPage() {
           <span>종료일</span>
           <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
         </label>
+        <label>
+          <span>정렬</span>
+          <select value={sortKey} onChange={(event) => setSortKey(event.target.value as AdminSortKey)}>
+            <option value="createdAt">저장일</option>
+            <option value="participantName">이름</option>
+            <option value="centerName">센터명</option>
+            <option value="topCareer">대표 직업</option>
+            <option value="durationMinutes">소요 시간</option>
+          </select>
+        </label>
+        <label>
+          <span>표시 개수</span>
+          <select value={String(pageSize)} onChange={(event) => setPageSize(parsePageSize(event.target.value))}>
+            {pageSizeOptions.map((option) => (
+              <option key={String(option)} value={String(option)}>
+                {option === 'all' ? '전체' : `${option}개`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="ghost-button admin-sort-direction"
+          type="button"
+          onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
+          aria-label={`현재 ${sortLabel}. 정렬 방향 바꾸기`}
+        >
+          {sortDirection === 'asc' ? <ArrowUp size={17} /> : <ArrowDown size={17} />}
+          {sortDirection === 'asc' ? '오름차순' : '내림차순'}
+        </button>
+        <label className="admin-checkbox-field">
+          <input
+            type="checkbox"
+            checked={hideTestResults}
+            onChange={(event) => setHideTestResults(event.target.checked)}
+          />
+          <span>테스트 의심 결과 숨기기</span>
+        </label>
         <button
           className="ghost-button admin-filter-reset"
           type="button"
           onClick={() => {
             setCenterFilter('');
             setFromDate('');
+            setHideTestResults(false);
+            setPageSize(25);
+            setSearchTerm('');
+            setSortDirection('desc');
+            setSortKey('createdAt');
             setToDate('');
           }}
         >
@@ -498,6 +788,34 @@ export function AdminPage() {
         </div>
       </section>
 
+      <section className="admin-card admin-center-audit-card">
+        <div className="admin-card-heading">
+          <div>
+            <p className="section-kicker">운영 정리</p>
+            <h2>센터명 정리 보조</h2>
+            <p>공백, 대소문자, 특수문자 차이만 있는 센터명을 감지해요. 실제 데이터는 수정하지 않아요.</p>
+          </div>
+        </div>
+        <div className="admin-similar-center-list">
+          {similarCenterGroups.slice(0, 5).map((group) => (
+            <article key={group.normalizedKey}>
+              <div>
+                <strong>{group.normalizedKey}</strong>
+                <span>{group.totalCount}건 · {group.variants.length}개 표기</span>
+              </div>
+              <div className="admin-chip-row">
+                {group.variants.map((variant) => (
+                  <span key={`${variant.centerKey}-${variant.centerName}`}>
+                    {variant.centerName} {variant.count}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+          {similarCenterGroups.length === 0 && <p className="admin-empty">현재 감지된 유사 센터명 그룹이 없어요.</p>}
+        </div>
+      </section>
+
       <div className="admin-grid">
         <section className="admin-card">
           <h2>센터별 검사 수</h2>
@@ -529,7 +847,11 @@ export function AdminPage() {
         <div className="admin-card-heading">
           <div>
             <h2>개별 검사 결과</h2>
-            <p>행의 결과 보기를 누르면 답변, 점수, 추천 직업까지 확인할 수 있어요.</p>
+            <p>
+              {paginatedResults.totalResults === 0
+                ? '조건에 맞는 결과가 없어요.'
+                : `${visibleStart}-${visibleEnd} / 총 ${paginatedResults.totalResults}건 · CSV/PDF는 현재 필터 전체 기준이에요.`}
+            </p>
           </div>
         </div>
         <div className="admin-table-wrap">
@@ -546,10 +868,13 @@ export function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredResults.map((result) => (
+              {paginatedResults.pageResults.map((result) => (
                 <tr key={result.id}>
                   <td>{formatDate(result.createdAt)}</td>
-                  <td>{result.participantName ?? '이름 없음'}</td>
+                  <td>
+                    <span className="admin-table-primary">{result.participantName ?? '이름 없음'}</span>
+                    {isSuspectedTestResult(result) && <span className="admin-test-badge">테스트 의심</span>}
+                  </td>
                   <td>{result.centerName ?? '센터 없음'}</td>
                   <td>{getCareerName(result.topCareer)}</td>
                   <td>{formatDuration(getResultDurationMinutes(result))}</td>
@@ -566,21 +891,82 @@ export function AdminPage() {
           </table>
           {filteredResults.length === 0 && <p className="admin-empty">조건에 맞는 결과가 없어요.</p>}
         </div>
+        <div className="admin-pagination">
+          <p>
+            페이지 {paginatedResults.currentPage} / {paginatedResults.totalPages}
+          </p>
+          <div>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={paginatedResults.currentPage <= 1}
+            >
+              <ChevronLeft size={17} />
+              이전
+            </button>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.min(paginatedResults.totalPages, page + 1))}
+              disabled={paginatedResults.currentPage >= paginatedResults.totalPages}
+            >
+              다음
+              <ChevronRight size={17} />
+            </button>
+          </div>
+        </div>
       </section>
     </section>
   );
 }
 
 function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResultRecord; onClose: () => void }) {
+  const [areAnswersExpanded, setAreAnswersExpanded] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const answerDetails = result.answers.map(getAnswerDetail);
   const scoreEntries = Object.entries(result.scores).sort((left, right) => Number(right[1]) - Number(left[1]));
   const maxScore = Math.max(...scoreEntries.map(([, score]) => Number(score)), 1);
-  const recommendedCareerNames = getRecommendedCareerNames(result);
+  const interestScoreEntries = scoreEntries.filter(([scoreKey]) => interestScoreKeys.has(scoreKey));
+  const styleScoreEntries = scoreEntries.filter(([scoreKey]) => !interestScoreKeys.has(scoreKey));
+  const recommendedCareerNames = getRecommendedCareerNames(result.recommendedCareers)
+    .split(' / ')
+    .filter(Boolean);
+  const visibleAnswers = areAnswersExpanded ? answerDetails : answerDetails.slice(0, 8);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const copySummary = async () => {
+    const text = [
+      `이름: ${result.participantName ?? '이름 없음'}`,
+      `센터: ${result.centerName ?? '센터 없음'}`,
+      `대표 직업: ${getCareerName(result.topCareer)}`,
+      `추천 직업: ${recommendedCareerNames.join(', ') || '-'}`,
+      `요약: ${result.resultSummary}`,
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus('success');
+    } catch {
+      setCopyStatus('failed');
+    }
+  };
 
   return (
     <div className="admin-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         aria-modal="true"
+        aria-labelledby="admin-result-detail-title"
         className="admin-result-modal"
         role="dialog"
         onMouseDown={(event) => event.stopPropagation()}
@@ -588,7 +974,7 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
         <div className="admin-modal-heading">
           <div>
             <p className="section-kicker">개별 결과</p>
-            <h2>{result.participantName ?? '이름 없는 검사'} 결과</h2>
+            <h2 id="admin-result-detail-title">{result.participantName ?? '이름 없는 검사'} 결과</h2>
             <p>{result.centerName ?? '센터 없음'} · {formatDate(result.createdAt)}</p>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="상세 결과 닫기">
@@ -624,8 +1010,17 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
         </div>
 
         <section className="admin-detail-section">
-          <h3>결과 요약</h3>
+          <div className="admin-detail-section-heading">
+            <h3>학생용 결과 요약</h3>
+            <button className="admin-detail-button" type="button" onClick={copySummary}>
+              <Copy size={15} />
+              요약 복사
+            </button>
+          </div>
           <p>{result.resultSummary}</p>
+          <div className="admin-chip-row">
+            <span className="strong">{getCareerName(result.topCareer)}</span>
+          </div>
           {recommendedCareerNames.length > 0 && (
             <div className="admin-chip-row">
               {recommendedCareerNames.map((careerName) => (
@@ -633,27 +1028,29 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
               ))}
             </div>
           )}
+          {copyStatus === 'success' && <p className="admin-copy-status">요약을 복사했어요.</p>}
+          {copyStatus === 'failed' && <p className="admin-copy-status warning">복사하지 못했어요. 브라우저 권한을 확인해주세요.</p>}
         </section>
 
         <section className="admin-detail-section">
           <h3>점수</h3>
-          <div className="admin-score-bars compact">
-            {scoreEntries.map(([scoreKey, score]) => (
-              <div key={scoreKey}>
-                <span>{scoreLabels[scoreKey] ?? scoreKey}</span>
-                <div>
-                  <i style={{ width: `${Math.max(6, (Number(score) / maxScore) * 100)}%` }} />
-                </div>
-                <strong>{Number(score)}</strong>
-              </div>
-            ))}
+          <div className="admin-score-groups">
+            <ScoreGroup title="관심 유형" entries={interestScoreEntries} maxScore={maxScore} />
+            <ScoreGroup title="스타일 유형" entries={styleScoreEntries} maxScore={maxScore} />
           </div>
         </section>
 
         <section className="admin-detail-section">
-          <h3>문항별 답변</h3>
+          <div className="admin-detail-section-heading">
+            <h3>문항별 답변</h3>
+            {answerDetails.length > 8 && (
+              <button className="admin-text-button" type="button" onClick={() => setAreAnswersExpanded((current) => !current)}>
+                {areAnswersExpanded ? '접기' : `전체 ${answerDetails.length}개 보기`}
+              </button>
+            )}
+          </div>
           <div className="admin-answer-list">
-            {answerDetails.map((answer, index) => (
+            {visibleAnswers.map((answer, index) => (
               <article key={`${answer.questionEyebrow}-${index}`}>
                 <span>{answer.questionEyebrow}</span>
                 <strong>{answer.questionText}</strong>
@@ -669,8 +1066,28 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
   );
 }
 
+function ScoreGroup({ entries, maxScore, title }: { entries: Array<[string, number]>; maxScore: number; title: string }) {
+  return (
+    <div className="admin-score-group">
+      <h4>{title}</h4>
+      <div className="admin-score-bars compact">
+        {entries.map(([scoreKey, score]) => (
+          <div key={scoreKey}>
+            <span>{scoreLabels[scoreKey] ?? scoreKey}</span>
+            <div>
+              <i style={{ width: `${Math.max(6, (Number(score) / maxScore) * 100)}%` }} />
+            </div>
+            <strong>{Number(score)}</strong>
+          </div>
+        ))}
+        {entries.length === 0 && <p className="admin-empty">점수 데이터가 없어요.</p>}
+      </div>
+    </div>
+  );
+}
+
 const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>(function AdminReportDocument(
-  { activeCenterLabel, analysis, dateRangeLabel, results, summary },
+  { activeCenterLabel, analysis, dateRangeLabel, filterMemo, hideTestResults, results, searchTerm, similarCenterGroups, sortLabel, summary },
   ref,
 ) {
   return (
@@ -684,6 +1101,10 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
         <div className="admin-report-filter-summary">
           <span>적용 센터 필터: {activeCenterLabel}</span>
           <span>적용 날짜 필터: {dateRangeLabel}</span>
+          <span>검색어: {searchTerm.trim() || '없음'}</span>
+          <span>테스트 의심 결과: {hideTestResults ? '제외' : '포함'}</span>
+          <span>정렬: {sortLabel}</span>
+          <span>{filterMemo}</span>
         </div>
 
         <div className="admin-report-stats">
@@ -711,6 +1132,15 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
             <li>가장 많은 센터: {analysis.topCenter ? `${analysis.topCenter.centerName} (${analysis.topCenter.count}건)` : '데이터 없음'}</li>
             <li>가장 많은 대표 직업: {analysis.topCareer ? `${analysis.topCareer.careerName} (${analysis.topCareer.count}건)` : '데이터 없음'}</li>
             <li>평균 답변 수: {formatAverage(analysis.averageAnsweredCount)}개</li>
+            <li>
+              상위 점수 평균:{' '}
+              {analysis.scoreAverages.length > 0
+                ? analysis.scoreAverages
+                    .slice(0, 3)
+                    .map((score) => `${scoreLabels[score.scoreKey] ?? score.scoreKey} ${score.average.toFixed(1)}`)
+                    .join(', ')
+                : '데이터 없음'}
+            </li>
           </ul>
         </section>
 
@@ -736,6 +1166,19 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
         </div>
 
         <section>
+          <h2>센터명 유사 그룹</h2>
+          {similarCenterGroups.slice(0, 5).map((group) => (
+            <div className="admin-report-row" key={group.normalizedKey}>
+              <span>
+                {group.variants.map((variant) => `${variant.centerName} ${variant.count}건`).join(' / ')}
+              </span>
+              <strong>{group.totalCount}</strong>
+            </div>
+          ))}
+          {similarCenterGroups.length === 0 && <p>감지된 유사 센터명 그룹이 없습니다.</p>}
+        </section>
+
+        <section>
           <h2>최근 결과</h2>
           <table>
             <thead>
@@ -758,6 +1201,10 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
             </tbody>
           </table>
         </section>
+
+        <p className="admin-report-footnote">
+          본 보고서는 WEKID 관리자 페이지에서 생성된 요약 자료입니다. 개인정보가 포함될 수 있으므로 외부 공유에 주의하세요.
+        </p>
       </div>
     </div>
   );

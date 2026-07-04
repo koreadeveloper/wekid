@@ -19,10 +19,53 @@ export type AdminResultAnalysis = {
   scoreAverages: Array<{ scoreKey: string; average: number; total: number }>;
 };
 
+export type AdminSortKey = 'createdAt' | 'participantName' | 'centerName' | 'topCareer' | 'durationMinutes';
+export type AdminSortDirection = 'asc' | 'desc';
+export type AdminPageSize = number | 'all';
+
 export type AdminResultFilters = {
   centerKey?: string;
   fromDate?: string;
+  hideTestResults?: boolean;
+  searchTerm?: string;
   toDate?: string;
+};
+
+export type AdminResultSort = {
+  direction: AdminSortDirection;
+  key: AdminSortKey;
+};
+
+export type AdminPaginationOptions = {
+  page: number;
+  pageSize: AdminPageSize;
+};
+
+export type AdminPaginationResult = {
+  currentPage: number;
+  pageResults: StoredTestResultRecord[];
+  pageSize: AdminPageSize;
+  totalPages: number;
+  totalResults: number;
+};
+
+export type SimilarCenterGroup = {
+  normalizedKey: string;
+  totalCount: number;
+  variants: Array<{ centerKey: string; centerName: string; count: number }>;
+};
+
+export type ResultsCsvOptions = {
+  filterMemo?: string;
+};
+
+export type AdminExportFileNameOptions = {
+  centerLabel: string;
+  dateStamp: string;
+  extension: 'csv' | 'pdf';
+  hideTestResults?: boolean;
+  kind: 'report' | 'results';
+  searchTerm?: string;
 };
 
 export type FetchAdminResultsResult =
@@ -60,7 +103,7 @@ export function getCareerName(topCareer: StoredTestResultRecord['topCareer']) {
   return typeof topCareer.name === 'string' ? topCareer.name : '알 수 없음';
 }
 
-function getCareerNames(careers: StoredTestResultRecord['recommendedCareers']) {
+export function getRecommendedCareerNames(careers: StoredTestResultRecord['recommendedCareers']) {
   return careers
     .map((career) => {
       if (typeof career === 'string') {
@@ -73,6 +116,14 @@ function getCareerNames(careers: StoredTestResultRecord['recommendedCareers']) {
     .join(' / ');
 }
 
+function stringifyRawValue(value: unknown) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return JSON.stringify(value);
+}
+
 export function getResultDurationMinutes(result: Pick<StoredTestResultRecord, 'startedAt' | 'completedAt'>) {
   const startedAt = toAdminDate(result.startedAt);
   const completedAt = toAdminDate(result.completedAt);
@@ -83,6 +134,50 @@ export function getResultDurationMinutes(result: Pick<StoredTestResultRecord, 's
 
   const minutes = (completedAt.getTime() - startedAt.getTime()) / 60000;
   return Number.isFinite(minutes) && minutes >= 0 ? minutes : null;
+}
+
+function getResultDurationSeconds(result: Pick<StoredTestResultRecord, 'startedAt' | 'completedAt'>) {
+  const durationMinutes = getResultDurationMinutes(result);
+  return durationMinutes === null ? null : Math.round(durationMinutes * 60);
+}
+
+function normalizeSearchValue(value: unknown) {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('ko-KR');
+}
+
+function compactSearchValue(value: unknown) {
+  return normalizeSearchValue(value).replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+function resultMatchesSearch(result: StoredTestResultRecord, searchTerm: string) {
+  const query = normalizeSearchValue(searchTerm);
+  const compactQuery = compactSearchValue(searchTerm);
+
+  if (!query) {
+    return true;
+  }
+
+  const fields = [
+    result.participantName,
+    result.centerName,
+    getCareerName(result.topCareer),
+    result.resultSummary,
+    result.id,
+  ];
+
+  return fields.some((field) => {
+    const normalizedField = normalizeSearchValue(field);
+    return normalizedField.includes(query) || (compactQuery.length > 0 && compactSearchValue(field).includes(compactQuery));
+  });
+}
+
+export function isSuspectedTestResult(result: Pick<StoredTestResultRecord, 'centerKey' | 'centerName' | 'participantName'>) {
+  const value = `${result.participantName ?? ''} ${result.centerName ?? ''} ${result.centerKey ?? ''}`.toLocaleLowerCase(
+    'ko-KR',
+  );
+  return ['테스트', 'test', 'mcp', 'audit'].some((keyword) => value.includes(keyword));
 }
 
 export function createAdminResultSummary(results: StoredTestResultRecord[], now = new Date()): AdminResultSummary {
@@ -122,6 +217,7 @@ export function createAdminResultSummary(results: StoredTestResultRecord[], now 
 export function filterResults(results: StoredTestResultRecord[], filters: AdminResultFilters) {
   const fromDate = filters.fromDate ? new Date(`${filters.fromDate}T00:00:00.000`) : null;
   const toDate = filters.toDate ? new Date(`${filters.toDate}T23:59:59.999`) : null;
+  const searchTerm = filters.searchTerm?.trim() ?? '';
 
   return results.filter((result) => {
     const createdAt = toDateValue(result.createdAt);
@@ -139,8 +235,147 @@ export function filterResults(results: StoredTestResultRecord[], filters: AdminR
       return false;
     }
 
+    if (filters.hideTestResults && isSuspectedTestResult(result)) {
+      return false;
+    }
+
+    if (searchTerm && !resultMatchesSearch(result, searchTerm)) {
+      return false;
+    }
+
     return true;
   });
+}
+
+function compareNullableText(left: string | null | undefined, right: string | null | undefined) {
+  if (!left && !right) {
+    return 0;
+  }
+
+  if (!left) {
+    return 1;
+  }
+
+  if (!right) {
+    return -1;
+  }
+
+  return left.localeCompare(right, 'ko-KR', { numeric: true, sensitivity: 'base' });
+}
+
+function getSortValue(result: StoredTestResultRecord, key: AdminSortKey) {
+  if (key === 'createdAt') {
+    return toAdminDate(result.createdAt)?.getTime() ?? null;
+  }
+
+  if (key === 'participantName') {
+    return result.participantName;
+  }
+
+  if (key === 'centerName') {
+    return result.centerName;
+  }
+
+  if (key === 'topCareer') {
+    return getCareerName(result.topCareer);
+  }
+
+  return getResultDurationMinutes(result);
+}
+
+export function sortAdminResults(results: StoredTestResultRecord[], sort: AdminResultSort) {
+  return results
+    .map((result, index) => ({ index, result }))
+    .sort((left, right) => {
+      const leftValue = getSortValue(left.result, sort.key);
+      const rightValue = getSortValue(right.result, sort.key);
+      let comparison = 0;
+
+      if (leftValue == null && rightValue == null) {
+        comparison = 0;
+      } else if (leftValue == null) {
+        return 1;
+      } else if (rightValue == null) {
+        return -1;
+      } else if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+        comparison = leftValue - rightValue;
+      } else {
+        comparison = compareNullableText(String(leftValue), String(rightValue));
+      }
+
+      if (comparison === 0) {
+        return left.index - right.index;
+      }
+
+      return sort.direction === 'asc' ? comparison : -comparison;
+    })
+    .map(({ result }) => result);
+}
+
+export function paginateAdminResults(results: StoredTestResultRecord[], options: AdminPaginationOptions): AdminPaginationResult {
+  if (options.pageSize === 'all') {
+    return {
+      currentPage: 1,
+      pageResults: results,
+      pageSize: options.pageSize,
+      totalPages: 1,
+      totalResults: results.length,
+    };
+  }
+
+  const totalPages = Math.max(1, Math.ceil(results.length / options.pageSize));
+  const currentPage = Math.min(Math.max(1, Math.floor(options.page)), totalPages);
+  const startIndex = (currentPage - 1) * options.pageSize;
+
+  return {
+    currentPage,
+    pageResults: results.slice(startIndex, startIndex + options.pageSize),
+    pageSize: options.pageSize,
+    totalPages,
+    totalResults: results.length,
+  };
+}
+
+function normalizeCenterName(value: string) {
+  return value.toLocaleLowerCase('ko-KR').replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+export function detectSimilarCenterGroups(results: StoredTestResultRecord[]): SimilarCenterGroup[] {
+  const groups = new Map<string, Map<string, { centerKey: string; centerName: string; count: number }>>();
+
+  results.forEach((result) => {
+    if (!result.centerName) {
+      return;
+    }
+
+    const normalizedKey = normalizeCenterName(result.centerName);
+    if (!normalizedKey) {
+      return;
+    }
+
+    const variants = groups.get(normalizedKey) ?? new Map<string, { centerKey: string; centerName: string; count: number }>();
+    const variantKey = `${result.centerName}::${result.centerKey ?? 'none'}`;
+    const variant = variants.get(variantKey) ?? {
+      centerKey: result.centerKey ?? 'none',
+      centerName: result.centerName,
+      count: 0,
+    };
+    variant.count += 1;
+    variants.set(variantKey, variant);
+    groups.set(normalizedKey, variants);
+  });
+
+  return Array.from(groups.entries())
+    .map(([normalizedKey, variants]) => ({
+      normalizedKey,
+      variants: Array.from(variants.values()).sort((left, right) => right.count - left.count),
+    }))
+    .filter((group) => group.variants.length > 1)
+    .map((group) => ({
+      ...group,
+      totalCount: group.variants.reduce((sum, variant) => sum + variant.count, 0),
+    }))
+    .sort((left, right) => right.totalCount - left.totalCount || left.normalizedKey.localeCompare(right.normalizedKey));
 }
 
 function toDateValue(value: StoredTestResultRecord['createdAt']) {
@@ -162,7 +397,7 @@ function csvCell(value: unknown) {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-export function toResultsCsv(results: StoredTestResultRecord[]) {
+export function toResultsCsv(results: StoredTestResultRecord[], options: ResultsCsvOptions = {}) {
   const headers = [
     '문서ID',
     '저장일',
@@ -178,12 +413,18 @@ export function toResultsCsv(results: StoredTestResultRecord[]) {
     '답변수',
     '요약',
     '점수JSON',
+    '테스트의심여부',
+    '필터메모',
+    '소요시간초',
+    '대표직업Raw',
+    '추천직업Raw',
   ];
   const rows = results.map((result) => {
     const createdAt = toAdminDate(result.createdAt)?.toISOString() ?? '';
     const startedAt = toAdminDate(result.startedAt)?.toISOString() ?? '';
     const completedAt = toAdminDate(result.completedAt)?.toISOString() ?? '';
     const duration = getResultDurationMinutes(result);
+    const durationSeconds = getResultDurationSeconds(result);
 
     return [
       result.id,
@@ -196,16 +437,57 @@ export function toResultsCsv(results: StoredTestResultRecord[]) {
       result.centerKey,
       result.centerSource,
       getCareerName(result.topCareer),
-      getCareerNames(result.recommendedCareers),
+      getRecommendedCareerNames(result.recommendedCareers),
       result.answers.length,
       result.resultSummary,
       JSON.stringify(result.scores),
+      isSuspectedTestResult(result) ? '예' : '아니오',
+      options.filterMemo ?? '',
+      durationSeconds == null ? '' : durationSeconds,
+      stringifyRawValue(result.topCareer),
+      JSON.stringify(result.recommendedCareers),
     ]
       .map(csvCell)
       .join(',');
   });
 
   return `${CSV_UTF8_BOM}${[headers.join(','), ...rows].join('\n')}`;
+}
+
+export function sanitizeAdminFileNamePart(value: string, maxLength = 48) {
+  const sanitized = value
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return (sanitized || 'all').slice(0, maxLength);
+}
+
+export function buildAdminExportFileName({
+  centerLabel,
+  dateStamp,
+  extension,
+  hideTestResults,
+  kind,
+  searchTerm,
+}: AdminExportFileNameOptions) {
+  const centerPart = centerLabel.trim() === '전체 센터' ? 'all' : sanitizeAdminFileNamePart(centerLabel);
+  const parts = [`wekid-${kind}`, centerPart];
+  const trimmedSearchTerm = searchTerm?.trim();
+
+  if (hideTestResults) {
+    parts.push('no-test');
+  }
+
+  if (trimmedSearchTerm) {
+    parts.push(sanitizeAdminFileNamePart(trimmedSearchTerm, 24));
+  }
+
+  parts.push(dateStamp);
+
+  return `${parts.join('-')}.${extension}`;
 }
 
 export function createAdminResultAnalysis(results: StoredTestResultRecord[]): AdminResultAnalysis {
