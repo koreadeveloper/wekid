@@ -7,7 +7,7 @@
   justify-content: center;
   background: rgba(0,0,0,0.45);
   backdrop-filter: blur(6px);
-  padding: 0;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   animation: fadeIn 200ms ease both;
 }
 
@@ -20,6 +20,7 @@
   width: 100%;
   max-width: 520px;
   max-height: 88vh;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
   overflow-y: auto;
   padding: 28px 24px 36px;
   border-radius: 32px 32px 0 0;
@@ -48,11 +49,27 @@
   transition: background 150ms ease;
 }
 .modal-close:hover { background: var(--line); }
+.modal-close:focus-visible {
+  outline: 0;
+  border-color: var(--duo-blue);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--duo-blue) 22%, transparent);
+}
 
-.modal-emoji {
-  font-size: 52px;
-  line-height: 1;
-  margin-bottom: 10px;
+.modal-career-symbol {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 12px;
+  border: 3px solid #ffffff;
+  border-radius: 22px;
+  color: var(--duo-green-dark);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(221, 244, 255, 0.92)),
+    #ddf4ff;
+  box-shadow:
+    0 6px 0 rgba(28, 176, 246, 0.22),
+    0 12px 24px rgba(28, 176, 246, 0.18);
 }
 
 .modal-tagline {
@@ -77,6 +94,15 @@
   font-size: 16px;
   font-weight: 800;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  word-break: keep-all;
+}
+
+.modal-fit-note p {
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  word-break: keep-all;
 }
 
 .modal-section {
@@ -105,6 +131,9 @@
   font-size: 15px;
   font-weight: 800;
   line-height: 1.5;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  word-break: keep-all;
 }
 
 .modal-skill-chips {
@@ -138,6 +167,9 @@
   font-size: 14px;
   font-weight: 800;
   line-height: 1.5;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+  word-break: keep-all;
 }
 .modal-funfact svg { flex: 0 0 auto; margin-top: 2px; color: #f4b942; }
 
@@ -168,8 +200,10 @@
 
 /* ===== 브랜드 마크 3D ===== */
 .brand-mark {
-  background: linear-gradient(145deg, #6de000, var(--duo-green), #46a302);
-  box-shadow: 0 5px 0 var(--duo-green-dark), 0 8px 20px rgba(88,204,2,0.35);
+  background: #ffffff;
+  box-shadow:
+    0 5px 0 rgba(70, 163, 2, 0.58),
+    0 8px 20px rgba(88,204,2,0.2);
 }
 
 /* ===== 아이콘 버튼 hover ===== */
@@ -191,10 +225,11 @@
 @media (min-width: 760px) {
   .modal-overlay {
     align-items: center;
-    padding: 20px;
+    padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
   }
   .modal-card {
     border-radius: 32px;
     max-height: 80vh;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
   }
 }

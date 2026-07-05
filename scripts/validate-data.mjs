@@ -103,14 +103,20 @@ careerFitItems.forEach((career) => {
 });
 
 const categoryText = listTsFiles('src/data/careerCategories').map(read).join('\n');
+const careerCatalogSummaryText = read('src/data/careerCatalogSummary.ts');
 const categoryCareers = [...categoryText.matchAll(/careers:\s*\[([\s\S]*?)\]/g)].flatMap((match) =>
   collect(match[1], /'([^']+)'/g),
 );
 const uniqueCategoryCareers = [...new Set(categoryCareers)];
+const summaryCount = Number(careerCatalogSummaryText.match(/totalCareerCount\s*=\s*(\d+)/)?.[1]);
 
 assertUnique(categoryCareers, 'career category name');
 if (uniqueCategoryCareers.length < 177) {
   fail(`expected at least 177 career map entries, found ${uniqueCategoryCareers.length}`);
+}
+
+if (summaryCount !== uniqueCategoryCareers.length) {
+  fail(`totalCareerCount must match career map count ${uniqueCategoryCareers.length}; found ${summaryCount}`);
 }
 
 careerFitNames.forEach((careerName) => {

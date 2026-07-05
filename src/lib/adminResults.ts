@@ -1,5 +1,5 @@
 import { collection, getDocs, limit, orderBy, query, type Firestore, type Timestamp } from 'firebase/firestore';
-import { firestore } from './firebase';
+import { firestore } from './firebaseFirestore';
 import type { StoredTestResultRecord, TestResultDocument } from '../types/firestore';
 
 export const CSV_UTF8_BOM = '\uFEFF';

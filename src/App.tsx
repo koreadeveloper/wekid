@@ -1,29 +1,42 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TopBar } from './components/layout/TopBar';
-import { getCareerDetail } from './data/careerDetails';
-import { careerCategories } from './data/careerCategories';
+import { totalCareerCount } from './data/careerCatalogSummary';
 import { questions } from './data/questions';
+import { readCurrentAppMode, writeAppModeToHistory, type AppMode } from './lib/appMode';
 import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
 import { getCareerResult, getScores } from './lib/careerScoring';
-import { saveTestResult } from './lib/resultStorage';
-import { AdminPage } from './pages/admin/AdminPage';
-import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
+import { persistTestResult } from './lib/resultPersistence';
+import { LazyAdminPage } from './pages/admin/LazyAdminPage';
+import { LazyBusinessCardMakerPage } from './pages/business-card/LazyBusinessCardMakerPage';
+import type { BusinessCardData } from './pages/business-card/BusinessCardPreview';
+import { buildResultBusinessCardData } from './pages/business-card/businessCardConfig';
+import {
+  clearBusinessCardDraft,
+  readBusinessCardDraft,
+  saveBusinessCardDraft,
+} from './pages/business-card/businessCardDraftStorage';
 import { QuizPage } from './pages/quiz/QuizPage';
-import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
-import { ResultPage } from './pages/result/ResultPage';
+import { LazyCareerDetailModal } from './pages/result/components/LazyCareerDetailModal';
+import { LazyResultPage } from './pages/result/LazyResultPage';
 import { StartPage } from './pages/start/StartPage';
-import type { AnswerMap, CareerDetail, ChoiceKey } from './types/career';
+import type { AnswerMap, CareerDetail, ChoiceKey, FocusHandoffOptions } from './types/career';
 
-type AppMode = 'career' | 'business-card' | 'admin';
+type ResultSaveErrorReason = 'firebase-not-configured' | 'write-failed';
 
-type ResultSaveStatus =
-  | { status: 'idle' | 'saving' }
-  | { status: 'saved'; resultId: string }
-  | { status: 'skipped'; reason: 'firebase-not-configured' }
-  | { status: 'failed'; error: unknown };
+const resultSaveErrorMessages: Record<ResultSaveErrorReason, string> = {
+  'firebase-not-configured': '결과 저장 연결이 준비되지 않았어요. 담당자에게 알려 주세요.',
+  'write-failed': '결과를 저장하지 못했어요. 연결 상태를 확인한 뒤 다시 시도해 주세요.',
+};
+
+const getPreferredScrollBehavior = (): ScrollBehavior =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: getPreferredScrollBehavior() });
+
+const requestScrollToTop = () => window.requestAnimationFrame(scrollToTop);
 
 function App() {
-  const [mode, setMode] = useState<AppMode>('career');
+  const [mode, setMode] = useState<AppMode>(() => readCurrentAppMode());
   const initialUrlCenterName = useMemo(
     () => getCenterNameFromSearch(typeof window === 'undefined' ? '' : window.location.search),
     [],
@@ -37,17 +50,30 @@ function App() {
   const [isCenterManual, setIsCenterManual] = useState(false);
   const [userName, setUserName] = useState('');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
-  const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>({ status: 'idle' });
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
+  const [businessCardData, setBusinessCardData] = useState<BusinessCardData | undefined>(() => readBusinessCardDraft());
   const [isAdvancing, setIsAdvancingState] = useState(false);
+  const [quizFocusRequest, setQuizFocusRequest] = useState(0);
+  const [resultFocusRequest, setResultFocusRequest] = useState(0);
+  const [businessCardFocusRequest, setBusinessCardFocusRequest] = useState(0);
+  const [resultSaveError, setResultSaveError] = useState<ResultSaveErrorReason | null>(null);
+  const [resultSaveRetryRequest, setResultSaveRetryRequest] = useState(0);
   const advanceTimerRef = useRef<number | undefined>(undefined);
   const advancingRef = useRef(false);
   const savedResultSignatureRef = useRef<string | null>(null);
+  const savingResultSignatureRef = useRef<string | null>(null);
+  const savingResultRequestRef = useRef<symbol | null>(null);
 
   const setIsAdvancing = (value: boolean) => {
     advancingRef.current = value;
     setIsAdvancingState(value);
   };
+
+  const requestQuizFocus = () => setQuizFocusRequest((request) => request + 1);
+
+  const requestResultFocus = () => setResultFocusRequest((request) => request + 1);
+
+  const requestBusinessCardFocus = () => setBusinessCardFocusRequest((request) => request + 1);
 
   const clearAdvanceTimer = () => {
     if (advanceTimerRef.current !== undefined) {
@@ -83,10 +109,15 @@ function App() {
       ...careerMatches.explore.map((career) => career.name),
     ]);
   }, [careerMatches, profile]);
-  const totalCareerCount = useMemo(
-    () => new Set(careerCategories.flatMap((category) => category.careers)).size,
-    [],
-  );
+  useEffect(() => {
+    const syncModeFromHistory = () => {
+      setMode(readCurrentAppMode());
+      setSelectedCareer(null);
+    };
+
+    window.addEventListener('popstate', syncModeFromHistory);
+    return () => window.removeEventListener('popstate', syncModeFromHistory);
+  }, []);
 
   useEffect(() => {
     if (!showResult || !profile || !isComplete) {
@@ -94,50 +125,64 @@ function App() {
     }
 
     const resultSignature = JSON.stringify({ answers, centerContext, topCareer: profile.topCareer.name, userName });
-    if (savedResultSignatureRef.current === resultSignature) {
+    if (savedResultSignatureRef.current === resultSignature || savingResultSignatureRef.current === resultSignature) {
       return;
     }
 
-    savedResultSignatureRef.current = resultSignature;
-    setResultSaveStatus({ status: 'saving' });
-
+    const saveRequest = Symbol(resultSignature);
+    savingResultSignatureRef.current = resultSignature;
+    savingResultRequestRef.current = saveRequest;
     const completedAt = new Date();
     const resultStartedAt = startedAt ?? completedAt;
 
-    void saveTestResult({
-      participantName: userName || null,
-      centerName: centerContext.centerName,
-      centerKey: centerContext.centerKey,
-      centerSource: centerContext.centerSource,
-      startedAt: resultStartedAt,
-      completedAt,
-      answers: questions
-        .map((question) => ({ questionId: question.id, choice: answers[question.id] }))
-        .filter((answer) => Boolean(answer.choice)),
-      scores,
-      topCareer: profile.topCareer,
-      recommendedCareers: profile.recommendations,
-      resultSummary: profile.summary,
-    }).then((saveResult) => {
-      if (saveResult.ok) {
-        setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
-        return;
+    void (async () => {
+      try {
+        const saveResult = await persistTestResult({
+          participantName: userName || null,
+          centerName: centerContext.centerName,
+          centerKey: centerContext.centerKey,
+          centerSource: centerContext.centerSource,
+          startedAt: resultStartedAt,
+          completedAt,
+          answers: questions
+            .map((question) => ({ questionId: question.id, choice: answers[question.id] }))
+            .filter((answer) => Boolean(answer.choice)),
+          scores,
+          topCareer: profile.topCareer,
+          recommendedCareers: profile.recommendations,
+          resultSummary: profile.summary,
+        });
+
+        if (savingResultRequestRef.current !== saveRequest) {
+          return;
+        }
+
+        if (saveResult.ok) {
+          savedResultSignatureRef.current = resultSignature;
+          setResultSaveError(null);
+          return;
+        }
+
+        setResultSaveError(saveResult.reason);
+      } catch {
+        if (savingResultRequestRef.current === saveRequest) {
+          setResultSaveError('write-failed');
+        }
+      } finally {
+        if (savingResultRequestRef.current === saveRequest) {
+          savingResultSignatureRef.current = null;
+          savingResultRequestRef.current = null;
+        }
       }
+    })();
+  }, [answers, centerContext, isComplete, profile, resultSaveRetryRequest, scores, showResult, startedAt, userName]);
 
-      if (saveResult.reason === 'firebase-not-configured') {
-        setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
-        return;
-      }
-
-      setResultSaveStatus({ status: 'failed', error: saveResult.error });
-    });
-  }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName]);
-
-  const chooseAnswer = (choice: ChoiceKey) => {
+  const chooseAnswer = (choice: ChoiceKey, options: FocusHandoffOptions = {}) => {
     if (advancingRef.current) {
       return;
     }
 
+    const shouldFocusNextSurface = options.focusNextSurface === true;
     setIsAdvancing(true);
     clearAdvanceTimer();
 
@@ -167,7 +212,10 @@ function App() {
       advanceTimerRef.current = undefined;
       setShowResult(true);
       setIsAdvancing(false);
-      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      if (shouldFocusNextSurface) {
+        requestResultFocus();
+      }
+      requestScrollToTop();
     }, 180);
   };
 
@@ -181,10 +229,14 @@ function App() {
     setNameInput('');
     setUserName('');
     setStartedAt(null);
-    setResultSaveStatus({ status: 'idle' });
+    setBusinessCardData(undefined);
+    clearBusinessCardDraft();
     savedResultSignatureRef.current = null;
+    savingResultSignatureRef.current = null;
+    savingResultRequestRef.current = null;
+    setResultSaveError(null);
     setSelectedCareer(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
   };
 
   const editLastAnswer = () => {
@@ -192,52 +244,105 @@ function App() {
     setIsAdvancing(false);
     setShowResult(false);
     setCurrentIndex(questions.length - 1);
-    setResultSaveStatus({ status: 'idle' });
     savedResultSignatureRef.current = null;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    savingResultSignatureRef.current = null;
+    savingResultRequestRef.current = null;
+    setResultSaveError(null);
+    requestQuizFocus();
+    scrollToTop();
   };
 
-  const startWithName = () => {
+  const retryResultSave = () => {
+    savingResultSignatureRef.current = null;
+    savingResultRequestRef.current = null;
+    setResultSaveError(null);
+    setResultSaveRetryRequest((request) => request + 1);
+  };
+
+  const startWithName = (shouldFocusQuiz = false) => {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName(nameInput.trim());
     setNameStep(false);
     setStartedAt(new Date());
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    if (shouldFocusQuiz) {
+      requestQuizFocus();
+    }
+    requestScrollToTop();
   };
 
-  const skipName = () => {
+  const skipName = (shouldFocusQuiz = false) => {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName('');
     setNameStep(false);
     setStartedAt(new Date());
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    if (shouldFocusQuiz) {
+      requestQuizFocus();
+    }
+    requestScrollToTop();
   };
 
   const selectCareer = (careerName: string) => {
-    const detail = getCareerDetail(careerName);
-    if (detail) {
-      setSelectedCareer(detail);
-    }
+    void import('./data/careerDetails').then(({ getCareerDetail }) => setSelectedCareer(getCareerDetail(careerName)));
   };
 
   const handleModeChange = (nextMode: AppMode) => {
+    if (nextMode === 'business-card') {
+      const storedCardData = readBusinessCardDraft();
+      if (storedCardData) {
+        setBusinessCardData(storedCardData);
+      }
+    }
+
+    if (nextMode !== mode) {
+      writeAppModeToHistory(nextMode);
+    }
+
     setMode(nextMode);
     setSelectedCareer(null);
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    if (nextMode === 'business-card') {
+      requestBusinessCardFocus();
+    }
+    requestScrollToTop();
   };
 
+  const createBusinessCardFromResult = (careerName: string) => {
+    const nextBusinessCardData = buildResultBusinessCardData({
+      userName,
+      centerName: centerContext.centerName,
+      careerName,
+    });
+
+    setBusinessCardData(nextBusinessCardData);
+    saveBusinessCardDraft(nextBusinessCardData);
+    handleModeChange('business-card');
+  };
+
+  const appClassName = [
+    'app',
+    mode === 'business-card' ? 'business-card-app' : '',
+    mode === 'career' && nameStep ? 'name-step-app' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''}`}>
+    <main className={appClassName}>
       {mode === 'career' && selectedCareer && (
-        <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
+        <LazyCareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
       )}
-      <TopBar mode={mode} totalCareerCount={totalCareerCount} onModeChange={handleModeChange} onReset={reset} />
+      <TopBar
+        mode={mode}
+        showReset={mode === 'career' && !nameStep && !showResult}
+        totalCareerCount={totalCareerCount}
+        onModeChange={handleModeChange}
+        onReset={reset}
+      />
       {mode === 'admin' ? (
-        <AdminPage />
+        <LazyAdminPage />
       ) : mode === 'business-card' ? (
-        <BusinessCardMakerPage />
+        <LazyBusinessCardMakerPage focusRequest={businessCardFocusRequest} initialCardData={businessCardData} />
       ) : nameStep ? (
         <StartPage
           centerInput={centerInput}
@@ -253,17 +358,20 @@ function App() {
           onSkip={skipName}
         />
       ) : showResult && profile ? (
-        <ResultPage
+        <LazyResultPage
           careerMatches={careerMatches}
           highlightedCareers={highlightedCareers}
           profile={profile}
+          focusRequest={resultFocusRequest}
           scores={scores}
-          resultSaveStatus={resultSaveStatus}
           userName={userName}
-          hasCareerDetail={(careerName) => Boolean(getCareerDetail(careerName))}
+          hasCareerDetail={() => true}
           onCareerSelect={selectCareer}
+          onCreateBusinessCard={createBusinessCardFromResult}
           onEditLastAnswer={editLastAnswer}
           onReset={reset}
+          onRetryResultSave={retryResultSave}
+          resultSaveErrorMessage={resultSaveError ? resultSaveErrorMessages[resultSaveError] : null}
         />
       ) : (
         <QuizPage
@@ -271,6 +379,7 @@ function App() {
           currentAnswer={currentAnswer}
           currentIndex={safeCurrentIndex}
           currentQuestion={currentQuestion}
+          focusRequest={quizFocusRequest}
           isAdvancing={isAdvancing}
           progress={progress}
           userName={userName}

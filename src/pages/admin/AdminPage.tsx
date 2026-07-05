@@ -16,8 +16,9 @@ import {
 } from 'lucide-react';
 import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { questions } from '../../data/questions';
-import { auth } from '../../lib/firebase';
+import { auth } from '../../lib/firebaseAuth';
 import { getAdminProfile, isOwnerAdmin } from '../../lib/adminAuth';
+import { useModalFocusTrap } from '../../lib/useModalFocusTrap';
 import {
   buildAdminExportFileName,
   createAdminResultAnalysis,
@@ -68,11 +69,11 @@ const scoreLabels: Record<string, string> = {
   enterprising: '도전형',
   conventional: '정리형',
   together: '함께하기',
-  focus: '혼자집중',
-  observe: '실제관찰',
-  imagine: '상상아이디어',
-  solve: '논리해결',
-  care: '마음도움',
+  focus: '혼자 집중',
+  observe: '실제 관찰',
+  imagine: '상상 아이디어',
+  solve: '논리 해결',
+  care: '마음 도움',
   plan: '계획형',
   flex: '탐험형',
 };
@@ -261,7 +262,7 @@ function createFilterMemo({
   sortLabel: string;
 }) {
   const searchLabel = searchTerm.trim() ? `검색: ${searchTerm.trim()}` : '검색: 없음';
-  const testLabel = hideTestResults ? '테스트 의심 결과 제외' : '테스트 의심 결과 포함';
+  const testLabel = hideTestResults ? '점검용 결과 제외' : '점검용 결과 포함';
 
   return `센터: ${activeCenterLabel} / 기간: ${dateRangeLabel} / ${searchLabel} / ${testLabel} / 정렬: ${sortLabel}`;
 }
@@ -328,12 +329,12 @@ export function AdminPage() {
     const profile = await getAdminProfile(user.uid);
 
     if (!profile.ok) {
-      setAdminStatus({ status: 'denied', message: '관리자 문서를 찾을 수 없어요.' });
+      setAdminStatus({ status: 'denied', message: '관리자 권한 정보를 찾을 수 없어요.' });
       return;
     }
 
     if (!isOwnerAdmin(profile.admin)) {
-      setAdminStatus({ status: 'denied', message: 'owner 권한이 있는 관리자만 볼 수 있어요.' });
+      setAdminStatus({ status: 'denied', message: '관리 권한이 있는 계정만 볼 수 있어요.' });
       return;
     }
 
@@ -350,8 +351,8 @@ export function AdminPage() {
     } else {
       setResultsError(
         response.reason === 'firebase-not-configured'
-          ? 'Firebase 설정이 아직 연결되지 않았어요.'
-          : '검사 결과를 불러오지 못했어요. Firestore 규칙과 관리자 권한을 확인해주세요.',
+          ? '관리자 연결 설정이 아직 끝나지 않았어요. 담당자에게 문의해 주세요.'
+          : '검사 결과를 불러오지 못했어요. 담당자에게 권한 설정을 확인해 달라고 알려 주세요.',
       );
     }
 
@@ -432,7 +433,7 @@ export function AdminPage() {
     event.preventDefault();
 
     if (!auth) {
-      setAuthError('Firebase 설정이 아직 연결되지 않았어요.');
+      setAuthError('관리자 연결 설정이 아직 끝나지 않았어요. 담당자에게 문의해 주세요.');
       return;
     }
 
@@ -443,7 +444,7 @@ export function AdminPage() {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       setPassword('');
     } catch {
-      setAuthError('로그인에 실패했어요. 이메일과 비밀번호를 확인해주세요.');
+      setAuthError('로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.');
     } finally {
       setIsSigningIn(false);
     }
@@ -468,14 +469,19 @@ export function AdminPage() {
       const imageData = canvas.toDataURL('image/png');
       const pageWidth = 210;
       const pageHeight = 297;
-      const imageHeight = (canvas.height * pageWidth) / canvas.width;
+      const naturalImageHeight = (canvas.height * pageWidth) / canvas.width;
+      const pageOverflowTolerance = 8;
+      const imageHeight =
+        naturalImageHeight > pageHeight && naturalImageHeight - pageHeight <= pageOverflowTolerance
+          ? pageHeight
+          : naturalImageHeight;
       let remainingHeight = imageHeight;
       let position = 0;
 
       pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
       remainingHeight -= pageHeight;
 
-      while (remainingHeight > 0) {
+      while (remainingHeight > pageOverflowTolerance) {
         position -= pageHeight;
         pdf.addPage();
         pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
@@ -493,7 +499,7 @@ export function AdminPage() {
         }),
       );
     } catch {
-      setResultsError('PDF 보고서를 만들지 못했어요. 잠시 후 다시 시도해주세요.');
+      setResultsError('PDF 보고서를 만들지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsPdfSaving(false);
     }
@@ -505,7 +511,7 @@ export function AdminPage() {
         <div className="admin-card compact">
           <Lock size={24} />
           <h1>관리자 페이지</h1>
-          <p>Firebase 환경변수를 먼저 연결해야 관리자 페이지를 사용할 수 있어요.</p>
+          <p>관리자 연결 설정이 아직 끝나지 않았어요. 담당자에게 문의해 주세요.</p>
         </div>
       </section>
     );
@@ -535,9 +541,9 @@ export function AdminPage() {
               autoComplete="current-password"
             />
           </label>
-          {adminStatus.status === 'checking' && <p className="admin-message">권한을 확인하는 중이에요.</p>}
-          {adminStatus.status === 'denied' && <p className="admin-message warning">{adminStatus.message}</p>}
-          {authError && <p className="admin-message warning">{authError}</p>}
+          {adminStatus.status === 'checking' && <p className="admin-message" role="status">권한을 확인하는 중이에요.</p>}
+          {adminStatus.status === 'denied' && <p className="admin-message warning" role="alert">{adminStatus.message}</p>}
+          {authError && <p className="admin-message warning" role="alert">{authError}</p>}
           <button className="primary-button" type="submit" disabled={isSigningIn}>
             {isSigningIn ? '로그인 중' : '로그인'}
           </button>
@@ -569,7 +575,7 @@ export function AdminPage() {
           <h1>검사 결과 모아보기</h1>
           <p>
             {adminStatus.admin.email} 계정으로 로그인 중이에요. 현재 보기: {activeCenterLabel} · {dateRangeLabel}
-            {searchTerm.trim() ? ` · 검색 "${searchTerm.trim()}"` : ''}{hideTestResults ? ' · 테스트 의심 제외' : ''}
+            {searchTerm.trim() ? ` · 검색 "${searchTerm.trim()}"` : ''}{hideTestResults ? ' · 점검용 결과 제외' : ''}
           </p>
         </div>
         <div className="admin-actions">
@@ -591,7 +597,7 @@ export function AdminPage() {
             }
           >
             <Download size={17} />
-            필터 전체 CSV
+            필터 결과 CSV
           </button>
           <button className="ghost-button" type="button" onClick={handleDownloadReportPdf} disabled={isPdfSaving}>
             <FileText size={17} />
@@ -605,7 +611,7 @@ export function AdminPage() {
 
       <div className="admin-stats-grid">
         <article className="admin-stat-card">
-          <span>현재 보기 검사</span>
+          <span>현재 보이는 결과</span>
           <strong>{summary.totalCount}</strong>
         </article>
         <article className="admin-stat-card">
@@ -635,7 +641,7 @@ export function AdminPage() {
           )}
         </div>
         <div className="admin-center-chips">
-          <button className={!centerFilter ? 'active' : ''} type="button" onClick={() => setCenterFilter('')}>
+          <button className={!centerFilter ? 'active' : ''} type="button" aria-pressed={!centerFilter} onClick={() => setCenterFilter('')}>
             전체 <strong>{results.length}</strong>
           </button>
           {allCenters.map((center) => (
@@ -643,6 +649,7 @@ export function AdminPage() {
               className={centerFilter === center.centerKey ? 'active' : ''}
               key={center.centerKey}
               type="button"
+              aria-pressed={centerFilter === center.centerKey}
               onClick={() => setCenterFilter(center.centerKey)}
             >
               {center.centerName} <strong>{center.count}</strong>
@@ -656,19 +663,19 @@ export function AdminPage() {
           <span>검색</span>
           <div className="admin-search-box">
             <Search size={17} />
-            <input
-              type="search"
-              value={searchTerm}
-              placeholder="이름, 센터, 직업, 요약, 문서 ID"
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
+              <input
+                type="search"
+                value={searchTerm}
+                placeholder="이름, 센터, 직업, 요약"
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
             {searchTerm && (
               <button type="button" onClick={() => setSearchTerm('')} aria-label="검색어 지우기">
                 <X size={16} />
               </button>
             )}
           </div>
-          <small>
+          <small role="status" aria-live="polite">
             검색/필터 결과 {filteredResults.length}건
             {results.length !== filteredResults.length ? ` · 전체 ${results.length}건 중` : ''}
           </small>
@@ -727,7 +734,7 @@ export function AdminPage() {
             checked={hideTestResults}
             onChange={(event) => setHideTestResults(event.target.checked)}
           />
-          <span>테스트 의심 결과 숨기기</span>
+          <span>점검용 결과 숨기기</span>
         </label>
         <button
           className="ghost-button admin-filter-reset"
@@ -747,7 +754,7 @@ export function AdminPage() {
         </button>
       </div>
 
-      {resultsError && <p className="admin-message warning">{resultsError}</p>}
+      {resultsError && <p className="admin-message warning" role="alert">{resultsError}</p>}
 
       <section className="admin-card admin-analysis-card">
         <div className="admin-card-heading">
@@ -771,7 +778,7 @@ export function AdminPage() {
           <div>
             <span>평균 답변 수</span>
             <strong>{formatAverage(analysis.averageAnsweredCount)}</strong>
-            <p>저장된 답변 배열 기준</p>
+            <p>응답한 문항 기준</p>
           </div>
         </div>
         <div className="admin-score-bars">
@@ -792,8 +799,8 @@ export function AdminPage() {
         <div className="admin-card-heading">
           <div>
             <p className="section-kicker">운영 정리</p>
-            <h2>센터명 정리 보조</h2>
-            <p>공백, 대소문자, 특수문자 차이만 있는 센터명을 감지해요. 실제 데이터는 수정하지 않아요.</p>
+            <h2>비슷한 센터명 찾기</h2>
+            <p>띄어쓰기나 표기 차이가 있는 센터명을 찾아요. 실제 데이터는 바꾸지 않아요.</p>
           </div>
         </div>
         <div className="admin-similar-center-list">
@@ -812,7 +819,7 @@ export function AdminPage() {
               </div>
             </article>
           ))}
-          {similarCenterGroups.length === 0 && <p className="admin-empty">현재 감지된 유사 센터명 그룹이 없어요.</p>}
+          {similarCenterGroups.length === 0 && <p className="admin-empty">현재 찾은 비슷한 센터명이 없어요.</p>}
         </div>
       </section>
 
@@ -821,7 +828,12 @@ export function AdminPage() {
           <h2>센터별 검사 수</h2>
           <div className="admin-rank-list">
             {summary.byCenter.map((center) => (
-              <button key={center.centerKey} type="button" onClick={() => setCenterFilter(center.centerKey)}>
+              <button
+                key={center.centerKey}
+                type="button"
+                aria-pressed={centerFilter === center.centerKey}
+                onClick={() => setCenterFilter(center.centerKey)}
+              >
                 <span>{center.centerName}</span>
                 <strong>{center.count}</strong>
               </button>
@@ -850,7 +862,7 @@ export function AdminPage() {
             <p>
               {paginatedResults.totalResults === 0
                 ? '조건에 맞는 결과가 없어요.'
-                : `${visibleStart}-${visibleEnd} / 총 ${paginatedResults.totalResults}건 · CSV/PDF는 현재 필터 전체 기준이에요.`}
+                : `${visibleStart}-${visibleEnd} / 총 ${paginatedResults.totalResults}건 · CSV와 PDF에는 현재 필터가 적용된 전체 결과가 포함돼요.`}
             </p>
           </div>
         </div>
@@ -858,28 +870,37 @@ export function AdminPage() {
           <table>
             <thead>
               <tr>
-                <th>저장일</th>
-                <th>이름</th>
-                <th>센터</th>
-                <th>대표 직업</th>
-                <th>소요</th>
-                <th>요약</th>
-                <th>상세</th>
+                <th scope="col">저장일</th>
+                <th scope="col">이름</th>
+                <th scope="col">센터</th>
+                <th scope="col">대표 직업</th>
+                <th scope="col">소요</th>
+                <th scope="col">요약</th>
+                <th scope="col">상세</th>
               </tr>
             </thead>
             <tbody>
               {paginatedResults.pageResults.map((result) => (
                 <tr key={result.id}>
-                  <td>{formatDate(result.createdAt)}</td>
-                  <td>
+                  <td data-label="저장일">{formatDate(result.createdAt)}</td>
+                  <td data-label="이름">
                     <span className="admin-table-primary">{result.participantName ?? '이름 없음'}</span>
-                    {isSuspectedTestResult(result) && <span className="admin-test-badge">테스트 의심</span>}
+                    {isSuspectedTestResult(result) && <span className="admin-test-badge">점검용 결과</span>}
+                    <button
+                      className="admin-detail-button admin-mobile-detail-button"
+                      type="button"
+                      onClick={() => setSelectedResult(result)}
+                      aria-label={`${result.participantName ?? '이름 없는 검사'} 결과 보기`}
+                    >
+                      <Eye size={16} />
+                      결과 보기
+                    </button>
                   </td>
-                  <td>{result.centerName ?? '센터 없음'}</td>
-                  <td>{getCareerName(result.topCareer)}</td>
-                  <td>{formatDuration(getResultDurationMinutes(result))}</td>
-                  <td>{result.resultSummary}</td>
-                  <td>
+                  <td data-label="센터">{result.centerName ?? '센터 없음'}</td>
+                  <td data-label="대표 직업">{getCareerName(result.topCareer)}</td>
+                  <td data-label="소요">{formatDuration(getResultDurationMinutes(result))}</td>
+                  <td data-label="요약">{result.resultSummary}</td>
+                  <td data-label="상세">
                     <button className="admin-detail-button" type="button" onClick={() => setSelectedResult(result)}>
                       <Eye size={16} />
                       결과 보기
@@ -922,6 +943,9 @@ export function AdminPage() {
 }
 
 function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResultRecord; onClose: () => void }) {
+  const modalOverlayRef = useRef<HTMLDivElement | null>(null);
+  const modalDialogRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [areAnswersExpanded, setAreAnswersExpanded] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const answerDetails = result.answers.map(getAnswerDetail);
@@ -934,16 +958,12 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
     .filter(Boolean);
   const visibleAnswers = areAnswersExpanded ? answerDetails : answerDetails.slice(0, 8);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useModalFocusTrap({
+    dialogRef: modalDialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose,
+    overlayRef: modalOverlayRef,
+  });
 
   const copySummary = async () => {
     const text = [
@@ -963,12 +983,14 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
   };
 
   return (
-    <div className="admin-modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div className="admin-modal-backdrop" role="presentation" onMouseDown={onClose} ref={modalOverlayRef}>
       <section
         aria-modal="true"
         aria-labelledby="admin-result-detail-title"
         className="admin-result-modal"
+        ref={modalDialogRef}
         role="dialog"
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="admin-modal-heading">
@@ -977,7 +999,7 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
             <h2 id="admin-result-detail-title">{result.participantName ?? '이름 없는 검사'} 결과</h2>
             <p>{result.centerName ?? '센터 없음'} · {formatDate(result.createdAt)}</p>
           </div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="상세 결과 닫기">
+          <button className="icon-button" type="button" onClick={onClose} aria-label="상세 결과 닫기" ref={closeButtonRef}>
             <X size={20} />
           </button>
         </div>
@@ -1000,12 +1022,8 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
             <strong>{formatDuration(getResultDurationMinutes(result))}</strong>
           </div>
           <div>
-            <span>센터 입력</span>
+            <span>센터 입력 방식</span>
             <strong>{getSourceLabel(result.centerSource)}</strong>
-          </div>
-          <div>
-            <span>문서 ID</span>
-            <strong>{result.id}</strong>
           </div>
         </div>
 
@@ -1028,8 +1046,8 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
               ))}
             </div>
           )}
-          {copyStatus === 'success' && <p className="admin-copy-status">요약을 복사했어요.</p>}
-          {copyStatus === 'failed' && <p className="admin-copy-status warning">복사하지 못했어요. 브라우저 권한을 확인해주세요.</p>}
+          {copyStatus === 'success' && <p className="admin-copy-status" role="status">요약을 복사했어요.</p>}
+          {copyStatus === 'failed' && <p className="admin-copy-status warning" role="alert">복사하지 못했어요. 브라우저 권한을 확인해 주세요.</p>}
         </section>
 
         <section className="admin-detail-section">
@@ -1102,7 +1120,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
           <span>적용 센터 필터: {activeCenterLabel}</span>
           <span>적용 날짜 필터: {dateRangeLabel}</span>
           <span>검색어: {searchTerm.trim() || '없음'}</span>
-          <span>테스트 의심 결과: {hideTestResults ? '제외' : '포함'}</span>
+          <span>점검용 결과: {hideTestResults ? '제외' : '포함'}</span>
           <span>정렬: {sortLabel}</span>
           <span>{filterMemo}</span>
         </div>
@@ -1133,7 +1151,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
             <li>가장 많은 대표 직업: {analysis.topCareer ? `${analysis.topCareer.careerName} (${analysis.topCareer.count}건)` : '데이터 없음'}</li>
             <li>평균 답변 수: {formatAverage(analysis.averageAnsweredCount)}개</li>
             <li>
-              상위 점수 평균:{' '}
+              평균 점수가 높은 유형:{' '}
               {analysis.scoreAverages.length > 0
                 ? analysis.scoreAverages
                     .slice(0, 3)
@@ -1166,7 +1184,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
         </div>
 
         <section>
-          <h2>센터명 유사 그룹</h2>
+          <h2>비슷한 센터명</h2>
           {similarCenterGroups.slice(0, 5).map((group) => (
             <div className="admin-report-row" key={group.normalizedKey}>
               <span>
@@ -1175,7 +1193,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
               <strong>{group.totalCount}</strong>
             </div>
           ))}
-          {similarCenterGroups.length === 0 && <p>감지된 유사 센터명 그룹이 없습니다.</p>}
+          {similarCenterGroups.length === 0 && <p>찾은 비슷한 센터명이 없습니다.</p>}
         </section>
 
         <section>

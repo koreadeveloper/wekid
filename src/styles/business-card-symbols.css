@@ -1,0 +1,46 @@
+.job-theme-symbol,
+.card-job-symbol {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.job-theme-symbol {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  color: var(--duo-blue-dark);
+  background: #ddf4ff;
+  box-shadow: inset 0 -2px 0 rgba(28, 176, 246, 0.18);
+}
+
+.job-theme-button.active .job-theme-symbol {
+  color: var(--duo-green-dark);
+  background: #ffffff;
+  box-shadow: inset 0 -2px 0 rgba(70, 163, 2, 0.18);
+}
+
+.card-job-symbol {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--duo-green);
+  box-shadow: 0 2px 0 var(--duo-green-dark);
+}
+
+.card-job-symbol svg {
+  width: 14px;
+  height: 14px;
+}
+
+.business-card-back.print .card-job-symbol {
+  width: 12pt;
+  height: 12pt;
+  border-radius: 4pt;
+}
+
+.business-card-back.print .card-job-symbol svg {
+  width: 7pt;
+  height: 7pt;
+}

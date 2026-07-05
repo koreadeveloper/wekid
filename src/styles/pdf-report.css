@@ -10,11 +10,19 @@
 .pdf-report {
   box-sizing: border-box;
   width: 794px;
-  height: 1123px;
+  min-height: 1123px;
   padding: 54px;
   color: #202f18;
   background: linear-gradient(180deg, #f3ffed 0%, #ffffff 58%);
   font-family: inherit;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.pdf-report :where(h2, h3, h4, p, strong, span, li) {
+  text-wrap: pretty;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .pdf-report-header {
@@ -83,6 +91,7 @@
 
 .pdf-main-card span {
   display: block;
+  max-width: 60ch;
   margin-top: 12px;
   font-size: 17px;
   font-weight: 900;
@@ -140,7 +149,7 @@
 
 .pdf-mini-list li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   color: #33422e;

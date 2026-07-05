@@ -7,8 +7,18 @@
     "dev": "vite --host 0.0.0.0",
     "test": "vitest run",
     "check:data": "node scripts/validate-data.mjs",
+    "check:start-page": "node scripts/verify-start-page.mjs",
+    "check:result-ui": "node scripts/verify-result-ui.mjs",
+    "check:result-export-feedback": "node scripts/verify-result-export-feedback.mjs",
+    "check:admin-ui": "node scripts/verify-admin-ui-a11y.mjs",
+    "check:career-flow-a11y": "node scripts/verify-career-flow-a11y.mjs",
+    "check:touch-contrast": "node scripts/verify-touch-contrast.mjs",
+    "check:job-picker-layout": "node scripts/verify-job-picker-layout.mjs",
     "check:business-card": "node scripts/verify-business-card.mjs",
-    "build": "npm run check:data && npm run check:business-card && tsc && vite build",
+    "check:business-card-photo": "node scripts/verify-business-card-photo-controls.mjs",
+    "check:business-card-layout": "node scripts/verify-business-card-layout.mjs",
+    "check:business-card-back-layout": "node scripts/verify-business-card-back-layout.mjs",
+    "build": "npm run check:data && npm run check:start-page && npm run check:result-ui && npm run check:result-export-feedback && npm run check:admin-ui && npm run check:career-flow-a11y && npm run check:touch-contrast && npm run check:job-picker-layout && npm run check:business-card && npm run check:business-card-photo && npm run check:business-card-layout && npm run check:business-card-back-layout && tsc && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
@@ -24,6 +34,10 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "playwright": "^1.61.1",
+    "react-doctor": "^0.7.1",
+    "react-grab": "^0.1.48",
+    "react-scan": "^0.5.7",
     "typescript": "^5.9.3",
     "vitest": "^4.1.9"
   }

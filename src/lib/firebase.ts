@@ -1,6 +1,4 @@
 import { getApp, getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
 
 export const firebaseEnvKeys = [
   'VITE_FIREBASE_API_KEY',
@@ -69,21 +67,15 @@ function warnIfFirebaseIsMissing(status: FirebaseConfigStatus) {
 export const firebaseConfigStatus = createFirebaseConfigFromEnv(import.meta.env as FirebaseEnv);
 
 let initializedApp: FirebaseApp | null = null;
-let initializedFirestore: Firestore | null = null;
-let initializedAuth: Auth | null = null;
 
 if (firebaseConfigStatus.configured) {
   try {
     initializedApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfigStatus.config);
-    initializedFirestore = getFirestore(initializedApp);
-    initializedAuth = getAuth(initializedApp);
   } catch (error) {
     initializedApp = null;
-    initializedFirestore = null;
-    initializedAuth = null;
 
     if (import.meta.env.DEV && typeof window !== 'undefined') {
-      console.warn('[Firebase] Firebase initialization failed. Firestore/Auth features are disabled.', error);
+      console.warn('[Firebase] Firebase app initialization failed. Firebase features are disabled.', error);
     }
   }
 } else {
@@ -91,6 +83,4 @@ if (firebaseConfigStatus.configured) {
 }
 
 export const firebaseApp = initializedApp;
-export const firestore = initializedFirestore;
-export const auth = initializedAuth;
-export const isFirebaseConfigured = Boolean(firebaseApp && firestore && auth);
+export const isFirebaseConfigured = Boolean(firebaseApp);

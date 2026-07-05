@@ -1,6 +1,6 @@
 import { addDoc, collection, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { createCenterKey, normalizeCenterName } from './centerContext';
-import { firestore } from './firebase';
+import { firestore } from './firebaseFirestore';
 import type { TestResultDocument, TestResultDraft } from '../types/firestore';
 
 export type SaveTestResultResult =

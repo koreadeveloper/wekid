@@ -11,21 +11,20 @@ import { ResultActions } from './components/ResultActions';
 import { ResultHero } from './components/ResultHero';
 import { WhyPanel } from './components/WhyPanel';
 
-type ResultPageProps = {
+export type ResultPageProps = {
   careerMatches: CareerMatches;
+  focusRequest: number;
   highlightedCareers: Set<string>;
   profile: CareerProfile;
-  resultSaveStatus:
-    | { status: 'idle' | 'saving' }
-    | { status: 'saved'; resultId: string }
-    | { status: 'skipped'; reason: 'firebase-not-configured' }
-    | { status: 'failed'; error: unknown };
+  resultSaveErrorMessage: string | null;
   scores: ScoreMap;
   userName: string;
   hasCareerDetail: (careerName: string) => boolean;
   onCareerSelect: (careerName: string) => void;
+  onCreateBusinessCard: (careerName: string) => void;
   onEditLastAnswer: () => void;
   onReset: () => void;
+  onRetryResultSave: () => void;
 };
 
 const sanitizeFileNamePart = (value: string) => value.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
@@ -42,24 +41,29 @@ const getPdfFileName = (userName: string, careerName: string) => {
 
 export function ResultPage({
   careerMatches,
+  focusRequest,
   highlightedCareers,
   profile,
-  resultSaveStatus,
+  resultSaveErrorMessage,
   scores,
   userName,
   hasCareerDetail,
   onCareerSelect,
+  onCreateBusinessCard,
   onEditLastAnswer,
   onReset,
+  onRetryResultSave,
 }: ResultPageProps) {
   const pdfReportRef = useRef<HTMLDivElement>(null);
   const [isPdfSaving, setIsPdfSaving] = useState(false);
+  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(null);
 
   const handleSavePdf = async () => {
     if (!pdfReportRef.current) {
       return;
     }
 
+    setExportErrorMessage(null);
     setIsPdfSaving(true);
     try {
       await document.fonts?.ready;
@@ -68,12 +72,34 @@ export function ResultPage({
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
+        windowWidth: pdfReportRef.current.scrollWidth,
       });
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+      const imageData = canvas.toDataURL('image/png');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const naturalImageHeight = (canvas.height * pageWidth) / canvas.width;
+      const pageOverflowTolerance = 8;
+      const imageHeight =
+        naturalImageHeight > pageHeight && naturalImageHeight - pageHeight <= pageOverflowTolerance
+          ? pageHeight
+          : naturalImageHeight;
+      let remainingHeight = imageHeight;
+      let position = 0;
+
+      pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
+      remainingHeight -= pageHeight;
+
+      while (remainingHeight > pageOverflowTolerance) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
+        remainingHeight -= pageHeight;
+      }
+
       pdf.save(getPdfFileName(userName, profile.topCareer.name));
     } catch {
-      alert('PDF 결과지를 만들지 못했어요. 다시 시도해 주세요.');
+      setExportErrorMessage('PDF 결과지를 만들지 못했어요. 다시 시도해 주세요.');
     } finally {
       setIsPdfSaving(false);
     }
@@ -83,13 +109,26 @@ export function ResultPage({
     <section className="result-layout">
       <ResultHero
         profile={profile}
+        focusRequest={focusRequest}
         userName={userName}
         hasCareerDetail={hasCareerDetail}
         onCareerSelect={onCareerSelect}
+        onCreateBusinessCard={onCreateBusinessCard}
         onSavePdf={handleSavePdf}
         isPdfSaving={isPdfSaving}
+        exportErrorMessage={exportErrorMessage}
+        onClearExportError={() => setExportErrorMessage(null)}
+        onExportError={setExportErrorMessage}
       />
-      <ResultSaveNotice resultSaveStatus={resultSaveStatus} />
+      {resultSaveErrorMessage && (
+        <div className="result-save-notice warning" role="status" aria-live="polite" aria-atomic="true">
+          <p>{resultSaveErrorMessage}</p>
+          <button type="button" onClick={onRetryResultSave}>
+            다시 시도
+          </button>
+        </div>
+      )}
+      <ResultActions onEditLastAnswer={onEditLastAnswer} onReset={onReset} />
       <WhyPanel profile={profile} />
       <InsightPanels axisLabels={axisLabels} profile={profile} scores={scores} />
       <CareerRecommendations
@@ -108,7 +147,6 @@ export function ResultPage({
         hasCareerDetail={hasCareerDetail}
         onCareerSelect={onCareerSelect}
       />
-      <ResultActions onEditLastAnswer={onEditLastAnswer} onReset={onReset} />
       <PdfResultReport
         ref={pdfReportRef}
         careerMatches={careerMatches}
@@ -118,24 +156,4 @@ export function ResultPage({
       />
     </section>
   );
-}
-
-function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSaveStatus'>) {
-  if (resultSaveStatus.status === 'idle') {
-    return null;
-  }
-
-  if (resultSaveStatus.status === 'saving') {
-    return <p className="result-save-notice">결과를 안전하게 저장하는 중이에요.</p>;
-  }
-
-  if (resultSaveStatus.status === 'saved') {
-    return <p className="result-save-notice success">결과가 저장됐어요.</p>;
-  }
-
-  if (resultSaveStatus.status === 'skipped') {
-    return <p className="result-save-notice muted">Firebase 연결 전이라 이 결과는 이 기기에서만 확인돼요.</p>;
-  }
-
-  return <p className="result-save-notice warning">결과 저장에 실패했어요. 화면은 계속 사용할 수 있어요.</p>;
 }

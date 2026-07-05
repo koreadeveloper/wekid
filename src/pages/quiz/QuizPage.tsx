@@ -1,5 +1,5 @@
 import { questions } from '../../data/questions';
-import type { ChoiceKey, Question } from '../../types/career';
+import type { ChoiceKey, FocusHandoffOptions, Question } from '../../types/career';
 import { QuestionPanel } from './components/QuestionPanel';
 import { QuizIntro } from './components/QuizIntro';
 
@@ -8,10 +8,11 @@ type QuizPageProps = {
   currentAnswer?: ChoiceKey;
   currentIndex: number;
   currentQuestion: Question;
+  focusRequest: number;
   isAdvancing: boolean;
   progress: number;
   userName: string;
-  onChooseAnswer: (choice: ChoiceKey) => void;
+  onChooseAnswer: (choice: ChoiceKey, options?: FocusHandoffOptions) => void;
   onPrevious: () => void;
 };
 
@@ -20,6 +21,7 @@ export function QuizPage({
   currentAnswer,
   currentIndex,
   currentQuestion,
+  focusRequest,
   isAdvancing,
   progress,
   userName,
@@ -28,17 +30,18 @@ export function QuizPage({
 }: QuizPageProps) {
   return (
     <section className="quiz-layout">
-      <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} userName={userName} />
       <QuestionPanel
         answeredCount={answeredCount}
         currentAnswer={currentAnswer}
         currentIndex={currentIndex}
         currentQuestion={currentQuestion}
+        focusRequest={focusRequest}
         isAdvancing={isAdvancing}
         questions={questions}
         onChooseAnswer={onChooseAnswer}
         onPrevious={onPrevious}
       />
+      <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} userName={userName} />
     </section>
   );
 }

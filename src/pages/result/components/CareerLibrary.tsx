@@ -19,6 +19,7 @@ const PREVIEW_CATEGORY_COUNT = 4;
 const PREVIEW_CAREER_COUNT = 10;
 
 export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail, onCareerSelect }: CareerLibraryProps) {
+  const libraryGridId = 'career-library-grid';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategoryTitle, setActiveCategoryTitle] = useState('all');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -56,6 +57,7 @@ export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail,
           type="button"
           onClick={() => setIsExpanded((current) => !current)}
           aria-expanded={isExpanded}
+          aria-controls={libraryGridId}
         >
           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           {isExpanded ? '접기' : '펼치기'}
@@ -69,16 +71,20 @@ export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail,
             type="search"
             value={searchTerm}
             placeholder="직업 검색"
+            aria-label="직업 검색"
+            aria-controls={libraryGridId}
             onChange={(event) => {
               setSearchTerm(event.target.value);
               setIsExpanded(true);
             }}
           />
         </label>
-        <div className="library-category-filter" aria-label="직업 카테고리">
+        <div className="library-category-filter" role="group" aria-label="직업 카테고리">
           <button
             className={`library-filter-button ${activeCategoryTitle === 'all' ? 'active' : ''}`}
             type="button"
+            aria-controls={libraryGridId}
+            aria-pressed={activeCategoryTitle === 'all'}
             onClick={() => {
               setActiveCategoryTitle('all');
               setIsExpanded(false);
@@ -91,6 +97,8 @@ export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail,
               className={`library-filter-button ${activeCategoryTitle === category.title ? 'active' : ''}`}
               key={category.title}
               type="button"
+              aria-controls={libraryGridId}
+              aria-pressed={activeCategoryTitle === category.title}
               onClick={() => {
                 setActiveCategoryTitle(category.title);
                 setIsExpanded(true);
@@ -102,7 +110,7 @@ export function CareerLibrary({ categories, highlightedCareers, hasCareerDetail,
         </div>
       </div>
 
-      <div className="category-grid">
+      <div className="category-grid" id={libraryGridId}>
         {visibleCategories.map((category) => {
           const Icon = category.icon;
           const visibleCareers =

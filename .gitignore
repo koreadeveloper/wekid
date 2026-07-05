@@ -11,6 +11,10 @@ dist/
 dev-server*.log
 *.log
 
+# Local agent and visual QA evidence
+.omo/
+audits/
+
 # Office temporary lock files
 ~$*.docx
 

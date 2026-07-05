@@ -57,7 +57,7 @@ export const PdfResultReport = forwardRef<HTMLDivElement, PdfResultReportProps>(
             </div>
           </div>
           <div className="pdf-box">
-            <h4>선택에서 보인 모습</h4>
+            <h4>내 답변에서 보인 모습</h4>
             <ul className="pdf-mini-list">
               {axisOrder.map((axis) => {
                 const axisInfo = axisLabels[axis];

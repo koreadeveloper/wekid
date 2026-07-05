@@ -1,6 +1,7 @@
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import type { Auth, User } from 'firebase/auth';
-import { auth, firestore } from './firebase';
+import { auth } from './firebaseAuth';
+import { firestore } from './firebaseFirestore';
 import type { AdminDocument, AdminProfile } from '../types/firestore';
 
 export type AdminProfileResult =

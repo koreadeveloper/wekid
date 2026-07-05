@@ -10,7 +10,7 @@ export function CareerRecommendations({ careers, hasCareerDetail, onCareerSelect
   return (
     <section className="career-section">
       <div className="section-heading">
-        <p className="section-kicker">함께 잘 맞는 직업</p>
+        <p className="section-kicker">같이 보면 좋은 직업</p>
         <h2>추천 직업과 이유</h2>
       </div>
       <div className="career-grid primary career-reason-grid">
@@ -22,6 +22,7 @@ export function CareerRecommendations({ careers, hasCareerDetail, onCareerSelect
               key={career.name}
               type="button"
               onClick={() => hasDetail && onCareerSelect(career.name)}
+              aria-label={hasDetail ? `${career.name} 자세히 보기` : undefined}
               disabled={!hasDetail}
             >
               <span>{String(index + 1).padStart(2, '0')}</span>

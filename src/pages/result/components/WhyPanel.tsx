@@ -1,14 +1,13 @@
 import { Brain } from 'lucide-react';
+import { getReadableKoreanLines } from '../../../lib/readableKoreanLines';
 import type { CareerProfile } from '../../../types/career';
 
 type WhyPanelProps = {
   profile: CareerProfile;
 };
 
-const getSentenceLines = (text: string) => text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((line) => line.trim()) ?? [text];
-
 export function WhyPanel({ profile }: WhyPanelProps) {
-  const reasonLines = getSentenceLines(`${profile.summary} ${profile.topCareer.reason}`);
+  const reasonLines = getReadableKoreanLines(`${profile.summary} ${profile.topCareer.reason}`);
 
   return (
     <section className="why-panel">

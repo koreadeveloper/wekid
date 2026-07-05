@@ -28,7 +28,7 @@ export function InsightPanels({ axisLabels, profile, scores }: InsightPanelsProp
       <div className="insight-panel">
         <div className="panel-title">
           <Compass size={20} />
-          <h2>선택에서 보인 모습</h2>
+          <h2>내 답변에서 보인 모습</h2>
         </div>
         <div className="hint-list">
           {(Object.keys(axisLabels) as ExplorationAxis[]).map((axis) => {

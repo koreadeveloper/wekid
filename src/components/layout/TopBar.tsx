@@ -1,20 +1,23 @@
-import { Compass, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import { ResetConfirmButton } from './ResetConfirmButton';
+import type { AppMode } from '../../lib/appMode';
 
-type AppMode = 'career' | 'business-card' | 'admin';
+const SITE_LOGO_URL = '/brand/wekid-site-logo.png';
 
 type TopBarProps = {
   mode: AppMode;
+  showReset: boolean;
   totalCareerCount: number;
   onModeChange: (mode: AppMode) => void;
   onReset: () => void;
 };
 
-export function TopBar({ mode, totalCareerCount, onModeChange, onReset }: TopBarProps) {
+export function TopBar({ mode, showReset, totalCareerCount, onModeChange, onReset }: TopBarProps) {
   return (
     <section className="topbar" aria-label="상단 정보">
       <div className="brand">
-        <div className="brand-mark">
-          <Compass size={22} />
+        <div className="brand-mark" aria-hidden="true">
+          <img className="brand-logo" src={SITE_LOGO_URL} alt="" />
         </div>
         <div>
           <strong>위키드 직업 탐험</strong>
@@ -22,7 +25,7 @@ export function TopBar({ mode, totalCareerCount, onModeChange, onReset }: TopBar
         </div>
       </div>
       <div className="topbar-actions">
-        <div className="mode-switch" aria-label="화면 선택">
+        <div className={`mode-switch ${mode === 'admin' ? 'with-admin' : ''}`} role="group" aria-label="화면 선택">
           <button
             className={`mode-button ${mode === 'career' ? 'active' : ''}`}
             type="button"
@@ -39,19 +42,23 @@ export function TopBar({ mode, totalCareerCount, onModeChange, onReset }: TopBar
           >
             명함 제작
           </button>
-          <button
-            className={`mode-button ${mode === 'admin' ? 'active' : ''}`}
-            type="button"
-            onClick={() => onModeChange('admin')}
-            aria-pressed={mode === 'admin'}
-          >
-            관리자
-          </button>
+          {mode === 'admin' && (
+            <button
+              className="mode-button active"
+              type="button"
+              onClick={() => onModeChange('admin')}
+              aria-pressed="true"
+            >
+              센터 관리
+            </button>
+          )}
         </div>
         <span className="career-count">{totalCareerCount}+ 직업</span>
-        <button className="icon-button" type="button" onClick={onReset} aria-label="처음부터 다시 하기">
-          <RotateCcw size={19} />
-        </button>
+        {showReset && (
+          <ResetConfirmButton className="icon-button" onConfirm={onReset} ariaLabel="검사 처음부터 다시 하기">
+            <RotateCcw size={19} />
+          </ResetConfirmButton>
+        )}
       </div>
     </section>
   );

@@ -17,6 +17,9 @@ export type StyleKey = EnergyKey | InfoKey | DecisionKey | PaceKey;
 export type ChoiceKey = StyleKey | InterestKey;
 export type AnswerMap = Record<number, ChoiceKey>;
 export type ScoreMap = Record<ChoiceKey, number>;
+export type FocusHandoffOptions = {
+  readonly focusNextSurface?: boolean;
+};
 
 export type Question = {
   id: number;
