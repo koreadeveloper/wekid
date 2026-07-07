@@ -18,7 +18,8 @@
     "check:business-card-photo": "node scripts/verify-business-card-photo-controls.mjs",
     "check:business-card-layout": "node scripts/verify-business-card-layout.mjs",
     "check:business-card-back-layout": "node scripts/verify-business-card-back-layout.mjs",
-    "build": "npm run check:data && npm run check:start-page && npm run check:result-ui && npm run check:result-export-feedback && npm run check:admin-ui && npm run check:career-flow-a11y && npm run check:touch-contrast && npm run check:job-picker-layout && npm run check:business-card && npm run check:business-card-photo && npm run check:business-card-layout && npm run check:business-card-back-layout && tsc && vite build",
+    "verify": "npm run check:data && npm run check:start-page && npm run check:result-ui && npm run check:result-export-feedback && npm run check:admin-ui && npm run check:career-flow-a11y && npm run check:touch-contrast && npm run check:job-picker-layout && npm run check:business-card && npm run check:business-card-photo && npm run check:business-card-layout && npm run check:business-card-back-layout && npm test",
+    "build": "npm run check:data && tsc && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

@@ -101,14 +101,21 @@ Firebase가 설정되지 않아도 앱은 렌더링됩니다. 이 경우 결과 
 
 ## 검증 명령
 
-가장 중요한 전체 검증은 다음 명령입니다.
+배포용 빌드는 Playwright 브라우저 바이너리에 의존하지 않도록 가볍게 유지합니다.
 
 ```bash
 npm run build
-npm test
 ```
 
-`npm run build`는 아래 검증을 모두 실행한 뒤 TypeScript와 Vite 빌드를 수행합니다.
+`npm run build`는 데이터 정합성 검사, TypeScript 검사, Vite 빌드를 수행합니다.
+
+브라우저 기반 UI/인쇄 검증까지 포함한 전체 로컬 검증은 다음 명령입니다.
+
+```bash
+npm run verify
+```
+
+`npm run verify`는 아래 검증과 단위 테스트를 모두 실행합니다. Playwright 브라우저가 없는 환경에서는 먼저 `npx playwright install chromium`을 실행하세요.
 
 | 명령 | 확인 내용 |
 | --- | --- |
@@ -124,6 +131,7 @@ npm test
 | `npm run check:business-card-photo` | 사진 넣기/빼기 컨트롤 |
 | `npm run check:business-card-layout` | 앞면 이름/직업명 출력 레이아웃 |
 | `npm run check:business-card-back-layout` | 뒷면 이름/정보 출력 레이아웃 |
+| `npm test` | Vitest 단위 테스트 |
 
 ## 프로젝트 구조
 
@@ -161,4 +169,4 @@ Vite 정적 빌드 결과는 `dist/`에 생성됩니다.
 npm run build
 ```
 
-Vercel에서는 루트 프로젝트로 연결하면 `vite build` 결과를 배포할 수 있습니다.
+Vercel에서는 루트 프로젝트로 연결하면 `vite build` 결과를 배포할 수 있습니다. 브라우저 QA는 `npm run verify`로 로컬 또는 별도 CI에서 실행하고, Vercel production build에서는 Playwright 브라우저 다운로드가 필요하지 않도록 분리합니다.
