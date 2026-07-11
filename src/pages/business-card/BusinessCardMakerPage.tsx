@@ -28,35 +28,35 @@ const JOB_CARD_THEMES: JobCardTheme[] = [
     name: '경찰관',
     emoji: '👮',
     hint: '질서와 안전을 지키는 공공 전문가',
-    backgroundUrl: '/business-card-backgrounds/police.png',
+    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
   },
   {
     key: 'firefighter',
     name: '소방관',
     emoji: '🚒',
     hint: '위험한 순간 가장 먼저 달려가는 구조자',
-    backgroundUrl: '/business-card-backgrounds/firefighter.png',
+    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
   },
   {
     key: 'soccer',
     name: '축구선수',
     emoji: '⚽',
     hint: '경기장에서 팀과 함께 뛰는 운동 전문가',
-    backgroundUrl: '/business-card-backgrounds/soccer.png',
+    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
   },
   {
     key: 'director',
     name: '영화감독',
     emoji: '🎬',
     hint: '영상 이야기를 이끄는 연출가',
-    backgroundUrl: '/business-card-backgrounds/director.png',
+    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
   },
   {
     key: 'teacher',
     name: '선생님',
     emoji: '📚',
     hint: '배움의 길을 열어 주는 사람',
-    backgroundUrl: '/business-card-backgrounds/teacher.png',
+    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
   },
 ];
 
@@ -286,7 +286,6 @@ type BusinessCardPreviewProps = {
 function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }: BusinessCardPreviewProps) {
   const value = (text: string, fallback: string) => text.trim() || fallback;
   const name = value(data.name, '이름');
-  const englishName = value(data.englishName, 'WEKID DREAM');
   const job = value(data.job, '희망 직업');
   const school = value(data.school, '학교 / 소속');
   const phone = value(data.phone, '전화번호');
@@ -296,16 +295,13 @@ function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }
     return (
       <article className={`business-card-face business-card-front ${theme.key} ${variant}`} aria-label="명함 앞면">
         <img className="card-front-background" src={theme.backgroundUrl} alt="" />
-        <div className="card-front-name-layer">
-          <h3 className="card-name-overlay">{name}</h3>
-          <span className="card-english-overlay">{englishName}</span>
-        </div>
       </article>
     );
   }
 
   return (
     <article className={`business-card-face business-card-back ${variant}`} aria-label="명함 뒷면">
+      <span className="card-back-smile" aria-hidden="true" />
       <div className="card-photo-frame">
         {photoUrl ? (
           <img

@@ -8,6 +8,7 @@ const requiredFiles = [
   'public/business-card-backgrounds/soccer.png',
   'public/business-card-backgrounds/director.png',
   'public/business-card-backgrounds/teacher.png',
+  'public/business-card-backgrounds/community-partnership.png',
 ];
 const failures = [];
 
@@ -40,15 +41,17 @@ const requiredChecks = [
   [page.includes('jobSearch') && page.includes('filteredJobThemes'), 'page must support searching job themes'],
   [page.includes('selectJobTheme'), 'page must support selecting a job theme'],
   [page.includes('backgroundUrl'), 'job themes must point to baked background images'],
+  [page.match(/backgroundUrl: '\/business-card-backgrounds\/community-partnership\.png'/g)?.length === 5,
+    'every job theme must use the shared partnership front background'],
   [page.includes('card-front-background'), 'front card must render a baked background image'],
-  [page.includes('card-name-overlay'), 'front card must render the editable Korean name as an overlay'],
-  [page.includes('card-english-overlay'), 'front card must render the editable English name as an overlay'],
+  [!page.includes('card-front-name-layer'), 'front card must use the baked background image without a web overlay'],
   [!page.includes('<div className="card-brand-row">'), 'front card must not render WEKID as web overlay'],
   [!page.includes('className="card-job-pill"'), 'front card must not render job badge as web overlay'],
   [!page.includes('<p>나의 미래 명함</p>'), 'front card must remove the old future-card label'],
   [css.includes('.card-front-background'), 'CSS must position the baked background image'],
-  [css.includes('.card-name-overlay'), 'CSS must position the Korean name overlay'],
-  [css.includes('.card-english-overlay'), 'CSS must position the English name overlay'],
+  [css.includes('#ff7b70'), 'card back must include the coral edge accent'],
+  [css.includes('#ffc928'), 'card back must include the yellow sun accent'],
+  [css.includes('#2eb85c'), 'card back must include the green smile accent'],
 ];
 
 for (const [passes, message] of requiredChecks) {
