@@ -11,6 +11,7 @@ import {
   type BusinessCardPrefill,
 } from './pages/admin/AdminBusinessCardBridge';
 import { AdminPage } from './pages/admin/AdminPage';
+import { AdminBusinessCardMakerPage } from './pages/business-card/AdminBusinessCardMakerPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
@@ -269,14 +270,11 @@ function App() {
       {mode === 'admin' ? (
         <AdminPage onOwnerStatusChange={setCanUseBusinessCard} />
       ) : mode === 'business-card' ? (
-        <BusinessCardMakerPage
-          key={businessCardPrefill?.sourceId ?? 'manual-business-card'}
-          initialEmail={businessCardPrefill?.email ?? userEmail}
-          initialGoal={businessCardPrefill?.goal}
-          initialJob={businessCardPrefill?.job}
-          initialName={businessCardPrefill?.name ?? userName}
-          initialSchool={businessCardPrefill?.school}
-        />
+        businessCardPrefill ? (
+          <AdminBusinessCardMakerPage key={businessCardPrefill.sourceId} prefill={businessCardPrefill} />
+        ) : (
+          <BusinessCardMakerPage initialEmail={userEmail} initialName={userName} />
+        )
       ) : nameStep ? (
         <StartPage
           centerInput={centerInput}
