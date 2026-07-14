@@ -12,7 +12,7 @@ import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
 import { ResultPage } from './pages/result/ResultPage';
 import { StartPage } from './pages/start/StartPage';
-import type { AnswerMap, CareerDetail, ChoiceKey } from './types/career';
+import type { AnswerChoice, AnswerMap, CareerDetail } from './types/career';
 
 type AppMode = 'career' | 'business-card' | 'admin';
 
@@ -134,7 +134,7 @@ function App() {
     });
   }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName]);
 
-  const chooseAnswer = (choice: ChoiceKey) => {
+  const chooseAnswer = (choice: AnswerChoice) => {
     if (advancingRef.current) {
       return;
     }

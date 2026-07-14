@@ -79,7 +79,9 @@ export function getScores(answers: AnswerMap) {
   const scores: ScoreMap = { ...initialScores };
 
   Object.values(answers).forEach((choice) => {
-    scores[choice] += 1;
+    if (choice in scores) {
+      scores[choice as keyof ScoreMap] += 1;
+    }
   });
 
   return scores;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getCategoryRecommendations, getCategoryScores, initialScores } from './careerScoring';
-import type { ScoreMap } from '../types/career';
+import { getCategoryRecommendations, getCategoryScores, getScores, initialScores } from './careerScoring';
+import type { AnswerMap, ScoreMap } from '../types/career';
 
 const scoresWith = (values: Partial<ScoreMap>): ScoreMap => ({
   ...initialScores,
@@ -23,5 +23,13 @@ describe('balanced career recommendations', () => {
     expect(result).toHaveLength(3);
     expect(result.every((group) => group.careers.length > 0 && group.careers.length <= 2)).toBe(true);
     expect(new Set(result.map((group) => group.category)).size).toBe(3);
+  });
+
+  it('does not award an axis point for ambiguous or neither answers', () => {
+    const answers: AnswerMap = { 1: 'uncertain', 2: 'neither', 3: 'artistic' };
+    const scores = getScores(answers);
+
+    expect(scores.artistic).toBe(1);
+    expect(Object.values(scores).reduce((sum, score) => sum + score, 0)).toBe(1);
   });
 });

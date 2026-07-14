@@ -15,7 +15,9 @@ export type ExplorationAxis = 'energy' | 'information' | 'decision' | 'pace';
 export type QuestionAxis = ExplorationAxis | 'interest';
 export type StyleKey = EnergyKey | InfoKey | DecisionKey | PaceKey;
 export type ChoiceKey = StyleKey | InterestKey;
-export type AnswerMap = Record<number, ChoiceKey>;
+export type NeutralAnswerKey = 'uncertain' | 'neither';
+export type AnswerChoice = ChoiceKey | NeutralAnswerKey;
+export type AnswerMap = Record<number, AnswerChoice>;
 export type ScoreMap = Record<ChoiceKey, number>;
 
 export type Question = {

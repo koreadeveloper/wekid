@@ -32,7 +32,7 @@ export function QuizIntro({ answeredCount, totalQuestions, progress, userName }:
       <div className="intro-copy">
         <p className="section-kicker">{totalQuestions}문항</p>
         <h1>{userName ? `${userName}의 미래 직업 찾기` : '나에게 잘 맞는 미래 직업 찾기'}</h1>
-        <p>마음에 더 가까운 선택지를 고르면 마지막에 대표 추천 직업과 이유가 열립니다.</p>
+        <p>마음에 더 가까운 선택지를 골라보세요. 마지막에 나에게 잘 어울리는 직업과 그 이유를 알려드려요.</p>
       </div>
 
       <div className="progress-block">

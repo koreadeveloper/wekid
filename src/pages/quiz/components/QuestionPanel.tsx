@@ -1,14 +1,14 @@
 import { ArrowLeft, Check } from 'lucide-react';
-import type { ChoiceKey, Question } from '../../../types/career';
+import type { AnswerChoice, Question } from '../../../types/career';
 
 type QuestionPanelProps = {
   answeredCount: number;
-  currentAnswer?: ChoiceKey;
+  currentAnswer?: AnswerChoice;
   currentIndex: number;
   currentQuestion: Question;
   isAdvancing: boolean;
   questions: Question[];
-  onChooseAnswer: (choice: ChoiceKey) => void;
+  onChooseAnswer: (choice: AnswerChoice) => void;
   onPrevious: () => void;
 };
 
@@ -44,10 +44,28 @@ export function QuestionPanel({
               disabled={isAdvancing}
             >
               <span className="option-check">
-                {selected ? <Check size={18} /> : <span className="empty-dot" aria-hidden="true" />}
+                {selected ? <Check size={18} /> : null}
               </span>
               <strong>{option.label}</strong>
               <small>{option.helper}</small>
+            </button>
+          );
+        })}
+        {(['uncertain', 'neither'] as const).map((choice) => {
+          const selected = currentAnswer === choice;
+          const label = choice === 'uncertain' ? '둘 다 비슷해요' : '둘 다 아니에요';
+          return (
+            <button
+              className={`option-card option-card-neutral ${selected ? 'selected' : ''}`}
+              key={choice}
+              type="button"
+              onClick={() => onChooseAnswer(choice)}
+              aria-pressed={selected}
+              disabled={isAdvancing}
+            >
+              <span className="option-check">{selected ? <Check size={18} /> : null}</span>
+              <strong>{label}</strong>
+              <small>두 선택지와 내 마음이 크게 다를 때 골라요</small>
             </button>
           );
         })}

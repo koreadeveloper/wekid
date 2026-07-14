@@ -1,17 +1,17 @@
 import { questions } from '../../data/questions';
-import type { ChoiceKey, Question } from '../../types/career';
+import type { AnswerChoice, Question } from '../../types/career';
 import { QuestionPanel } from './components/QuestionPanel';
 import { QuizIntro } from './components/QuizIntro';
 
 type QuizPageProps = {
   answeredCount: number;
-  currentAnswer?: ChoiceKey;
+  currentAnswer?: AnswerChoice;
   currentIndex: number;
   currentQuestion: Question;
   isAdvancing: boolean;
   progress: number;
   userName: string;
-  onChooseAnswer: (choice: ChoiceKey) => void;
+  onChooseAnswer: (choice: AnswerChoice) => void;
   onPrevious: () => void;
 };
 
