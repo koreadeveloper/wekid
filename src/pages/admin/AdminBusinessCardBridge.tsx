@@ -84,7 +84,7 @@ export function AdminBusinessCardBridge({ enabled, onCreateBusinessCard }: Admin
 
         const cells = Array.from(row.cells);
         const result = results.find((candidate) => matchesRow(candidate, cells));
-        const actionCell = cells.at(-1);
+        const actionCell = cells[cells.length - 1];
 
         if (!result || !actionCell) {
           return;
