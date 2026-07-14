@@ -44,6 +44,13 @@ export type CareerProfile = {
   strengths: string[];
   missions: string[];
   interestHighlights?: string[];
+  categoryRecommendations: CategoryRecommendationGroup[];
+};
+
+export type CategoryRecommendationGroup = {
+  category: string;
+  score: number;
+  careers: ScoredCareer[];
 };
 
 export type CareerFit = {

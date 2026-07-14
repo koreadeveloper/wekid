@@ -1,24 +1,25 @@
-import { Compass, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 type AppMode = 'career' | 'business-card' | 'admin';
 
 type TopBarProps = {
   mode: AppMode;
   totalCareerCount: number;
+  canUseBusinessCard: boolean;
   onModeChange: (mode: AppMode) => void;
   onReset: () => void;
 };
 
-export function TopBar({ mode, totalCareerCount, onModeChange, onReset }: TopBarProps) {
+export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChange, onReset }: TopBarProps) {
   return (
     <section className="topbar" aria-label="상단 정보">
       <div className="brand">
         <div className="brand-mark">
-          <Compass size={22} />
+          <img src="/wekid-logo.png" alt="위키드 로고" />
         </div>
         <div>
           <strong>위키드 직업 탐험</strong>
-          <span>어린이 진로 추천 테스트</span>
+          <span>청소년 진로 직업 테스트</span>
         </div>
       </div>
       <div className="topbar-actions">
@@ -31,14 +32,14 @@ export function TopBar({ mode, totalCareerCount, onModeChange, onReset }: TopBar
           >
             진로 탐험
           </button>
-          <button
+          {canUseBusinessCard && <button
             className={`mode-button ${mode === 'business-card' ? 'active' : ''}`}
             type="button"
             onClick={() => onModeChange('business-card')}
             aria-pressed={mode === 'business-card'}
           >
             명함 제작
-          </button>
+          </button>}
           <button
             className={`mode-button ${mode === 'admin' ? 'active' : ''}`}
             type="button"

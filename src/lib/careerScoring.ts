@@ -1,4 +1,5 @@
 import { careerFits } from '../data/careerFits';
+import { careerCategories } from '../data/careerCategories';
 import { interestLabels } from '../data/interestLabels';
 import { questions } from '../data/questions';
 import type {
@@ -10,6 +11,7 @@ import type {
   ScoreMap,
   ScoredCareer,
   StyleKey,
+  CategoryRecommendationGroup,
 } from '../types/career';
 
 export const interestKeys: InterestKey[] = [
@@ -120,10 +122,46 @@ const scoreCareer = (scores: ScoreMap, careerNameOrder: number): ScoredCareer =>
   };
 };
 
-export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; matches: CareerMatches } {
-  const ranked = careerFits
+const scoredCareers = (scores: ScoreMap) =>
+  careerFits
     .map((_, index) => scoreCareer(scores, index))
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'ko'));
+
+export function getCategoryScores(scores: ScoreMap): Record<string, number> {
+  const ranked = scoredCareers(scores);
+
+  return Object.fromEntries(
+    careerCategories.map((category) => {
+      const categoryScores = ranked
+        .filter((career) => category.careers.includes(career.name))
+        .slice(0, 3)
+        .map((career) => career.score);
+      const normalized = categoryScores.length
+        ? categoryScores.reduce((sum, score) => sum + score, 0) / categoryScores.length
+        : 0;
+      return [category.title, normalized];
+    }),
+  );
+}
+
+export function getCategoryRecommendations(scores: ScoreMap): CategoryRecommendationGroup[] {
+  const ranked = scoredCareers(scores);
+  const categoryScores = getCategoryScores(scores);
+
+  return careerCategories
+    .map((category) => ({
+      category: category.title,
+      score: categoryScores[category.title] ?? 0,
+      careers: ranked
+        .filter((career) => category.careers.includes(career.name))
+        .slice(0, 2),
+    }))
+    .sort((a, b) => b.score - a.score || a.category.localeCompare(b.category, 'ko'))
+    .slice(0, 3);
+}
+
+export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; matches: CareerMatches } {
+  const ranked = scoredCareers(scores);
   const topCareer = ranked[0] ?? fallbackCareer;
   const topInterests = getTopInterests(scores);
   const mainInterest = topInterests[0];
@@ -149,6 +187,7 @@ export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; mat
       `${interestInfo.label}: ${interestInfo.keywords}`,
       `${interestLabels[topInterests[1]].label}: ${interestLabels[topInterests[1]].keywords}`,
     ],
+    categoryRecommendations: getCategoryRecommendations(scores),
   };
 
   return {

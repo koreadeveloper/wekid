@@ -24,6 +24,7 @@ type ResultSaveStatus =
 
 function App() {
   const [mode, setMode] = useState<AppMode>('career');
+  const [canUseBusinessCard, setCanUseBusinessCard] = useState(false);
   const initialUrlCenterName = useMemo(
     () => getCenterNameFromSearch(typeof window === 'undefined' ? '' : window.location.search),
     [],
@@ -233,9 +234,15 @@ function App() {
       {mode === 'career' && selectedCareer && (
         <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
       )}
-      <TopBar mode={mode} totalCareerCount={totalCareerCount} onModeChange={handleModeChange} onReset={reset} />
+      <TopBar
+        mode={mode}
+        totalCareerCount={totalCareerCount}
+        canUseBusinessCard={canUseBusinessCard}
+        onModeChange={handleModeChange}
+        onReset={reset}
+      />
       {mode === 'admin' ? (
-        <AdminPage />
+        <AdminPage onOwnerStatusChange={setCanUseBusinessCard} />
       ) : mode === 'business-card' ? (
         <BusinessCardMakerPage />
       ) : nameStep ? (

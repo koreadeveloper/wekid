@@ -94,6 +94,7 @@ export function ResultPage({
       <InsightPanels axisLabels={axisLabels} profile={profile} scores={scores} />
       <CareerRecommendations
         careers={careerMatches.primary}
+        categoryRecommendations={profile.categoryRecommendations}
         hasCareerDetail={hasCareerDetail}
         onCareerSelect={onCareerSelect}
       />

@@ -28,15 +28,17 @@ export function StartPage({
   return (
     <section className="name-step-layout">
       <div className="name-step-card">
-        <div className="name-step-emoji">🧭</div>
+        <div className="name-step-emoji">
+          <img src="/wekid-logo.png" alt="위키드 로고" />
+        </div>
         <p className="section-kicker">탐험 시작</p>
         <h1>
-          이름과 센터명을
+          나에게 맞는 미래 직업을
           <br />
-          알려주세요
+          찾아봐요
         </h1>
         <p className="name-step-sub">
-          검사를 마치면 이름, 센터명, 선택한 답변과 결과가 저장될 수 있어요. 센터명은 비워도 진행할 수 있어요.
+          몇 가지 질문에 답하면 나에게 어울리는 분야와 직업을 찾아드려요. 이름과 센터명은 선택이에요.
         </p>
         <input
           className="name-input"

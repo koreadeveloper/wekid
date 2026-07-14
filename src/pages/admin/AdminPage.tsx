@@ -295,7 +295,11 @@ function downloadCsv({
   URL.revokeObjectURL(url);
 }
 
-export function AdminPage() {
+type AdminPageProps = {
+  onOwnerStatusChange?: (isOwner: boolean) => void;
+};
+
+export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
   const initialAdminUiState = useMemo(readInitialAdminUiState, []);
   const [adminStatus, setAdminStatus] = useState<AdminStatus>(auth ? { status: 'checking' } : { status: 'firebase-missing' });
   const [email, setEmail] = useState('');
@@ -320,6 +324,7 @@ export function AdminPage() {
 
   const loadAdmin = async (user: User | null) => {
     if (!user) {
+      onOwnerStatusChange?.(false);
       setAdminStatus({ status: 'signed-out' });
       return;
     }
@@ -328,16 +333,19 @@ export function AdminPage() {
     const profile = await getAdminProfile(user.uid);
 
     if (!profile.ok) {
+      onOwnerStatusChange?.(false);
       setAdminStatus({ status: 'denied', message: '관리자 문서를 찾을 수 없어요.' });
       return;
     }
 
     if (!isOwnerAdmin(profile.admin)) {
+      onOwnerStatusChange?.(false);
       setAdminStatus({ status: 'denied', message: 'owner 권한이 있는 관리자만 볼 수 있어요.' });
       return;
     }
 
     setAdminStatus({ status: 'ready', admin: profile.admin });
+    onOwnerStatusChange?.(true);
   };
 
   const loadResults = async () => {
