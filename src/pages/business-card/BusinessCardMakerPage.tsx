@@ -11,6 +11,7 @@ type BusinessCardData = {
   job: string;
   school: string;
   phone: string;
+  email: string;
   goal: string;
 };
 
@@ -66,6 +67,7 @@ const defaultCardData: BusinessCardData = {
   job: JOB_CARD_THEMES[0].name,
   school: '위키드 초등학교',
   phone: '010-0000-0000',
+  email: 'dream@wekid.kr',
   goal: '사람들이 즐거운 순간을 만들고 싶어요.',
 };
 
@@ -78,7 +80,8 @@ const fields: Array<{
   { id: 'name', label: '이름', maxLength: 12, placeholder: '김위키드' },
   { id: 'englishName', label: '영문 이름', maxLength: 24, placeholder: 'KIM WEKID' },
   { id: 'school', label: '학교 / 소속', maxLength: 24, placeholder: '위키드 초등학교' },
-  { id: 'phone', label: '전화번호', maxLength: 18, placeholder: '010-0000-0000' },
+  { id: 'phone', label: '전화번호 (선택)', maxLength: 18, placeholder: '010-0000-0000' },
+  { id: 'email', label: '이메일 (선택)', maxLength: 36, placeholder: 'dream@wekid.kr' },
   { id: 'goal', label: '한 줄 목표', maxLength: 36, placeholder: '사람들이 즐거운 순간을 만들고 싶어요.' },
 ];
 
@@ -289,7 +292,8 @@ function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }
   const englishName = value(data.englishName, 'WEKID DREAMER');
   const job = value(data.job, '희망 직업');
   const school = value(data.school, '학교 / 소속');
-  const phone = value(data.phone, '전화번호');
+  const phoneText = data.phone.trim();
+  const emailText = data.email.trim();
   const goal = value(data.goal, '나의 목표를 적어보세요.');
 
   if (side === 'front') {
@@ -297,21 +301,20 @@ function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }
     const englishNameSize = englishName.length > 18 ? 'is-very-long' : englishName.length > 13 ? 'is-long' : '';
 
     return (
-      <article className={`business-card-face business-card-front ${theme.key} ${variant}`} aria-label="명함 앞면">
-        <img className="card-front-background" src={theme.backgroundUrl} alt="" />
-        {theme.key === 'police' ? (
-          <img
-            className="card-front-brand-lockup"
-            src="/business-card-backgrounds/wekid-dream-card-lockup.png"
-            alt="WEKID DREAM CARD"
-          />
-        ) : (
-          <img className="card-front-brand-mark" src="/wekid-logo.png" alt="위키드 로고" />
-        )}
-        <div className="card-front-name-layer" aria-label={`${name}의 ${job} 꿈 명함`}>
+      <article className={`business-card-face business-card-front ${variant}`} aria-label="명함 앞면">
+        <span className="card-front-topline" aria-hidden="true" />
+        <img className="card-front-center-logo" src="/goyang-volunteer-center.png" alt="고양시자원봉사센터" />
+        <div className="card-front-identity" aria-label={`${name}의 ${job} 꿈 명함`}>
           <strong className={nameSize}>{name}</strong>
           <span className={`card-front-english-name ${englishNameSize}`}>{englishName}</span>
+          <span className="card-front-job">{job}</span>
         </div>
+        <span className="card-front-divider" aria-hidden="true" />
+        <div className="card-front-contact">
+          {phoneText && <span>{phoneText}</span>}
+          {emailText && <span>{emailText}</span>}
+        </div>
+        <img className="card-front-wekid-mark" src="/wekid-logo.png" alt="위키드" />
       </article>
     );
   }
@@ -343,10 +346,12 @@ function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }
             <dt>소속</dt>
             <dd>{school}</dd>
           </div>
-          <div>
-            <dt>연락</dt>
-            <dd>{phone}</dd>
-          </div>
+          {(phoneText || emailText) && (
+            <div>
+              <dt>연락</dt>
+              <dd>{[phoneText, emailText].filter(Boolean).join(' · ')}</dd>
+            </div>
+          )}
           <div>
             <dt>목표</dt>
             <dd>{goal}</dd>
