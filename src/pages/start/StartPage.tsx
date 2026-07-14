@@ -75,7 +75,6 @@ export function StartPage({
         </label>
         <label className="center-input-wrap">
           <span>이메일 (선택)</span>
-          <small>적어 두면 꿈 명함에 자동으로 들어가요.</small>
           <input
             className="center-input"
             type="email"
