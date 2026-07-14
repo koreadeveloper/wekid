@@ -28,35 +28,35 @@ const JOB_CARD_THEMES: JobCardTheme[] = [
     name: '경찰관',
     emoji: '👮',
     hint: '질서와 안전을 지키는 공공 전문가',
-    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
+    backgroundUrl: '/business-card-backgrounds/police.png',
   },
   {
     key: 'firefighter',
     name: '소방관',
     emoji: '🚒',
     hint: '위험한 순간 가장 먼저 달려가는 구조자',
-    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
+    backgroundUrl: '/business-card-backgrounds/firefighter.png',
   },
   {
     key: 'soccer',
     name: '축구선수',
     emoji: '⚽',
     hint: '경기장에서 팀과 함께 뛰는 운동 전문가',
-    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
+    backgroundUrl: '/business-card-backgrounds/soccer.png',
   },
   {
     key: 'director',
     name: '영화감독',
     emoji: '🎬',
     hint: '영상 이야기를 이끄는 연출가',
-    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
+    backgroundUrl: '/business-card-backgrounds/director.png',
   },
   {
     key: 'teacher',
     name: '선생님',
     emoji: '📚',
     hint: '배움의 길을 열어 주는 사람',
-    backgroundUrl: '/business-card-backgrounds/community-partnership.png',
+    backgroundUrl: '/business-card-backgrounds/teacher.png',
   },
 ];
 
@@ -286,15 +286,32 @@ type BusinessCardPreviewProps = {
 function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }: BusinessCardPreviewProps) {
   const value = (text: string, fallback: string) => text.trim() || fallback;
   const name = value(data.name, '이름');
+  const englishName = value(data.englishName, 'WEKID DREAMER');
   const job = value(data.job, '희망 직업');
   const school = value(data.school, '학교 / 소속');
   const phone = value(data.phone, '전화번호');
   const goal = value(data.goal, '나의 목표를 적어보세요.');
 
   if (side === 'front') {
+    const nameSize = name.length > 9 ? 'is-very-long' : name.length > 6 ? 'is-long' : '';
+    const englishNameSize = englishName.length > 18 ? 'is-very-long' : englishName.length > 13 ? 'is-long' : '';
+
     return (
       <article className={`business-card-face business-card-front ${theme.key} ${variant}`} aria-label="명함 앞면">
         <img className="card-front-background" src={theme.backgroundUrl} alt="" />
+        {theme.key === 'police' ? (
+          <img
+            className="card-front-brand-lockup"
+            src="/business-card-backgrounds/wekid-dream-card-lockup.png"
+            alt="WEKID DREAM CARD"
+          />
+        ) : (
+          <img className="card-front-brand-mark" src="/wekid-logo.png" alt="위키드 로고" />
+        )}
+        <div className="card-front-name-layer" aria-label={`${name}의 ${job} 꿈 명함`}>
+          <strong className={nameSize}>{name}</strong>
+          <span className={`card-front-english-name ${englishNameSize}`}>{englishName}</span>
+        </div>
       </article>
     );
   }

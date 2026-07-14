@@ -258,12 +258,13 @@
   position: relative;
   display: flex;
   overflow: hidden;
-  width: min(100%, 450px);
-  aspect-ratio: 9 / 5;
+  width: min(100%, 570px);
+  aspect-ratio: 1672 / 929;
   border: 2px solid rgba(60, 60, 60, 0.16);
-  border-radius: 8px;
+  border-radius: 4.8%;
   color: var(--ink);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  container-type: inline-size;
 }
 
 .business-card-front {
@@ -279,6 +280,79 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.card-front-brand-mark {
+  position: absolute;
+  top: 9.8%;
+  left: 6.8%;
+  z-index: 1;
+  width: 8.2%;
+  height: auto;
+  border-radius: 19%;
+  filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 16, 75, 0.32));
+}
+
+.card-front-brand-lockup {
+  position: absolute;
+  top: 7%;
+  left: 4.8%;
+  z-index: 1;
+  width: 38.3%;
+  height: auto;
+}
+
+.card-front-name-layer {
+  position: absolute;
+  top: 42.8%;
+  left: 7.8%;
+  z-index: 1;
+  display: grid;
+  width: 36.5%;
+  gap: 3.3cqw;
+  color: #ffffff;
+  text-shadow: 0 0.35cqw 0.45cqw rgba(0, 18, 71, 0.82);
+}
+
+.card-front-name-layer strong,
+.card-front-english-name {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-front-name-layer strong {
+  font-size: 7.25cqw;
+  font-weight: 1000;
+  letter-spacing: -0.085em;
+  line-height: 0.98;
+}
+
+.card-front-name-layer strong.is-long {
+  font-size: 5.6cqw;
+}
+
+.card-front-name-layer strong.is-very-long {
+  font-size: 4.25cqw;
+}
+
+.card-front-english-name {
+  font-size: 2.85cqw;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.card-front-english-name.is-long {
+  font-size: 2.35cqw;
+  letter-spacing: 0.08em;
+}
+
+.card-front-english-name.is-very-long {
+  font-size: 1.9cqw;
+  letter-spacing: 0.04em;
 }
 
 .business-card-back {
@@ -488,7 +562,7 @@
   }
 
   .business-card-preview-grid {
-    grid-template-columns: minmax(0, 450px);
+    grid-template-columns: minmax(0, 570px);
     justify-content: center;
   }
 }
@@ -629,7 +703,7 @@
   }
 
   .business-card-front.print {
-    padding: 4.8mm;
+    padding: 0;
   }
 
   .business-card-back.print {
