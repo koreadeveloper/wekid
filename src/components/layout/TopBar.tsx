@@ -49,7 +49,7 @@ export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChang
             관리자
           </button>
         </div>
-        <span className="career-count">{totalCareerCount}+ 직업</span>
+        <span className="career-count">{totalCareerCount}개 직업</span>
         <button className="icon-button" type="button" onClick={onReset} aria-label="처음부터 다시 하기">
           <RotateCcw size={19} />
         </button>
