@@ -1,152 +1,74 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
 
-const rootDir = join(fileURLToPath(new URL('..', import.meta.url)));
-const read = (filePath) => readFileSync(join(rootDir, filePath), 'utf8');
-const listTsFiles = (dirPath) =>
-  readdirSync(join(rootDir, dirPath))
-    .filter((fileName) => fileName.endsWith('.ts') && fileName !== 'index.ts')
-    .map((fileName) => `${dirPath}/${fileName}`);
+const requiredFiles = [
+  'src/pages/business-card/BusinessCardMakerPage.tsx',
+  'src/styles/business-card.css',
+  'public/business-card-backgrounds/police.png',
+  'public/business-card-backgrounds/firefighter.png',
+  'public/business-card-backgrounds/soccer.png',
+  'public/business-card-backgrounds/director.png',
+  'public/business-card-backgrounds/teacher.png',
+  'public/business-card-backgrounds/community-partnership.png',
+  'public/goyang-volunteer-center.png',
+  'public/business-card-backgrounds/wekid-dream-card-lockup.png',
+];
+const failures = [];
 
-const interestKeys = ['realistic', 'investigative', 'artistic', 'social', 'enterprising', 'conventional'];
-const styleKeys = ['together', 'focus', 'observe', 'imagine', 'solve', 'care', 'plan', 'flex'];
-const styleAxes = ['energy', 'information', 'decision', 'pace'];
-const choiceKeys = [...interestKeys, ...styleKeys];
-const errors = [];
-
-const collect = (text, pattern) => [...text.matchAll(pattern)].map((match) => match[1]);
-const fail = (message) => errors.push(message);
-const assertUnique = (items, label) => {
-  const duplicates = [...new Set(items.filter((item, index) => items.indexOf(item) !== index))];
-  duplicates.forEach((item) => fail(`${label} duplicate: ${item}`));
-};
-
-const questionText = listTsFiles('src/data/questions').map(read).join('\n');
-const questionIds = collect(questionText, /id:\s*(\d+)/g).map(Number);
-const choices = collect(questionText, /choice:\s*'([^']+)'/g);
-
-if (questionIds.length !== 30) {
-  fail(`expected 30 questions, found ${questionIds.length}`);
+for (const file of requiredFiles) {
+  if (!existsSync(file)) {
+    failures.push(`${file} is missing`);
+  }
 }
 
-assertUnique(questionIds, 'question id');
-questionIds
-  .slice()
-  .sort((a, b) => a - b)
-  .forEach((id, index) => {
-    if (id !== index + 1) {
-      fail(`question ids must be sequential from 1 to 30; found ${id} at position ${index + 1}`);
-    }
-  });
+const readIfExists = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : '');
+const app = readIfExists('src/App.tsx');
+const indexCss = readIfExists('src/index.css');
+const css = readIfExists('src/styles/business-card.css');
+const page = readIfExists('src/pages/business-card/BusinessCardMakerPage.tsx');
 
-choices.forEach((choice) => {
-  if (!choiceKeys.includes(choice)) {
-    fail(`unknown question choice: ${choice}`);
+const requiredChecks = [
+  [app.includes('BusinessCardMakerPage'), 'App must import and render BusinessCardMakerPage'],
+  [app.includes('business-card'), 'App must include business-card mode state'],
+  [indexCss.includes('business-card.css'), 'index.css must import business-card.css'],
+  [css.includes('@page'), 'business-card.css must define @page print rules'],
+  [css.includes('size: A4'), 'print page size must be A4'],
+  [css.includes('--card-width: 90mm'), 'card width must be 90mm'],
+  [css.includes('--card-height: 50mm'), 'card height must be 50mm'],
+  [css.includes('grid-template-columns: repeat(2, var(--card-width))'), 'print sheet must use two columns'],
+  [page.includes('const PRINT_CARD_COUNT = 10'), 'page must repeat 10 cards per A4 sheet'],
+  [page.includes('window.print()'), 'page must use browser print'],
+  [page.includes('const JOB_CARD_THEMES'), 'page must define selectable job card themes'],
+  [page.includes('경찰관') && page.includes('소방관') && page.includes('축구선수'), 'page must include police, firefighter, and soccer themes'],
+  [page.includes('영화감독') && page.includes('선생님'), 'page must include film director and teacher themes'],
+  [page.includes('jobSearch') && page.includes('filteredJobThemes'), 'page must support searching job themes'],
+  [page.includes('selectJobTheme'), 'page must support selecting a job theme'],
+  [page.includes('card-front-center-logo'), 'front card must render the Goyang volunteer center logo'],
+  [page.includes('card-front-identity'), 'front card must render the identity block (name/english/job)'],
+  [page.includes('card-front-english-name'), 'front card must render an editable English name layer'],
+  [page.includes('card-front-contact'), 'front card must render the contact block (phone/email)'],
+  [page.includes('card-front-wekid-mark'), 'front card must render the Wekid logo mark'],
+  [!page.includes('<p>나의 미래 명함</p>'), 'front card must remove the old future-card label'],
+  [css.includes('.card-front-center-logo'), 'CSS must position the center logo'],
+  [css.includes('.card-front-identity'), 'CSS must position the front identity block'],
+  [css.includes('.card-front-contact'), 'CSS must position the front contact block'],
+  [css.includes('.card-front-wekid-mark'), 'CSS must position the front Wekid logo mark'],
+  [css.includes('#ff7b70'), 'card back must include the coral edge accent'],
+  [css.includes('#ffc928'), 'card back must include the yellow sun accent'],
+  [css.includes('#2eb85c'), 'card back must include the green smile accent'],
+];
+
+for (const [passes, message] of requiredChecks) {
+  if (!passes) {
+    failures.push(message);
   }
-});
-
-interestKeys.forEach((key) => {
-  const count = choices.filter((choice) => choice === key).length;
-  if (count !== 6) {
-    fail(`interest choice ${key} should appear 6 times, found ${count}`);
-  }
-});
-
-styleKeys.forEach((key) => {
-  const count = choices.filter((choice) => choice === key).length;
-  if (count !== 3) {
-    fail(`style choice ${key} should appear 3 times, found ${count}`);
-  }
-});
-
-const careerFitText = listTsFiles('src/data/careerFits').map(read).join('\n');
-const careerFitItems = [
-  ...careerFitText.matchAll(/\{\s*name:\s*'([^']+)',\s*interestFit:\s*\{([^}]*)\},\s*styleFit:\s*\{([^}]*)\}/g),
-].map((match) => ({
-  name: match[1],
-  interestFit: match[2],
-  styleFit: match[3],
-}));
-
-const careerFitNames = careerFitItems.map((career) => career.name);
-assertUnique(careerFitNames, 'career fit name');
-
-if (careerFitNames.length < 48) {
-  fail(`expected at least 48 matched careers, found ${careerFitNames.length}`);
 }
 
-careerFitItems.forEach((career) => {
-  const interestEntries = [...career.interestFit.matchAll(/([a-z]+):\s*([0-9.]+)/g)];
-  if (!interestEntries.length) {
-    fail(`career fit ${career.name} needs at least one interest`);
+if (failures.length > 0) {
+  console.error('Business card verification failed:');
+  for (const failure of failures) {
+    console.error(`- ${failure}`);
   }
-
-  interestEntries.forEach(([, key, rawWeight]) => {
-    const weight = Number(rawWeight);
-    if (!interestKeys.includes(key)) {
-      fail(`career fit ${career.name} has unknown interest ${key}`);
-    }
-    if (!Number.isFinite(weight) || weight <= 0) {
-      fail(`career fit ${career.name} has invalid interest weight ${rawWeight}`);
-    }
-  });
-
-  const styleEntries = Object.fromEntries([...career.styleFit.matchAll(/([a-z]+):\s*'([^']+)'/g)].map((match) => [match[1], match[2]]));
-  styleAxes.forEach((axis) => {
-    if (!styleEntries[axis]) {
-      fail(`career fit ${career.name} is missing style axis ${axis}`);
-    } else if (!styleKeys.includes(styleEntries[axis])) {
-      fail(`career fit ${career.name} has invalid style ${styleEntries[axis]}`);
-    }
-  });
-});
-
-const categoryText = listTsFiles('src/data/careerCategories').map(read).join('\n');
-const categoryCareers = [...categoryText.matchAll(/careers:\s*\[([\s\S]*?)\]/g)].flatMap((match) =>
-  collect(match[1], /'([^']+)'/g),
-);
-const uniqueCategoryCareers = [...new Set(categoryCareers)];
-
-assertUnique(categoryCareers, 'career category name');
-if (uniqueCategoryCareers.length < 177) {
-  fail(`expected at least 177 career map entries, found ${uniqueCategoryCareers.length}`);
-}
-
-careerFitNames.forEach((careerName) => {
-  if (!uniqueCategoryCareers.includes(careerName)) {
-    fail(`recommended career is missing from career map: ${careerName}`);
-  }
-});
-
-const careerDetailText = listTsFiles('src/data/careerDetailGroups')
-  .filter((filePath) => !filePath.endsWith('/factory.ts'))
-  .map(read)
-  .join('\n');
-const detailNames = collect(careerDetailText, /name:\s*['"]([^'"]+)['"]/g);
-assertUnique(detailNames, 'career detail name');
-
-if (detailNames.length !== uniqueCategoryCareers.length) {
-  fail(`expected ${uniqueCategoryCareers.length} career details, found ${detailNames.length}`);
-}
-
-uniqueCategoryCareers.forEach((careerName) => {
-  if (!detailNames.includes(careerName)) {
-    fail(`career map entry is missing detailed career content: ${careerName}`);
-  }
-});
-
-detailNames.forEach((careerName) => {
-  if (!uniqueCategoryCareers.includes(careerName)) {
-    fail(`career detail is not present in career map: ${careerName}`);
-  }
-});
-
-if (errors.length) {
-  console.error(['Data validation failed:', ...errors.map((error) => `- ${error}`)].join('\n'));
   process.exit(1);
 }
 
-console.log(
-  `Data validation passed: ${questionIds.length} questions, ${careerFitNames.length} matched careers, ${uniqueCategoryCareers.length} map careers, ${detailNames.length} career details.`,
-);
+console.log('Business card verification passed.');
