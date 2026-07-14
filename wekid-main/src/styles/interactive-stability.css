@@ -1,0 +1,41 @@
+button.top-career-card,
+button.career-card,
+button.career-chip {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+}
+
+button.career-card,
+button.career-chip {
+  color: inherit;
+}
+
+button.top-career-card,
+button.career-card.clickable,
+button.career-chip.has-detail {
+  cursor: pointer;
+}
+
+button.top-career-card:disabled,
+button.career-card:disabled,
+button.career-chip:disabled,
+.option-card:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+button.top-career-card:focus-visible,
+button.career-card:focus-visible,
+button.career-chip:focus-visible {
+  outline: 3px solid #84d8ff;
+  outline-offset: 3px;
+}
+
+button.career-chip.strong:disabled {
+  color: var(--duo-blue-dark);
+}
+
+button.career-chip.matched:disabled {
+  color: #ffffff;
+}

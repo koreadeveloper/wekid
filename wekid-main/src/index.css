@@ -1,0 +1,16 @@
+@import './styles/base.css';
+@import './styles/quiz-intro.css';
+@import './styles/question.css';
+@import './styles/result-hero.css';
+@import './styles/result-export.css';
+@import './styles/insights.css';
+@import './styles/career-sections.css';
+@import './styles/pdf-report.css';
+@import './styles/responsive.css';
+@import './styles/visual-enhancements.css';
+@import './styles/name-step.css';
+@import './styles/career-modal.css';
+@import './styles/career-modal-expanded.css';
+@import './styles/interactive-stability.css';
+@import './styles/business-card.css';
+@import './styles/admin.css';

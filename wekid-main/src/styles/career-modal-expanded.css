@@ -1,0 +1,46 @@
+.modal-fit-note {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  border: 2px solid var(--duo-green-dark);
+  border-radius: 20px;
+  background: var(--duo-green-soft);
+  color: var(--duo-green-dark);
+  box-shadow: 0 4px 0 rgba(70,163,2,0.18);
+}
+
+.modal-fit-note svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.modal-fit-note p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.55;
+}
+
+.modal-section + .modal-section {
+  padding-top: 2px;
+}
+
+.place-chips span {
+  border-color: #84d8ff;
+  background: #e8f7ff;
+  color: #0b6f9c;
+}
+
+.modal-task-list li {
+  padding: 9px 12px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.04);
+}
+
+.modal-task-list {
+  padding-left: 0;
+  list-style: none;
+}
