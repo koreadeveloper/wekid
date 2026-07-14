@@ -3,10 +3,12 @@ import type { CenterSource } from '../../lib/centerContext';
 
 type StartPageProps = {
   centerInput: string;
+  emailInput: string;
   centerSource: CenterSource;
   initialUrlCenterName: string | null;
   nameInput: string;
   onCenterChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onStart: () => void;
   onSkip: () => void;
@@ -15,9 +17,11 @@ type StartPageProps = {
 export function StartPage({
   centerInput,
   centerSource,
+  emailInput,
   initialUrlCenterName,
   nameInput,
   onCenterChange,
+  onEmailChange,
   onNameChange,
   onStart,
   onSkip,
@@ -40,7 +44,7 @@ export function StartPage({
         <p className="name-step-sub">
           몇 가지 질문에 답하면 나에게 어울리는 분야와 직업을
           <br />
-          찾아드려요. 이름과 센터명은 선택이에요.
+          찾아드려요. 이름과 센터명, 이메일은 선택이에요.
         </p>
         <input
           className="name-input"
@@ -67,6 +71,18 @@ export function StartPage({
             value={centerInput}
             maxLength={40}
             onChange={(event) => onCenterChange(event.target.value)}
+          />
+        </label>
+        <label className="center-input-wrap">
+          <span>이메일 (선택)</span>
+          <small>적어 두면 꿈 명함에 자동으로 들어가요.</small>
+          <input
+            className="center-input"
+            type="email"
+            placeholder="예: dream@wekid.kr"
+            value={emailInput}
+            maxLength={40}
+            onChange={(event) => onEmailChange(event.target.value)}
           />
         </label>
         <button className="primary-button name-start-btn" type="button" disabled={!hasName} onClick={onStart}>

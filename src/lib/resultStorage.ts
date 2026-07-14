@@ -53,6 +53,7 @@ export async function saveTestResult(
   const document: TestResultDocument = {
     ...draft,
     participantName: emptyStringToNull(draft.participantName),
+    participantEmail: emptyStringToNull(draft.participantEmail ?? null),
     centerName: normalizeCenterName(draft.centerName),
     centerKey: createCenterKey(draft.centerKey ?? draft.centerName),
     centerSource: draft.centerName ? draft.centerSource : 'none',

@@ -956,6 +956,7 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
   const copySummary = async () => {
     const text = [
       `이름: ${result.participantName ?? '이름 없음'}`,
+      `이메일: ${result.participantEmail ?? '-'}`,
       `센터: ${result.centerName ?? '센터 없음'}`,
       `대표 직업: ${getCareerName(result.topCareer)}`,
       `추천 직업: ${recommendedCareerNames.join(', ') || '-'}`,

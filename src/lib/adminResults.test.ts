@@ -266,8 +266,8 @@ describe('toResultsCsv', () => {
     const csv = toResultsCsv(records);
 
     expect(csv.startsWith(CSV_UTF8_BOM)).toBe(true);
-    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON,테스트의심여부,필터메모,소요시간초,대표직업Raw,추천직업Raw');
-    expect(csv).toContain('1,2026-07-04T00:05:01.000Z,2026-07-04T00:00:00.000Z,2026-07-04T00:05:00.000Z,5.0,김탐험,강남 청소년센터,강남 청소년센터,manual,사진작가,목공예가,0,관찰을 좋아해요.');
+    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,이메일,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON,테스트의심여부,필터메모,소요시간초,대표직업Raw,추천직업Raw');
+    expect(csv).toContain('1,2026-07-04T00:05:01.000Z,2026-07-04T00:00:00.000Z,2026-07-04T00:05:00.000Z,5.0,김탐험,,강남 청소년센터,강남 청소년센터,manual,사진작가,목공예가,0,관찰을 좋아해요.');
   });
 
   it('escapes comma, quote, newline, null, and JSON values for Excel-friendly CSV', () => {
@@ -277,7 +277,7 @@ describe('toResultsCsv', () => {
     expect(csv).toContain('"쉼표, 센터"');
     expect(csv).toContain(',교사 / 사회복지사,');
     expect(csv).toContain('"쉼표, 따옴표 ""테스트""\n줄바꿈 포함"');
-    expect(csv).toContain('no-center,2026-07-01T00:02:01.000Z,2026-07-01T00:00:00.000Z,2026-07-01T00:02:00.000Z,2.0,,,,none,작가');
+    expect(csv).toContain('no-center,2026-07-01T00:02:01.000Z,2026-07-01T00:00:00.000Z,2026-07-01T00:02:00.000Z,2.0,,,,,none,작가');
     expect(csv).toContain('"{""social"":5,""care"":3}",예,,270,"{""name"":""상담가""}"');
   });
 

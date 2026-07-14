@@ -34,9 +34,11 @@ function App() {
   const [showResult, setShowResult] = useState(false);
   const [nameStep, setNameStep] = useState(true);
   const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [centerInput, setCenterInput] = useState(initialUrlCenterName ?? '');
   const [isCenterManual, setIsCenterManual] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>({ status: 'idle' });
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
@@ -94,7 +96,7 @@ function App() {
       return;
     }
 
-    const resultSignature = JSON.stringify({ answers, centerContext, topCareer: profile.topCareer.name, userName });
+    const resultSignature = JSON.stringify({ answers, centerContext, topCareer: profile.topCareer.name, userName, userEmail });
     if (savedResultSignatureRef.current === resultSignature) {
       return;
     }
@@ -107,6 +109,7 @@ function App() {
 
     void saveTestResult({
       participantName: userName || null,
+      participantEmail: userEmail || null,
       centerName: centerContext.centerName,
       centerKey: centerContext.centerKey,
       centerSource: centerContext.centerSource,
@@ -132,7 +135,7 @@ function App() {
 
       setResultSaveStatus({ status: 'failed', error: saveResult.error });
     });
-  }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName]);
+  }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName, userEmail]);
 
   const chooseAnswer = (choice: AnswerChoice) => {
     if (advancingRef.current) {
@@ -180,7 +183,9 @@ function App() {
     setShowResult(false);
     setNameStep(true);
     setNameInput('');
+    setEmailInput('');
     setUserName('');
+    setUserEmail('');
     setStartedAt(null);
     setResultSaveStatus({ status: 'idle' });
     savedResultSignatureRef.current = null;
@@ -202,6 +207,7 @@ function App() {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName(nameInput.trim());
+    setUserEmail(emailInput.trim());
     setNameStep(false);
     setStartedAt(new Date());
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -244,10 +250,11 @@ function App() {
       {mode === 'admin' ? (
         <AdminPage onOwnerStatusChange={setCanUseBusinessCard} />
       ) : mode === 'business-card' ? (
-        <BusinessCardMakerPage />
+        <BusinessCardMakerPage initialEmail={userEmail} initialName={userName} />
       ) : nameStep ? (
         <StartPage
           centerInput={centerInput}
+          emailInput={emailInput}
           centerSource={centerContext.centerSource}
           initialUrlCenterName={initialUrlCenterName}
           nameInput={nameInput}
@@ -255,6 +262,7 @@ function App() {
             setCenterInput(value);
             setIsCenterManual(true);
           }}
+          onEmailChange={setEmailInput}
           onNameChange={setNameInput}
           onStart={startWithName}
           onSkip={skipName}

@@ -161,6 +161,7 @@ function resultMatchesSearch(result: StoredTestResultRecord, searchTerm: string)
 
   const fields = [
     result.participantName,
+    result.participantEmail,
     result.centerName,
     getCareerName(result.topCareer),
     result.resultSummary,
@@ -405,6 +406,7 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
     '검사완료',
     '소요분',
     '이름',
+    '이메일',
     '센터',
     '센터키',
     '센터입력경로',
@@ -433,6 +435,7 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
       completedAt,
       duration == null ? '' : duration.toFixed(1),
       result.participantName,
+      result.participantEmail ?? '',
       result.centerName,
       result.centerKey,
       result.centerSource,

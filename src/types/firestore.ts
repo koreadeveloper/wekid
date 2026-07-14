@@ -10,6 +10,7 @@ export type TestResultAnswer = {
 
 export type TestResultDraft = {
   participantName: string | null;
+  participantEmail?: string | null;
   centerName: string | null;
   centerKey: string | null;
   centerSource: 'url' | 'manual' | 'none';

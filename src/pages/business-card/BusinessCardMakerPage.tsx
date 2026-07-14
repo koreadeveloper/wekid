@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { romanizeKoreanName } from '../../lib/romanizeKoreanName';
 import { BriefcaseBusiness, ImagePlus, Printer, Search, Sparkles, UserRound } from 'lucide-react';
 
 const PRINT_CARD_COUNT = 10;
@@ -87,8 +88,26 @@ const fields: Array<{
 
 const cardCopies = Array.from({ length: PRINT_CARD_COUNT }, (_, index) => index);
 
-export function BusinessCardMakerPage() {
-  const [cardData, setCardData] = useState<BusinessCardData>(defaultCardData);
+type BusinessCardMakerPageProps = {
+  /** 검사 시작화면에서 입력한 이름 — 있으면 명함에 자동 입력 */
+  initialName?: string;
+  /** 검사 시작화면에서 입력한 이메일 — 있으면 명함에 자동 입력 */
+  initialEmail?: string;
+};
+
+export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCardMakerPageProps) {
+  const [cardData, setCardData] = useState<BusinessCardData>(() => {
+    const name = initialName?.trim() || defaultCardData.name;
+    const autoEnglish = romanizeKoreanName(name);
+    return {
+      ...defaultCardData,
+      name,
+      englishName: autoEnglish || defaultCardData.englishName,
+      email: initialEmail?.trim() || defaultCardData.email,
+    };
+  });
+  // 마지막으로 자동 생성한 영문 이름 — 사용자가 직접 고치기 전까지만 이름을 따라간다
+  const autoEnglishNameRef = useRef<string>('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [printSide, setPrintSide] = useState<PrintSide>('front');
   const [selectedJobKey, setSelectedJobKey] = useState<JobCardTheme['key']>(JOB_CARD_THEMES[0].key);
@@ -116,8 +135,35 @@ export function BusinessCardMakerPage() {
     [],
   );
 
+  useEffect(() => {
+    autoEnglishNameRef.current = romanizeKoreanName(cardData.name) === cardData.englishName ? cardData.englishName : '';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateField = (field: keyof BusinessCardData, value: string) => {
-    setCardData((current) => ({ ...current, [field]: value }));
+    setCardData((current) => {
+      if (field !== 'name') {
+        if (field === 'englishName') {
+          // 직접 수정하면 자동 변환을 멈춘다 (지우면 다시 자동)
+          autoEnglishNameRef.current = value.trim() === '' ? current.englishName : '';
+        }
+        return { ...current, [field]: value };
+      }
+
+      const autoEnglish = romanizeKoreanName(value);
+      const shouldSyncEnglish =
+        autoEnglish !== '' &&
+        (current.englishName.trim() === '' ||
+          current.englishName === autoEnglishNameRef.current ||
+          current.englishName === defaultCardData.englishName);
+
+      if (shouldSyncEnglish) {
+        autoEnglishNameRef.current = autoEnglish;
+        return { ...current, name: value, englishName: autoEnglish };
+      }
+
+      return { ...current, name: value };
+    });
   };
 
   const selectJobTheme = (theme: JobCardTheme) => {

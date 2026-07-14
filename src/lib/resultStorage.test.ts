@@ -39,6 +39,7 @@ describe('saveTestResult', () => {
     expect(addTestResult).toHaveBeenCalledWith({
       ...draft,
       participantName: '김탐험',
+      participantEmail: null,
       centerName: '강남 청소년센터',
       centerKey: '강남 청소년센터',
       centerSource: 'manual',
