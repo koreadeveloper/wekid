@@ -38,7 +38,9 @@ export function StartPage({
           찾아봐요
         </h1>
         <p className="name-step-sub">
-          몇 가지 질문에 답하면 나에게 어울리는 분야와 직업을 찾아드려요. 이름과 센터명은 선택이에요.
+          몇 가지 질문에 답하면 나에게 어울리는 분야와 직업을
+          <br />
+          찾아드려요. 이름과 센터명은 선택이에요.
         </p>
         <input
           className="name-input"
