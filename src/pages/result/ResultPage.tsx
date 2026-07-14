@@ -130,7 +130,7 @@ function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSav
   }
 
   if (resultSaveStatus.status === 'saved') {
-    return <p className="result-save-notice success">결과가 저장됐어요.</p>;
+    return null;
   }
 
   if (resultSaveStatus.status === 'skipped') {
