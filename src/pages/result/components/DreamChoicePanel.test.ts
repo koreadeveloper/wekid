@@ -30,11 +30,11 @@ describe('DreamChoicePanel helpers', () => {
     expect(getAutoSaveDreamChoice({ kind: 'undecided' })).toBeUndefined();
   });
 
-  it('prevents a second automatic career save while a result is saving or already saved', () => {
+  it('allows changing a saved career choice but prevents changes while it is saving', () => {
     const choice = { kind: 'recommended', careerName: '아이돌' } as const;
 
     expect(canAutoSaveCareerChoice(choice, false, undefined)).toBe(true);
     expect(canAutoSaveCareerChoice(choice, true, undefined)).toBe(false);
-    expect(canAutoSaveCareerChoice(choice, false, choice)).toBe(false);
+    expect(canAutoSaveCareerChoice(choice, false, choice)).toBe(true);
   });
 });

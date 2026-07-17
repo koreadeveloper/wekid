@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { saveTestResult } from './resultStorage';
+import * as resultStorage from './resultStorage';
 import type { TestResultDraft } from '../types/firestore';
 
 const draft: TestResultDraft = {
@@ -112,4 +113,50 @@ describe('saveTestResult', () => {
       dreamChoice: { kind: 'catalog', careerName: '유튜버' },
     }));
   });
+
+  it('defaults a completed v2 result to undecided when no dream has been chosen', async () => {
+    const addTestResult = vi.fn().mockResolvedValue({ id: 'result-without-dream' });
+    const completedDraftWithoutDream = {
+      participantName: '김탐험',
+      centerName: '강남 청소년센터',
+      centerKey: '강남 청소년센터',
+      centerSource: 'manual' as const,
+      startedAt: new Date('2026-07-04T00:00:00.000Z'),
+      completedAt: new Date('2026-07-04T00:05:00.000Z'),
+      questionnaireVersion: 2 as const,
+      answerSnapshots: [],
+      fieldResults: [],
+      recommendedFieldResults: [],
+      resultSummary: '여러 방향을 탐험했어요.',
+    };
+
+    await expect(saveTestResult(completedDraftWithoutDream as TestResultDraft, {
+      db: {} as never,
+      addTestResult,
+    })).resolves.toEqual({ ok: true, resultId: 'result-without-dream' });
+
+    expect(addTestResult).toHaveBeenCalledWith(expect.objectContaining({
+      dreamChoice: { kind: 'undecided' },
+    }));
+  });
+
+  it('updates the saved result when a participant chooses a dream later', async () => {
+    type ResultStorageWithDreamUpdater = typeof resultStorage & {
+      updateTestResultDreamChoice?: (
+        resultId: string,
+        dreamChoice: { kind: 'recommended'; careerName: string },
+        dependencies: { db: never; updateDreamChoice: ReturnType<typeof vi.fn> },
+      ) => Promise<unknown>;
+    };
+    const updateDreamChoice = vi.fn().mockResolvedValue(undefined);
+    const updateTestResultDreamChoice = (resultStorage as ResultStorageWithDreamUpdater).updateTestResultDreamChoice;
+
+    expect(updateTestResultDreamChoice).toBeTypeOf('function');
+    await expect(updateTestResultDreamChoice!('result-123', { kind: 'recommended', careerName: '과학자' }, {
+      db: {} as never,
+      updateDreamChoice,
+    })).resolves.toEqual({ ok: true, resultId: 'result-123' });
+    expect(updateDreamChoice).toHaveBeenCalledWith('result-123', { kind: 'recommended', careerName: '과학자' });
+  });
+
 });

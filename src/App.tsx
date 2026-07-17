@@ -6,7 +6,7 @@ import { careerQuestionsV2 } from './data/questionsV2';
 import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
 import { getCareerResultV2 } from './lib/careerScoring';
 import { createAnswerSnapshots } from './lib/questionSnapshots';
-import { saveTestResult } from './lib/resultStorage';
+import { saveTestResult, updateTestResultDreamChoice } from './lib/resultStorage';
 import { AdminPage } from './pages/admin/AdminPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
@@ -47,6 +47,8 @@ function App() {
   const [isAdvancing, setIsAdvancingState] = useState(false);
   const advanceTimerRef = useRef<number | undefined>(undefined);
   const advancingRef = useRef(false);
+  const automaticSaveStartedRef = useRef(false);
+  const savedResultIdRef = useRef<string | null>(null);
   const savedResultSignatureRef = useRef<string | null>(null);
 
   const setIsAdvancing = (value: boolean) => {
@@ -91,6 +93,8 @@ function App() {
     setAnswers(nextAnswers);
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
+    automaticSaveStartedRef.current = false;
+    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
 
     if (safeCurrentIndex < careerQuestionsV2.length - 1) {
@@ -125,6 +129,27 @@ function App() {
     }
 
     setDreamChoice(nextDreamChoice);
+
+    if (savedResultIdRef.current) {
+      const resultId = savedResultIdRef.current;
+      setResultSaveStatus({ status: 'saving' });
+
+      void updateTestResultDreamChoice(resultId, nextDreamChoice).then((saveResult) => {
+        if (saveResult.ok) {
+          setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
+          return;
+        }
+
+        if (saveResult.reason === 'firebase-not-configured') {
+          setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
+          return;
+        }
+
+        setResultSaveStatus({ status: 'failed', error: saveResult.error });
+      });
+      return;
+    }
+
     const resultSignature = JSON.stringify({ answers, centerContext, nextDreamChoice, userName, userEmail });
     if (savedResultSignatureRef.current === resultSignature) {
       return;
@@ -151,6 +176,7 @@ function App() {
       resultSummary: result.summary,
     }).then((saveResult) => {
       if (saveResult.ok) {
+        savedResultIdRef.current = saveResult.resultId;
         setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
         return;
       }
@@ -164,6 +190,15 @@ function App() {
       setResultSaveStatus({ status: 'failed', error: saveResult.error });
     });
   };
+
+  useEffect(() => {
+    if (!showResult || !result || !isComplete || automaticSaveStartedRef.current) {
+      return;
+    }
+
+    automaticSaveStartedRef.current = true;
+    confirmDreamChoice({ kind: 'undecided' });
+  }, [showResult, result, isComplete]);
 
   const reset = () => {
     clearAdvanceTimer();
@@ -179,6 +214,8 @@ function App() {
     setStartedAt(null);
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
+    automaticSaveStartedRef.current = false;
+    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
     setSelectedCareer(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -191,6 +228,8 @@ function App() {
     setCurrentIndex(careerQuestionsV2.length - 1);
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
+    automaticSaveStartedRef.current = false;
+    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

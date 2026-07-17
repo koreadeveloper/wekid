@@ -71,7 +71,7 @@ export function ResultPage({
   return (
     <section className="result-layout">
       <ResultHero result={result} userName={userName} onSavePdf={handleSavePdf} isPdfSaving={isPdfSaving} />
-      <ResultSaveNotice resultSaveStatus={resultSaveStatus} />
+      <ResultSaveNotice resultSaveStatus={resultSaveStatus} dreamChoice={dreamChoice} />
       <CareerRecommendations
         fieldResults={result.recommendedFieldResults}
         hasCareerDetail={hasCareerDetail}
@@ -96,9 +96,9 @@ export function ResultPage({
   );
 }
 
-function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSaveStatus'>) {
+function ResultSaveNotice({ resultSaveStatus, dreamChoice }: Pick<ResultPageProps, 'resultSaveStatus' | 'dreamChoice'>) {
   if (resultSaveStatus.status === 'idle') {
-    return <p className="result-save-notice muted">추천 직업이나 목록의 직업을 고르면 결과가 자동으로 저장돼요.</p>;
+    return <p className="result-save-notice muted">모든 문항을 마치면 답변이 자동으로 저장돼요.</p>;
   }
 
   if (resultSaveStatus.status === 'saving') {
@@ -106,7 +106,9 @@ function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSav
   }
 
   if (resultSaveStatus.status === 'saved') {
-    return <p className="result-save-notice success">내가 고른 꿈과 모든 답변을 저장했어요.</p>;
+    return dreamChoice?.kind === 'undecided'
+      ? <p className="result-save-notice success">모든 답변을 자동으로 저장했어요.</p>
+      : <p className="result-save-notice success">내가 고른 꿈과 모든 답변을 저장했어요.</p>;
   }
 
   if (resultSaveStatus.status === 'skipped') {

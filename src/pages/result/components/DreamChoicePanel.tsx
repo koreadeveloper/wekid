@@ -29,9 +29,9 @@ export function canConfirmDreamChoice(choice: DreamChoice | undefined, _savedCho
 export function canAutoSaveCareerChoice(
   choice: DreamChoice | undefined,
   isSaving: boolean,
-  savedChoice: DreamChoice | undefined,
+  _savedChoice: DreamChoice | undefined,
 ) {
-  return Boolean(getAutoSaveDreamChoice(choice)) && !isSaving && !savedChoice;
+  return Boolean(getAutoSaveDreamChoice(choice)) && !isSaving;
 }
 
 export function getDreamChoiceText(choice: DreamChoice | undefined) {
@@ -54,13 +54,19 @@ export function DreamChoicePanel({
   const [customName, setCustomName] = useState('');
   const automaticSaveStartedRef = useRef(false);
   const trimmedSearch = searchTerm.trim().toLocaleLowerCase('ko-KR');
-  const selectionLocked = isSaving || Boolean(savedChoice);
+  const selectionLocked = isSaving;
 
   useEffect(() => {
     if (!isSaving) {
       automaticSaveStartedRef.current = false;
     }
   }, [isSaving]);
+
+  useEffect(() => {
+    if (savedChoice) {
+      setChoice(savedChoice);
+    }
+  }, [savedChoice]);
   const groupedCareers = useMemo(() => {
     const groups = new Map<string, CareerDefinition[]>();
 

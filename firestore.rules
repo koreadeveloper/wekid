@@ -125,6 +125,12 @@ service cloud.firestore {
         request.resource.data.createdAt == request.time;
     }
 
+    function validV2DreamChoiceUpdate() {
+      return resource.data.schemaVersion == 2 &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dreamChoice']) &&
+        validV2DreamChoice(request.resource.data.dreamChoice);
+    }
+
     match /institutions/{institutionId} {
       // This MVP no longer uses institutions for center setup.
       // Keep this locked unless a future server-backed institution flow is added.
@@ -136,9 +142,11 @@ service cloud.firestore {
       allow create: if validV1TestResultCreate() || validV2TestResultCreate();
 
       // The first admin MVP is owner-only. Owners can read all results and group
-      // them by centerName/centerKey on the client. No client can edit/delete results.
+      // them by centerName/centerKey on the client. Participants can only change
+      // their final dream choice after the answer record has been created.
       allow get, list: if isOwner();
-      allow update, delete: if false;
+      allow update: if validV2DreamChoiceUpdate();
+      allow delete: if false;
     }
 
     match /admins/{uid} {

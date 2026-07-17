@@ -35,7 +35,7 @@ export type TestResultDraftV2 = TestResultBase & {
   answerSnapshots: TestResultAnswerSnapshot[];
   fieldResults: CareerFieldResult[];
   recommendedFieldResults: CareerFieldResult[];
-  dreamChoice: DreamChoice;
+  dreamChoice?: DreamChoice;
 };
 
 export type TestResultDraft = TestResultDraftV1 | TestResultDraftV2;
@@ -45,7 +45,8 @@ export type TestResultV1Document = TestResultDraftV1 & {
   schemaVersion: 1;
 };
 
-export type TestResultV2Document = TestResultDraftV2 & {
+export type TestResultV2Document = Omit<TestResultDraftV2, 'dreamChoice'> & {
+  dreamChoice: DreamChoice;
   createdAt: FirestoreTimestampValue;
   schemaVersion: 2;
 };
