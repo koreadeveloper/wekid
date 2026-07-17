@@ -82,7 +82,7 @@ export function ResultPage({
         recommendedCareerNames={recommendedCareerNames}
         onConfirm={onConfirmDreamChoice}
         isSaving={resultSaveStatus.status === 'saving'}
-        savedChoice={dreamChoice}
+        savedChoice={resultSaveStatus.status === 'saved' ? dreamChoice : undefined}
       />
       <CareerLibrary
         categories={careerCategories}
@@ -98,7 +98,7 @@ export function ResultPage({
 
 function ResultSaveNotice({ resultSaveStatus }: Pick<ResultPageProps, 'resultSaveStatus'>) {
   if (resultSaveStatus.status === 'idle') {
-    return <p className="result-save-notice muted">마지막으로 내가 고른 꿈을 선택하면 결과가 저장돼요.</p>;
+    return <p className="result-save-notice muted">추천 직업이나 목록의 직업을 고르면 결과가 자동으로 저장돼요.</p>;
   }
 
   if (resultSaveStatus.status === 'saving') {

@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CareerDefinition, DreamChoice } from '../../../types/career';
 
 type DreamChoicePanelProps = {
@@ -14,8 +14,24 @@ export function isDreamChoiceReady(choice: DreamChoice | undefined): choice is D
   return Boolean(choice && (choice.kind === 'undecided' || choice.careerName.trim().length > 0));
 }
 
-export function canConfirmDreamChoice(choice: DreamChoice | undefined, savedChoice: DreamChoice | undefined) {
-  return isDreamChoiceReady(choice) && JSON.stringify(choice) !== JSON.stringify(savedChoice);
+export function getAutoSaveDreamChoice(choice: DreamChoice | undefined) {
+  if (choice?.kind === 'recommended' || choice?.kind === 'catalog') {
+    return choice;
+  }
+
+  return undefined;
+}
+
+export function canConfirmDreamChoice(choice: DreamChoice | undefined, _savedChoice: DreamChoice | undefined) {
+  return isDreamChoiceReady(choice) && JSON.stringify(choice) !== JSON.stringify(_savedChoice);
+}
+
+export function canAutoSaveCareerChoice(
+  choice: DreamChoice | undefined,
+  isSaving: boolean,
+  savedChoice: DreamChoice | undefined,
+) {
+  return Boolean(getAutoSaveDreamChoice(choice)) && !isSaving && !savedChoice;
 }
 
 export function getDreamChoiceText(choice: DreamChoice | undefined) {
@@ -36,7 +52,15 @@ export function DreamChoicePanel({
   const [choice, setChoice] = useState<DreamChoice>();
   const [searchTerm, setSearchTerm] = useState('');
   const [customName, setCustomName] = useState('');
+  const automaticSaveStartedRef = useRef(false);
   const trimmedSearch = searchTerm.trim().toLocaleLowerCase('ko-KR');
+  const selectionLocked = isSaving || Boolean(savedChoice);
+
+  useEffect(() => {
+    if (!isSaving) {
+      automaticSaveStartedRef.current = false;
+    }
+  }, [isSaving]);
   const groupedCareers = useMemo(() => {
     const groups = new Map<string, CareerDefinition[]>();
 
@@ -57,12 +81,23 @@ export function DreamChoicePanel({
     setChoice(nextName.trim() ? { kind: 'custom', careerName: nextName } : undefined);
   };
 
+  const selectCareer = (nextChoice: Extract<DreamChoice, { kind: 'recommended' | 'catalog' }>) => {
+    if (automaticSaveStartedRef.current || !canAutoSaveCareerChoice(nextChoice, isSaving, savedChoice)) {
+      return;
+    }
+
+    automaticSaveStartedRef.current = true;
+    setChoice(nextChoice);
+    onConfirm(nextChoice);
+  };
+
   return (
     <section className="dream-choice-panel" aria-labelledby="dream-choice-title">
       <div className="section-heading">
         <p className="section-kicker">마지막 선택</p>
         <h2 id="dream-choice-title">내가 고른 꿈</h2>
         <p>추천을 참고해도 좋고, 목록에서 직접 찾거나 나만의 꿈을 적어도 괜찮아요.</p>
+        <p>추천 직업이나 목록의 직업은 누르는 즉시 자동으로 저장돼요.</p>
       </div>
 
       <div className="dream-choice-block">
@@ -73,8 +108,9 @@ export function DreamChoicePanel({
               className={`dream-chip ${choice?.kind === 'recommended' && choice.careerName === careerName ? 'selected' : ''}`}
               key={careerName}
               type="button"
-              onClick={() => setChoice({ kind: 'recommended', careerName })}
+              onClick={() => selectCareer({ kind: 'recommended', careerName })}
               aria-pressed={choice?.kind === 'recommended' && choice.careerName === careerName}
+              disabled={selectionLocked}
             >
               {careerName}
             </button>
@@ -92,6 +128,7 @@ export function DreamChoicePanel({
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="직업 목록에서 찾아보기"
+            disabled={selectionLocked}
           />
         </label>
         <div className="dream-library" aria-label="직업 목록">
@@ -104,8 +141,9 @@ export function DreamChoicePanel({
                     className={`dream-chip ${choice?.kind === 'catalog' && choice.careerName === career.name ? 'selected' : ''}`}
                     key={career.name}
                     type="button"
-                    onClick={() => setChoice({ kind: 'catalog', careerName: career.name })}
+                    onClick={() => selectCareer({ kind: 'catalog', careerName: career.name })}
                     aria-pressed={choice?.kind === 'catalog' && choice.careerName === career.name}
+                    disabled={selectionLocked}
                   >
                     {career.name}
                   </button>
@@ -128,6 +166,7 @@ export function DreamChoicePanel({
           value={customName}
           onChange={(event) => selectCustom(event.target.value)}
           placeholder="예: 만화 번역가"
+          disabled={selectionLocked}
         />
       </div>
 
@@ -137,6 +176,7 @@ export function DreamChoicePanel({
           type="button"
           onClick={() => setChoice({ kind: 'undecided' })}
           aria-pressed={choice?.kind === 'undecided'}
+          disabled={selectionLocked}
         >
           아직 더 찾아볼래요
         </button>
@@ -146,7 +186,7 @@ export function DreamChoicePanel({
           disabled={!canConfirmDreamChoice(choice, savedChoice) || isSaving}
           onClick={() => choice && onConfirm(choice)}
         >
-          {isSaving ? '결과 저장 중' : savedChoice ? '바꾼 꿈으로 결과 저장하기' : '이 꿈으로 결과 저장하기'}
+          {isSaving ? '결과 저장 중' : savedChoice ? '이 꿈으로 결과 저장 완료' : '이 꿈으로 결과 저장하기'}
         </button>
       </div>
       {choice && <p className="dream-selected">내가 고른 꿈: <strong>{getDreamChoiceText(choice)}</strong></p>}
