@@ -96,6 +96,7 @@ git commit -m "feat: map survey results to business card data"
 - Create: src/pages/business-card/CareerPicker.test.ts
 - Modify: src/pages/business-card/BusinessCardMakerPage.tsx
 - Modify: src/styles/business-card.css
+- Modify: scripts/verify-business-card.mjs
 
 **Interfaces:**
 - Consumes: careerCatalog: CareerDefinition[]
@@ -137,7 +138,7 @@ export function CareerPicker({ value, onChange }: { value: string; onChange: (ca
 }
 ~~~
 
-In BusinessCardMakerPage, remove JOB_CARD_THEMES, selectedJobKey, and selectedJobTheme. Use careerByName[cardData.job]?.detail.emoji ?? '💼' for the preview. Keep the existing common card design and do not add generated background assets.
+In BusinessCardMakerPage, remove JOB_CARD_THEMES, selectedJobKey, and selectedJobTheme. Use careerByName[cardData.job]?.detail.emoji ?? '💼' for the preview. Keep the existing common card design and do not add generated background assets. In scripts/verify-business-card.mjs, replace the fixed-five-theme source checks with checks for CareerPicker, careerCatalog, and 107-job search support.
 
 - [ ] **Step 4: Run picker and print checks**
 
@@ -148,7 +149,7 @@ Expected: PASS; every catalog career is searchable and print verification remain
 - [ ] **Step 5: Commit**
 
 ~~~
-git add src/pages/business-card/CareerPicker.tsx src/pages/business-card/CareerPicker.test.ts src/pages/business-card/BusinessCardMakerPage.tsx src/styles/business-card.css
+git add src/pages/business-card/CareerPicker.tsx src/pages/business-card/CareerPicker.test.ts src/pages/business-card/BusinessCardMakerPage.tsx src/styles/business-card.css scripts/verify-business-card.mjs
 git commit -m "feat: offer all careers in business card maker"
 ~~~
 
@@ -289,4 +290,3 @@ Expected: TypeScript and Vite exit with code 0. The existing bundle-size warning
 Run: git diff --check HEAD~4..HEAD; git status --short
 
 Expected: no whitespace errors; the pre-existing package-lock.json remains unstaged.
-
