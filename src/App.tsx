@@ -7,9 +7,7 @@ import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerConte
 import { getCareerResultV2 } from './lib/careerScoring';
 import { createAnswerSnapshots } from './lib/questionSnapshots';
 import { saveTestResult } from './lib/resultStorage';
-import { AdminBusinessCardBridge, type BusinessCardPrefill } from './pages/admin/AdminBusinessCardBridge';
 import { AdminPage } from './pages/admin/AdminPage';
-import { AdminBusinessCardMakerPage } from './pages/business-card/AdminBusinessCardMakerPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
@@ -28,7 +26,6 @@ type ResultSaveStatus =
 function App() {
   const [mode, setMode] = useState<AppMode>('career');
   const [canUseBusinessCard, setCanUseBusinessCard] = useState(false);
-  const [businessCardPrefill, setBusinessCardPrefill] = useState<BusinessCardPrefill | null>(null);
   const initialUrlCenterName = useMemo(
     () => getCenterNameFromSearch(typeof window === 'undefined' ? '' : window.location.search),
     [],
@@ -226,18 +223,8 @@ function App() {
   };
 
   const handleModeChange = (nextMode: AppMode) => {
-    if (nextMode !== 'business-card') {
-      setBusinessCardPrefill(null);
-    }
     setMode(nextMode);
     setSelectedCareer(null);
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  };
-
-  const createBusinessCardFromResult = (prefill: BusinessCardPrefill) => {
-    setBusinessCardPrefill(prefill);
-    setSelectedCareer(null);
-    setMode('business-card');
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
@@ -251,15 +238,10 @@ function App() {
         onModeChange={handleModeChange}
         onReset={reset}
       />
-      <AdminBusinessCardBridge enabled={mode === 'admin' && canUseBusinessCard} onCreateBusinessCard={createBusinessCardFromResult} />
       {mode === 'admin' ? (
         <AdminPage onOwnerStatusChange={setCanUseBusinessCard} />
       ) : mode === 'business-card' ? (
-        businessCardPrefill ? (
-          <AdminBusinessCardMakerPage key={businessCardPrefill.sourceId} prefill={businessCardPrefill} />
-        ) : (
-          <BusinessCardMakerPage initialEmail={userEmail} initialName={userName} />
-        )
+        <BusinessCardMakerPage initialEmail={userEmail} initialName={userName} />
       ) : nameStep ? (
         <StartPage
           centerInput={centerInput}
