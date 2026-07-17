@@ -258,27 +258,73 @@ const catalogGroups: CatalogGroup[] = [
   },
 ];
 
-const activityVariants: ActivityTag[] = [
-  'investigate', 'observe', 'measure', 'digital_make', 'rule_make', 'express', 'perform', 'guide',
-  'communicate', 'care', 'health', 'plan', 'introduce', 'safety', 'nature', 'active',
-];
+type CareerTraits = Pick<CareerDefinition, 'activityTags' | 'workStyleTags'>;
 
-const styleVariants: WorkStyleTag[] = ['together', 'focus', 'observe', 'imagine', 'solve', 'care', 'plan', 'flex'];
+const trait = (
+  names: string[],
+  activityTags: CareerTraits['activityTags'],
+  workStyleTags: CareerTraits['workStyleTags'],
+) => names.map((name) => [name, { activityTags, workStyleTags }] as const);
 
-function makeCareer(name: string, group: CatalogGroup, index: number): CareerDefinition {
-  const activityVariant = activityVariants[index % activityVariants.length];
-  const supportingActivityVariant = activityVariants[(index + 5) % activityVariants.length];
-  const styleVariant = styleVariants[index % styleVariants.length];
-  const supportingStyleVariant = styleVariants[(index + 3) % styleVariants.length];
+// Every occupation has a meaning-based trait profile.  These are deliberately
+// organised by the work children can see, never by its position in the list.
+export const careerTraitProfiles: Record<string, CareerTraits> = Object.fromEntries([
+  ...trait(['크리에이터', '유튜버'], { introduce: 1.12, express: 0.82, digital_make: 0.62 }, { imagine: 1.08, flex: 0.7, together: 0.46 }),
+  ...trait(['아나운서', '기자'], { communicate: 1.12, investigate: 0.72, introduce: 0.7 }, { focus: 0.72, together: 0.66, solve: 0.46 }),
+  ...trait(['성우', '코미디언', '마술사'], { perform: 1.14, express: 0.88, communicate: 0.66 }, { imagine: 0.98, together: 0.62, flex: 0.56 }),
+  ...trait(['방송 PD', '영화감독'], { plan: 1.08, express: 0.8, introduce: 0.72 }, { together: 0.92, imagine: 0.7, solve: 0.54 }),
+  ...trait(['영상 편집자', '사진작가'], { digital_make: 1.08, observe: 0.84, express: 0.74 }, { focus: 0.86, imagine: 0.72, plan: 0.5 }),
+  ...trait(['아이돌', '가수', '댄서', '뮤지컬 배우'], { perform: 1.14, express: 0.94, communicate: 0.5 }, { focus: 0.82, together: 0.72, flex: 0.46 }),
+  ...trait(['작곡가', '음악 프로듀서', '음악가'], { express: 1.08, digital_make: 0.72, perform: 0.68 }, { imagine: 1.0, focus: 0.82, flex: 0.48 }),
+  ...trait(['배우', '모델', '연주자'], { perform: 1.08, express: 0.9, observe: 0.5 }, { focus: 0.78, imagine: 0.72, together: 0.54 }),
+  ...trait(['웹툰 작가'], { express: 1.12, digital_make: 0.82, observe: 0.64 }, { imagine: 1.04, focus: 0.82, flex: 0.5 }),
+  ...trait(['작가'], { express: 1.12, introduce: 0.74, observe: 0.62 }, { imagine: 1.02, focus: 0.88, plan: 0.42 }),
+  ...trait(['동화작가'], { express: 1.1, care: 0.68, introduce: 0.58 }, { imagine: 1.06, focus: 0.8, care: 0.48 }),
+  ...trait(['시인'], { express: 1.14, observe: 0.8, nature: 0.5 }, { imagine: 1.08, focus: 0.84, flex: 0.46 }),
+  ...trait(['화가', '일러스트레이터', '캐릭터 디자이너'], { express: 1.12, observe: 0.74, digital_make: 0.56 }, { imagine: 1.06, focus: 0.78, flex: 0.46 }),
+  ...trait(['애니메이터', '그래픽 디자이너'], { digital_make: 1.06, express: 0.86, observe: 0.58 }, { focus: 0.82, imagine: 0.86, plan: 0.48 }),
+  ...trait(['패션 디자이너', '인테리어 디자이너'], { express: 1.02, plan: 0.76, observe: 0.64 }, { imagine: 0.98, solve: 0.58, focus: 0.6 }),
+  ...trait(['프로게이머'], { digital_make: 0.74, active: 0.72, rule_make: 0.72 }, { focus: 1.02, solve: 0.78, flex: 0.5 }),
+  ...trait(['게임 개발자'], { digital_make: 1.14, rule_make: 0.78, express: 0.62 }, { solve: 0.9, imagine: 0.76, focus: 0.7 }),
+  ...trait(['소프트웨어 개발자'], { digital_make: 1.14, rule_make: 0.96, investigate: 0.66 }, { solve: 0.98, focus: 0.9, plan: 0.5 }),
+  ...trait(['AI 개발자'], { digital_make: 1.12, investigate: 0.9, measure: 0.58 }, { solve: 0.94, focus: 0.86, imagine: 0.64 }),
+  ...trait(['로봇공학자', '드론 조종사'], { digital_make: 1.04, active: 0.74, safety: 0.64 }, { solve: 0.84, focus: 0.72, plan: 0.54 }),
+  ...trait(['화이트 해커', '정보보안 전문가'], { safety: 1.08, digital_make: 0.92, investigate: 0.78 }, { solve: 0.94, focus: 0.86, plan: 0.56 }),
+  ...trait(['운동선수', '스포츠 트레이너'], { active: 1.16, health: 0.76, guide: 0.58 }, { together: 0.76, flex: 0.72, care: 0.5 }),
+  ...trait(['스포츠 감독', '체육교사', '심판'], { guide: 1.06, safety: 0.72, active: 0.62 }, { together: 0.86, plan: 0.68, solve: 0.54 }),
+  ...trait(['요리사', '제빵사', '바리스타'], { active: 1.02, health: 0.66, plan: 0.62 }, { focus: 0.78, plan: 0.7, flex: 0.46 }),
+  ...trait(['영양사'], { health: 1.08, measure: 0.76, plan: 0.64 }, { focus: 0.74, solve: 0.64, care: 0.56 }),
+  ...trait(['수의사', '동물훈련사', '반려동물 미용사'], { care: 1.08, observe: 0.72, health: 0.62 }, { care: 0.98, focus: 0.64, flex: 0.5 }),
+  ...trait(['사육사', '아쿠아리스트', '농부', '플로리스트'], { nature: 1.1, care: 0.84, observe: 0.68 }, { care: 0.88, focus: 0.66, flex: 0.52 }),
+  ...trait(['과학자', '천문학자', '해양생물학자', '수학자'], { investigate: 1.14, observe: 0.88, measure: 0.82 }, { focus: 0.92, solve: 0.74, imagine: 0.46 }),
+  ...trait(['우주비행사', '우주공학자', '발명가'], { investigate: 1.0, digital_make: 0.78, active: 0.7 }, { solve: 0.86, focus: 0.74, plan: 0.58 }),
+  ...trait(['고고학자'], { investigate: 1.04, observe: 0.92, measure: 0.66 }, { focus: 0.84, plan: 0.6, imagine: 0.52 }),
+  ...trait(['의사', '치과의사', '한의사', '간호사', '응급구조사', '물리치료사'], { health: 1.12, care: 0.9, observe: 0.62 }, { care: 0.96, focus: 0.7, solve: 0.58 }),
+  ...trait(['약사'], { health: 1.08, measure: 0.72, care: 0.62 }, { focus: 0.82, solve: 0.64, care: 0.54 }),
+  ...trait(['경찰관', '소방관', '군인', '해양 구조대원'], { safety: 1.14, active: 0.82, guide: 0.56 }, { solve: 0.76, together: 0.72, plan: 0.6 }),
+  ...trait(['판사', '변호사', '외교관', '공무원'], { rule_make: 1.08, communicate: 0.72, investigate: 0.66 }, { solve: 0.82, plan: 0.72, together: 0.56 }),
+  ...trait(['파일럿', '기관사', '선장', '자동차 정비사'], { safety: 1.08, active: 0.74, measure: 0.66 }, { focus: 0.84, plan: 0.72, solve: 0.56 }),
+  ...trait(['승무원'], { guide: 1.04, safety: 0.74, communicate: 0.7 }, { together: 0.78, care: 0.64, flex: 0.54 }),
+  ...trait(['선생님', '유치원 선생님', '보건 선생님', '사서', '통역사', '심리상담사', '사회복지사'], { guide: 1.12, communicate: 0.82, care: 0.78 }, { together: 0.92, care: 0.82, flex: 0.48 }),
+  ...trait(['헤어 디자이너', '메이크업 아티스트', '네일 아티스트'], { express: 1.02, care: 0.72, observe: 0.56 }, { together: 0.76, flex: 0.66, imagine: 0.56 }),
+  ...trait(['호텔리어', '여행 가이드', '이벤트 플래너'], { guide: 1.06, communicate: 0.76, plan: 0.64 }, { together: 0.82, flex: 0.66, plan: 0.5 }),
+  ...trait(['건축가', '목공예가', '도예가', '조경가', '장난감 디자이너'], { plan: 1.04, digital_make: 0.64, express: 0.62 }, { imagine: 0.78, solve: 0.68, focus: 0.6 }),
+  ...trait(['기상캐스터', '환경운동가', '큐레이터'], { introduce: 1.0, investigate: 0.7, nature: 0.62 }, { together: 0.7, imagine: 0.66, plan: 0.54 }),
+  ...trait(['CEO', '창업가'], { plan: 1.12, introduce: 0.82, communicate: 0.72 }, { together: 0.9, solve: 0.66, imagine: 0.58 }),
+]);
+
+function makeCareer(name: string, group: CatalogGroup): CareerDefinition {
+  const traits = careerTraitProfiles[name];
+  if (!traits) {
+    throw new Error(`Missing meaning-based career traits for ${name}`);
+  }
   const activityTags = {
     ...group.activityTags,
-    [activityVariant]: Number((1.1 + (index + 1) / 1000).toFixed(3)),
-    [supportingActivityVariant]: Number((0.42 + (index + 1) / 1000).toFixed(3)),
+    ...traits.activityTags,
   };
   const workStyleTags = {
     ...group.workStyleTags,
-    [styleVariant]: Number((1.05 + (index + 1) / 1000).toFixed(3)),
-    [supportingStyleVariant]: Number((0.38 + (index + 1) / 1000).toFixed(3)),
+    ...traits.workStyleTags,
   };
 
   return {
@@ -303,10 +349,8 @@ function makeCareer(name: string, group: CatalogGroup, index: number): CareerDef
   };
 }
 
-let catalogIndex = 0;
-
 export const careerCatalog: CareerDefinition[] = catalogGroups.flatMap((group) =>
-  group.names.map((name) => makeCareer(name, group, catalogIndex++)),
+  group.names.map((name) => makeCareer(name, group)),
 );
 
 export const careerByName: Record<string, CareerDefinition> = Object.fromEntries(

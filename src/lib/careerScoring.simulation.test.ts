@@ -60,15 +60,7 @@ function optimizeScenarioForCareer(career: typeof careerCatalog[number]) {
 }
 
 describe('career scoring distribution safeguards', () => {
-  it('keeps every career profile unique and reachable by its matching scenario', () => {
-    const profiles = careerCatalog.map((career) => JSON.stringify({
-      primaryField: career.primaryField,
-      secondaryField: career.secondaryField,
-      activityTags: Object.entries(career.activityTags).sort(),
-      workStyleTags: Object.entries(career.workStyleTags).sort(),
-    }));
-    expect(new Set(profiles).size).toBe(careerCatalog.length);
-
+  it('keeps every career reachable by its matching scenario', () => {
     const unreachable = careerCatalog.flatMap((career) => {
       const result = getCareerResultV2(scenarioForCareer(career));
       const isRecommended = result.fieldResults

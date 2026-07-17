@@ -82,7 +82,7 @@ export function ResultPage({
         recommendedCareerNames={recommendedCareerNames}
         onConfirm={onConfirmDreamChoice}
         isSaving={resultSaveStatus.status === 'saving'}
-        isSaved={resultSaveStatus.status === 'saved'}
+        savedChoice={dreamChoice}
       />
       <CareerLibrary
         categories={careerCategories}

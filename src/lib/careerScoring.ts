@@ -384,12 +384,13 @@ export function getCareerResultV2(answers: CareerAnswerMap): CareerResultV2 {
         score,
         scoreBand: scoreBand(score),
         evidence: evidenceForField(answers, field.activityTags),
-        recommendedCareers: topWithTies(careers, 5),
+        recommendedCareers: topWithTies(careers, 3),
       };
     })
     .sort((left, right) => right.score - left.score);
 
-  const recommendedFieldResults = fieldResults.slice(0, 3);
+  const hasKnownAnswer = Object.values(answers).some((answer) => answer === 'A' || answer === 'B');
+  const recommendedFieldResults = hasKnownAnswer ? fieldResults.slice(0, 3) : [];
   const strengths = recommendedFieldResults.map((field) => field.label.split(' — ')[0]);
 
   return {
@@ -397,6 +398,8 @@ export function getCareerResultV2(answers: CareerAnswerMap): CareerResultV2 {
     fieldResults,
     recommendedFieldResults,
     strengths,
-    summary: '답변 속에서 여러 가지 흥미로운 방향을 찾았어요. 아래 분야와 직업을 차례로 탐험해 보세요.',
+    summary: hasKnownAnswer
+      ? '답변 속에서 여러 가지 흥미로운 방향을 찾았어요. 아래 분야와 직업을 차례로 탐험해 보세요.'
+      : '아직 마음이 끌리는 활동을 찾는 중이에요. 마음에 드는 직업을 직접 골라 보고, 다음에는 조금 더 답해 보세요.',
   };
 }

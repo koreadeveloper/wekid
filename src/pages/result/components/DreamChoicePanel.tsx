@@ -7,11 +7,15 @@ type DreamChoicePanelProps = {
   recommendedCareerNames: string[];
   onConfirm: (choice: DreamChoice) => void;
   isSaving?: boolean;
-  isSaved?: boolean;
+  savedChoice?: DreamChoice;
 };
 
 export function isDreamChoiceReady(choice: DreamChoice | undefined): choice is DreamChoice {
   return Boolean(choice && (choice.kind === 'undecided' || choice.careerName.trim().length > 0));
+}
+
+export function canConfirmDreamChoice(choice: DreamChoice | undefined, savedChoice: DreamChoice | undefined) {
+  return isDreamChoiceReady(choice) && JSON.stringify(choice) !== JSON.stringify(savedChoice);
 }
 
 export function getDreamChoiceText(choice: DreamChoice | undefined) {
@@ -27,7 +31,7 @@ export function DreamChoicePanel({
   recommendedCareerNames,
   onConfirm,
   isSaving = false,
-  isSaved = false,
+  savedChoice,
 }: DreamChoicePanelProps) {
   const [choice, setChoice] = useState<DreamChoice>();
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,10 +143,10 @@ export function DreamChoicePanel({
         <button
           className="primary-button"
           type="button"
-          disabled={!isDreamChoiceReady(choice) || isSaving || isSaved}
+          disabled={!canConfirmDreamChoice(choice, savedChoice) || isSaving}
           onClick={() => choice && onConfirm(choice)}
         >
-          {isSaved ? '결과를 저장했어요' : isSaving ? '결과 저장 중' : '이 꿈으로 결과 저장하기'}
+          {isSaving ? '결과 저장 중' : savedChoice ? '바꾼 꿈으로 결과 저장하기' : '이 꿈으로 결과 저장하기'}
         </button>
       </div>
       {choice && <p className="dream-selected">내가 고른 꿈: <strong>{getDreamChoiceText(choice)}</strong></p>}

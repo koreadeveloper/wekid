@@ -1057,6 +1057,24 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
           </section>
         )}
 
+        {isV2 && (
+          <section className="admin-detail-section">
+            <h3>분야별 점수와 선택 근거</h3>
+            <div className="admin-score-groups">
+              <ScoreGroup
+                title="8개 분야"
+                entries={result.fieldResults.map((field) => [field.label, field.score])}
+                maxScore={1}
+              />
+            </div>
+            <div className="admin-chip-row">
+              {result.fieldResults.flatMap((field) => field.evidence.map((evidence) => (
+                <span key={`${field.fieldId}-${evidence}`}>{field.label}: {evidence}</span>
+              )))}
+            </div>
+          </section>
+        )}
+
         <section className="admin-detail-section">
           <div className="admin-detail-section-heading">
             <h3>문항별 답변</h3>

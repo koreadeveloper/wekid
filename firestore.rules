@@ -74,6 +74,77 @@ service cloud.firestore {
         (value.kind == 'undecided' || (value.careerName is string && value.careerName.size() <= 40));
     }
 
+    function validV2AnswerSnapshot(value) {
+      return value is map &&
+        value.keys().hasOnly(['questionId', 'questionText', 'choice', 'optionLabel']) &&
+        value.questionId is int && value.questionId >= 1 && value.questionId <= 24 &&
+        value.questionText is string && value.questionText.size() <= 200 &&
+        value.choice in ['A', 'B', 'unknown'] &&
+        value.optionLabel is string && value.optionLabel.size() <= 240;
+    }
+
+    function validV2Career(value) {
+      return value is map &&
+        value.keys().hasOnly(['name', 'score', 'primaryField', 'secondaryField', 'reason']) &&
+        value.keys().hasAll(['name', 'score', 'primaryField', 'reason']) &&
+        value.name is string && value.name.size() <= 40 && value.score is number && value.score >= 0 && value.score <= 1 &&
+        value.primaryField in ['research', 'digital', 'creative', 'people', 'life', 'leadership', 'public', 'action'] &&
+        (!value.keys().hasAll(['secondaryField']) || value.secondaryField == null || value.secondaryField in ['research', 'digital', 'creative', 'people', 'life', 'leadership', 'public', 'action']) &&
+        value.reason is string && value.reason.size() <= 300;
+    }
+
+    function validV2Evidence(value) {
+      return value.size() <= 2 &&
+        (value.size() < 1 || (value[0] is string && value[0].size() <= 240)) &&
+        (value.size() < 2 || (value[1] is string && value[1].size() <= 240));
+    }
+
+    function validV2RecommendedCareers(value) {
+      return value.size() <= 20 &&
+        (value.size() < 1 || validV2Career(value[0])) && (value.size() < 2 || validV2Career(value[1])) &&
+        (value.size() < 3 || validV2Career(value[2])) && (value.size() < 4 || validV2Career(value[3])) &&
+        (value.size() < 5 || validV2Career(value[4])) && (value.size() < 6 || validV2Career(value[5])) &&
+        (value.size() < 7 || validV2Career(value[6])) && (value.size() < 8 || validV2Career(value[7])) &&
+        (value.size() < 9 || validV2Career(value[8])) && (value.size() < 10 || validV2Career(value[9])) &&
+        (value.size() < 11 || validV2Career(value[10])) && (value.size() < 12 || validV2Career(value[11])) &&
+        (value.size() < 13 || validV2Career(value[12])) && (value.size() < 14 || validV2Career(value[13])) &&
+        (value.size() < 15 || validV2Career(value[14])) && (value.size() < 16 || validV2Career(value[15])) &&
+        (value.size() < 17 || validV2Career(value[16])) && (value.size() < 18 || validV2Career(value[17])) &&
+        (value.size() < 19 || validV2Career(value[18])) && (value.size() < 20 || validV2Career(value[19]));
+    }
+
+    function validV2Field(value) {
+      return value is map &&
+        value.keys().hasOnly(['fieldId', 'label', 'score', 'scoreBand', 'evidence', 'recommendedCareers']) &&
+        value.fieldId in ['research', 'digital', 'creative', 'people', 'life', 'leadership', 'public', 'action'] &&
+        value.label is string && value.label.size() <= 100 && value.score is number && value.score >= 0 && value.score <= 1 &&
+        value.scoreBand in ['very-high', 'high', 'explore'] && value.evidence is list && validV2Evidence(value.evidence) &&
+        value.recommendedCareers is list && validV2RecommendedCareers(value.recommendedCareers);
+    }
+
+    function validV2AnswerSnapshots(value) {
+      return value.size() == 24 &&
+        validV2AnswerSnapshot(value[0]) && validV2AnswerSnapshot(value[1]) && validV2AnswerSnapshot(value[2]) && validV2AnswerSnapshot(value[3]) &&
+        validV2AnswerSnapshot(value[4]) && validV2AnswerSnapshot(value[5]) && validV2AnswerSnapshot(value[6]) && validV2AnswerSnapshot(value[7]) &&
+        validV2AnswerSnapshot(value[8]) && validV2AnswerSnapshot(value[9]) && validV2AnswerSnapshot(value[10]) && validV2AnswerSnapshot(value[11]) &&
+        validV2AnswerSnapshot(value[12]) && validV2AnswerSnapshot(value[13]) && validV2AnswerSnapshot(value[14]) && validV2AnswerSnapshot(value[15]) &&
+        validV2AnswerSnapshot(value[16]) && validV2AnswerSnapshot(value[17]) && validV2AnswerSnapshot(value[18]) && validV2AnswerSnapshot(value[19]) &&
+        validV2AnswerSnapshot(value[20]) && validV2AnswerSnapshot(value[21]) && validV2AnswerSnapshot(value[22]) && validV2AnswerSnapshot(value[23]);
+    }
+
+    function validV2Fields(value) {
+      return value.size() == 8 &&
+        validV2Field(value[0]) && validV2Field(value[1]) && validV2Field(value[2]) && validV2Field(value[3]) &&
+        validV2Field(value[4]) && validV2Field(value[5]) && validV2Field(value[6]) && validV2Field(value[7]);
+    }
+
+    function validV2RecommendedFields(value) {
+      return value.size() <= 3 &&
+        (value.size() < 1 || validV2Field(value[0])) &&
+        (value.size() < 2 || validV2Field(value[1])) &&
+        (value.size() < 3 || validV2Field(value[2]));
+    }
+
     function validV2TestResultCreate() {
       return request.resource.data.keys().hasOnly([
           'participantName',
@@ -101,11 +172,11 @@ service cloud.firestore {
         request.resource.data.completedAt is timestamp &&
         request.resource.data.questionnaireVersion == 2 &&
         request.resource.data.answerSnapshots is list &&
-        request.resource.data.answerSnapshots.size() <= 24 &&
+        validV2AnswerSnapshots(request.resource.data.answerSnapshots) &&
         request.resource.data.fieldResults is list &&
-        request.resource.data.fieldResults.size() <= 8 &&
+        validV2Fields(request.resource.data.fieldResults) &&
         request.resource.data.recommendedFieldResults is list &&
-        request.resource.data.recommendedFieldResults.size() <= 3 &&
+        validV2RecommendedFields(request.resource.data.recommendedFieldResults) &&
         validV2DreamChoice(request.resource.data.dreamChoice) &&
         request.resource.data.resultSummary is string &&
         request.resource.data.resultSummary.size() <= 2000 &&

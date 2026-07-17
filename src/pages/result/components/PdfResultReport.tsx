@@ -26,7 +26,7 @@ export const PdfResultReport = forwardRef<HTMLDivElement, PdfResultReportProps>(
           <span>{reportDate}</span>
         </header>
         <section className="pdf-main-card">
-          <p>내가 탐험한 세 가지 방향</p>
+          <p>{result.recommendedFieldResults.length ? '내가 탐험한 세 가지 방향' : '내가 직접 고른 진로 탐험'}</p>
           {result.recommendedFieldResults.map((field) => <h3 key={field.fieldId}>{field.label}</h3>)}
           <span>{result.summary}</span>
         </section>
@@ -43,6 +43,7 @@ export const PdfResultReport = forwardRef<HTMLDivElement, PdfResultReportProps>(
                 <p>{field.label}</p>
               </div>
             )))}
+            {result.recommendedFieldResults.length === 0 && <p>아직 고르는 중이에요.</p>}
           </div>
         </section>
       </article>

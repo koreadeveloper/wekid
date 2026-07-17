@@ -20,6 +20,7 @@ export function CareerRecommendations({ fieldResults, hasCareerDetail, onCareerS
         <h2 id="field-results-title">내가 더 탐험해 볼 분야와 직업</h2>
       </div>
       <div className="field-result-grid">
+        {fieldResults.length === 0 && <p className="field-empty">아직 추천 방향은 정하지 않았어요. 아래 직업 목록에서 마음이 가는 꿈을 직접 골라 보세요.</p>}
         {fieldResults.map((field) => (
           <article className="field-result-card" key={field.fieldId}>
             <div className="field-result-heading">

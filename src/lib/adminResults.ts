@@ -1,5 +1,5 @@
 import { collection, getDocs, limit, orderBy, query, type Firestore, type Timestamp } from 'firebase/firestore';
-import { legacyQuestionsV1 } from '../data/legacyQuestionsV1';
+import { legacyChoiceLabelsV1, legacyQuestionsV1 } from '../data/legacyQuestionsV1';
 import { firestore } from './firebase';
 import type { StoredTestResultRecord, TestResultDocument } from '../types/firestore';
 
@@ -149,9 +149,9 @@ export function getAdminAnswerDetails(result: StoredTestResultRecord) {
     return {
       questionEyebrow: question?.eyebrow ?? `문항 ${answer.questionId}`,
       questionText: question?.text ?? '저장된 문항 정보를 찾을 수 없어요.',
-      optionLabel: String(answer.choice),
+      optionLabel: legacyChoiceLabelsV1[String(answer.choice)] ?? String(answer.choice),
       choice: String(answer.choice),
-      helper: '기존 설문 선택값',
+      helper: '기존 설문 선택',
     };
   });
 }
@@ -486,6 +486,8 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
     '최종꿈유형',
     '답변수',
     '답변스냅샷JSON',
+    '모든분야점수JSON',
+    '분야근거JSON',
     '요약',
     '점수JSON',
     '테스트의심여부',
@@ -522,13 +524,15 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
       isV2Result(result) ? result.dreamChoice.kind : '',
       isV2Result(result) ? result.answerSnapshots.length : result.answers.length,
       isV2Result(result) ? JSON.stringify(result.answerSnapshots) : '',
+      isV2Result(result) ? JSON.stringify(result.fieldResults.map((field) => ({ label: field.label, score: field.score }))) : '',
+      isV2Result(result) ? JSON.stringify(result.fieldResults.map((field) => ({ label: field.label, evidence: field.evidence }))) : '',
       result.resultSummary,
       JSON.stringify(result.scores),
       isSuspectedTestResult(result) ? '예' : '아니오',
       options.filterMemo ?? '',
       durationSeconds == null ? '' : durationSeconds,
       isV2Result(result) ? '' : stringifyRawValue(result.topCareer),
-      isV2Result(result) ? JSON.stringify(result.recommendedFieldResults) : JSON.stringify(result.recommendedCareers),
+      isV2Result(result) ? JSON.stringify(result.fieldResults) : JSON.stringify(result.recommendedCareers),
     ]
       .map(csvCell)
       .join(',');
@@ -587,6 +591,13 @@ export function createAdminResultAnalysis(results: StoredTestResultRecord[]): Ad
   const scoreTotals = new Map<string, number>();
 
   results.forEach((result) => {
+    if (isV2Result(result)) {
+      result.fieldResults.forEach((field) => {
+        scoreTotals.set(field.label, (scoreTotals.get(field.label) ?? 0) + Number(field.score));
+      });
+      return;
+    }
+
     Object.entries(result.scores).forEach(([scoreKey, score]) => {
       scoreTotals.set(scoreKey, (scoreTotals.get(scoreKey) ?? 0) + Number(score));
     });

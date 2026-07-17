@@ -43,8 +43,8 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
     <section className="result-hero career-result-hero" ref={shareCardRef}>
       <div>
         <p className="section-kicker">{userName ? `${userName}의 진로 탐험 결과` : '나의 진로 탐험 결과'}</p>
-        <h1 className="result-title">세 가지 방향을 탐험했어요</h1>
-        <p className="result-subtitle">한 가지 직업으로 정하지 않아도 괜찮아요.</p>
+        <h1 className="result-title">{result.recommendedFieldResults.length ? '세 가지 방향을 탐험했어요' : '나만의 진로를 찾아볼 시간이에요'}</h1>
+        <p className="result-subtitle">{result.recommendedFieldResults.length ? '한 가지 직업으로 정하지 않아도 괜찮아요.' : '마음에 드는 직업을 고르고, 다음에 다시 탐험해도 괜찮아요.'}</p>
         <p className="result-description">{result.summary}</p>
         <div className="field-hero-list">
           {result.recommendedFieldResults.map((field) => (

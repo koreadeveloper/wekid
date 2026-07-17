@@ -121,7 +121,14 @@ const v2Record: StoredTestResultRecord = {
     choice: 'A',
     optionLabel: '별과 우주를 관찰하며 궁금한 점 알아보기',
   }],
-  fieldResults: [],
+  fieldResults: [{
+    fieldId: 'research',
+    label: '호기심 많은 탐구자 — 과학·연구',
+    score: 0.9,
+    scoreBand: 'very-high',
+    evidence: ['별과 우주를 관찰하며 궁금한 점 알아보기'],
+    recommendedCareers: [],
+  }],
   recommendedFieldResults: [{
     fieldId: 'research',
     label: '호기심 많은 탐구자 — 과학·연구',
@@ -155,6 +162,7 @@ describe('v2 result helpers', () => {
     expect(csv).toContain('설문버전');
     expect(csv).toContain('최종꿈');
     expect(csv).toContain('호기심 많은 탐구자 — 과학·연구');
+    expect(csv).toContain('모든분야점수JSON');
   });
 });
 
@@ -293,6 +301,14 @@ describe('createAdminResultAnalysis', () => {
     expect(analysis.topCenter).toEqual({ centerName: '강남 청소년센터', count: 1, ratio: 0.5 });
     expect(analysis.topCareer).toEqual({ careerName: '사진작가', count: 1, ratio: 0.5 });
     expect(analysis.scoreAverages[0]).toEqual({ scoreKey: 'artistic', average: 2.5, total: 5 });
+  });
+
+  it('includes all v2 field scores in the aggregate analysis', () => {
+    const analysis = createAdminResultAnalysis([v2Record]);
+
+    expect(analysis.scoreAverages).toContainEqual({
+      scoreKey: '호기심 많은 탐구자 — 과학·연구', average: 0.9, total: 0.9,
+    });
   });
 
   it('excludes invalid durations and handles null center values', () => {

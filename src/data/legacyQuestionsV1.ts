@@ -32,3 +32,12 @@ export const legacyQuestionsV1: Record<string, { eyebrow: string; text: string }
   '29': { eyebrow: '발표 준비', text: '마지막 점검 시간에 나는?' },
   '30': { eyebrow: '자유 시간', text: '갑자기 두 시간이 생겼을 때 나는?' },
 };
+
+// v1 records retained a choice key instead of option text. This frozen map keeps
+// those historical answers readable even after the live questionnaire changes.
+export const legacyChoiceLabelsV1: Record<string, string> = {
+  realistic: '직접 해 보고 움직이는 쪽', investigative: '이유와 원리를 찾아보는 쪽', artistic: '그림·글·음악으로 표현하는 쪽',
+  social: '친구와 사람을 돕는 쪽', enterprising: '앞에서 이끌고 소개하는 쪽', conventional: '순서와 자료를 정리하는 쪽',
+  together: '친구와 함께하는 쪽', focus: '혼자 차분히 집중하는 쪽', observe: '실제로 보고 확인하는 쪽', imagine: '새로운 생각을 떠올리는 쪽',
+  solve: '문제를 찾아 해결하는 쪽', care: '마음을 살피고 돕는 쪽', plan: '미리 계획하고 준비하는 쪽', flex: '상황에 맞춰 바꾸는 쪽',
+};

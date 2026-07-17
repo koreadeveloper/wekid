@@ -35,4 +35,22 @@ describe('ResultPage', () => {
     expect(markup).toContain('호기심 많은 탐구자 — 과학·연구');
     expect(markup).not.toContain('가장 잘 맞는 직업은');
   });
+
+  it('does not invent three directions for an all-unknown result', () => {
+    const markup = renderToStaticMarkup(
+      <ResultPage
+        result={{ ...result, recommendedFieldResults: [], summary: '아직 마음이 끌리는 활동을 찾는 중이에요.' }}
+        userName="김탐험"
+        resultSaveStatus={{ status: 'idle' }}
+        hasCareerDetail={() => true}
+        onCareerSelect={() => undefined}
+        onEditLastAnswer={() => undefined}
+        onReset={() => undefined}
+        onConfirmDreamChoice={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain('나만의 진로를 찾아볼 시간이에요');
+    expect(markup).not.toContain('세 가지 방향을 탐험했어요');
+  });
 });

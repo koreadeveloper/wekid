@@ -20,4 +20,18 @@ describe('normalized multi-field career recommendations', () => {
 
     expect(result.fieldResults[0].fieldId).toBe('research');
   });
+
+  it('does not invent a ranked field or career when every answer is unknown', () => {
+    const answers = Object.fromEntries(Array.from({ length: 24 }, (_, index) => [index + 1, 'unknown'])) as Record<number, 'unknown'>;
+    const result = getCareerResultV2(answers);
+
+    expect(result.recommendedFieldResults).toEqual([]);
+    expect(result.summary).toContain('아직 마음이 끌리는 활동을 찾는 중');
+  });
+
+  it('keeps three careers per recommended field, including a third-place tie only', () => {
+    const result = getCareerResultV2({ 1: 'A', 5: 'A', 9: 'A', 13: 'A' });
+
+    expect(result.recommendedFieldResults.every((field) => field.recommendedCareers.length >= 3)).toBe(true);
+  });
 });
