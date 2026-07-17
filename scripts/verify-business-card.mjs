@@ -2,15 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 
 const requiredFiles = [
   'src/pages/business-card/BusinessCardMakerPage.tsx',
+  'src/pages/business-card/CareerPicker.tsx',
+  'src/pages/business-card/CareerPicker.test.ts',
   'src/styles/business-card.css',
-  'public/business-card-backgrounds/police.png',
-  'public/business-card-backgrounds/firefighter.png',
-  'public/business-card-backgrounds/soccer.png',
-  'public/business-card-backgrounds/director.png',
-  'public/business-card-backgrounds/teacher.png',
-  'public/business-card-backgrounds/community-partnership.png',
   'public/goyang-volunteer-center.png',
-  'public/business-card-backgrounds/wekid-dream-card-lockup.png',
 ];
 const failures = [];
 
@@ -25,6 +20,8 @@ const app = readIfExists('src/App.tsx');
 const indexCss = readIfExists('src/index.css');
 const css = readIfExists('src/styles/business-card.css');
 const page = readIfExists('src/pages/business-card/BusinessCardMakerPage.tsx');
+const picker = readIfExists('src/pages/business-card/CareerPicker.tsx');
+const pickerTest = readIfExists('src/pages/business-card/CareerPicker.test.ts');
 
 const requiredChecks = [
   [app.includes('BusinessCardMakerPage'), 'App must import and render BusinessCardMakerPage'],
@@ -37,11 +34,11 @@ const requiredChecks = [
   [css.includes('grid-template-columns: repeat(2, var(--card-width))'), 'print sheet must use two columns'],
   [page.includes('const PRINT_CARD_COUNT = 10'), 'page must repeat 10 cards per A4 sheet'],
   [page.includes('window.print()'), 'page must use browser print'],
-  [page.includes('const JOB_CARD_THEMES'), 'page must define selectable job card themes'],
-  [page.includes('경찰관') && page.includes('소방관') && page.includes('축구선수'), 'page must include police, firefighter, and soccer themes'],
-  [page.includes('영화감독') && page.includes('선생님'), 'page must include film director and teacher themes'],
-  [page.includes('jobSearch') && page.includes('filteredJobThemes'), 'page must support searching job themes'],
-  [page.includes('selectJobTheme'), 'page must support selecting a job theme'],
+  [page.includes('CareerPicker'), 'page must render the catalog career picker'],
+  [picker.includes('careerCatalog'), 'career picker must use the shared career catalog'],
+  [picker.includes('filterBusinessCardCareers'), 'career picker must support searching catalog careers'],
+  [picker.includes('career.name.toLowerCase().includes(keyword)'), 'career picker must search all 107 careers by name'],
+  [pickerTest.includes("filterBusinessCardCareers(careerCatalog, '')") && pickerTest.includes('toHaveLength(107)'), 'picker must verify access to all 107 catalog careers'],
   [page.includes('card-front-center-logo'), 'front card must render the Goyang volunteer center logo'],
   [page.includes('card-front-identity'), 'front card must render the identity block (name/english/job)'],
   [page.includes('card-front-english-name'), 'front card must render an editable English name layer'],

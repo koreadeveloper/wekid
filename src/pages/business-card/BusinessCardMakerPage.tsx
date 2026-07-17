@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { romanizeKoreanName } from '../../lib/romanizeKoreanName';
-import { BriefcaseBusiness, ImagePlus, Printer, Search, Sparkles, UserRound } from 'lucide-react';
+import { BriefcaseBusiness, ImagePlus, Printer, Sparkles, UserRound } from 'lucide-react';
+import { careerByName } from '../../data/careerCatalog';
+import { CareerPicker } from './CareerPicker';
 
 const PRINT_CARD_COUNT = 10;
 
@@ -16,56 +18,10 @@ type BusinessCardData = {
   goal: string;
 };
 
-type JobCardTheme = {
-  key: 'police' | 'firefighter' | 'soccer' | 'director' | 'teacher';
-  name: string;
-  emoji: string;
-  hint: string;
-  backgroundUrl: string;
-};
-
-const JOB_CARD_THEMES: JobCardTheme[] = [
-  {
-    key: 'police',
-    name: '경찰관',
-    emoji: '👮',
-    hint: '질서와 안전을 지키는 공공 전문가',
-    backgroundUrl: '/business-card-backgrounds/police.png',
-  },
-  {
-    key: 'firefighter',
-    name: '소방관',
-    emoji: '🚒',
-    hint: '위험한 순간 가장 먼저 달려가는 구조자',
-    backgroundUrl: '/business-card-backgrounds/firefighter.png',
-  },
-  {
-    key: 'soccer',
-    name: '축구선수',
-    emoji: '⚽',
-    hint: '경기장에서 팀과 함께 뛰는 운동 전문가',
-    backgroundUrl: '/business-card-backgrounds/soccer.png',
-  },
-  {
-    key: 'director',
-    name: '영화감독',
-    emoji: '🎬',
-    hint: '영상 이야기를 이끄는 연출가',
-    backgroundUrl: '/business-card-backgrounds/director.png',
-  },
-  {
-    key: 'teacher',
-    name: '선생님',
-    emoji: '📚',
-    hint: '배움의 길을 열어 주는 사람',
-    backgroundUrl: '/business-card-backgrounds/teacher.png',
-  },
-];
-
 const defaultCardData: BusinessCardData = {
   name: '김위키드',
   englishName: 'KIM WEKID',
-  job: JOB_CARD_THEMES[0].name,
+  job: '경찰관',
   school: '위키드 초등학교',
   phone: '010-0000-0000',
   email: 'dream@wekid.kr',
@@ -110,21 +66,8 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
   const autoEnglishNameRef = useRef<string>('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [printSide, setPrintSide] = useState<PrintSide>('front');
-  const [selectedJobKey, setSelectedJobKey] = useState<JobCardTheme['key']>(JOB_CARD_THEMES[0].key);
-  const [jobSearch, setJobSearch] = useState('');
   const photoObjectUrlRef = useRef<string | null>(null);
-
-  const selectedJobTheme = JOB_CARD_THEMES.find((theme) => theme.key === selectedJobKey) ?? JOB_CARD_THEMES[0];
-  const filteredJobThemes = useMemo(() => {
-    const keyword = jobSearch.trim().toLowerCase();
-    if (!keyword) {
-      return JOB_CARD_THEMES;
-    }
-
-    return JOB_CARD_THEMES.filter(
-      (theme) => theme.name.toLowerCase().includes(keyword) || theme.hint.toLowerCase().includes(keyword),
-    );
-  }, [jobSearch]);
+  const selectedCareerEmoji = careerByName[cardData.job]?.detail.emoji ?? '💼';
 
   useEffect(
     () => () => {
@@ -166,9 +109,8 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
     });
   };
 
-  const selectJobTheme = (theme: JobCardTheme) => {
-    setSelectedJobKey(theme.key);
-    setCardData((current) => ({ ...current, job: theme.name }));
+  const selectCareer = (careerName: string) => {
+    setCardData((current) => ({ ...current, job: careerName }));
   };
 
   const updatePhoto = (file: File | undefined) => {
@@ -207,34 +149,7 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
           </div>
 
           <div className="business-card-form-grid">
-            <div className="business-card-job-selector">
-              <label className="business-card-field">
-                <span>희망 직업 검색</span>
-                <div className="job-search-box">
-                  <Search size={17} />
-                  <input
-                    type="search"
-                    value={jobSearch}
-                    placeholder="경찰관, 소방관, 축구선수..."
-                    onChange={(event) => setJobSearch(event.target.value)}
-                  />
-                </div>
-              </label>
-              <div className="job-theme-list" aria-label="희망 직업 선택">
-                {filteredJobThemes.map((theme) => (
-                  <button
-                    className={`job-theme-button ${selectedJobTheme.key === theme.key ? 'active' : ''}`}
-                    key={theme.key}
-                    type="button"
-                    onClick={() => selectJobTheme(theme)}
-                  >
-                    <span aria-hidden="true">{theme.emoji}</span>
-                    <strong>{theme.name}</strong>
-                  </button>
-                ))}
-                {filteredJobThemes.length === 0 && <p className="job-theme-empty">검색 결과가 없어요.</p>}
-              </div>
-            </div>
+            <CareerPicker value={cardData.job} onChange={selectCareer} />
 
             {fields.map((field) => (
               <label className="business-card-field" key={field.id}>
@@ -276,8 +191,8 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
           </div>
 
           <div className="business-card-preview-grid">
-            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="front" theme={selectedJobTheme} />
-            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="back" theme={selectedJobTheme} />
+            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="front" emoji={selectedCareerEmoji} />
+            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="back" emoji={selectedCareerEmoji} />
           </div>
 
           <div className="business-card-print-controls" aria-label="인쇄 설정">
@@ -314,7 +229,7 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
               key={`${printSide}-${copy}`}
               photoUrl={photoUrl}
               side={printSide}
-              theme={selectedJobTheme}
+              emoji={selectedCareerEmoji}
               variant="print"
             />
           ))}
@@ -328,11 +243,11 @@ type BusinessCardPreviewProps = {
   data: BusinessCardData;
   photoUrl: string | null;
   side: PrintSide;
-  theme: JobCardTheme;
+  emoji: string;
   variant?: 'screen' | 'print';
 };
 
-function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }: BusinessCardPreviewProps) {
+function BusinessCardPreview({ data, photoUrl, side, emoji, variant = 'screen' }: BusinessCardPreviewProps) {
   const value = (text: string, fallback: string) => text.trim() || fallback;
   const name = value(data.name, '이름');
   const englishName = value(data.englishName, 'WEKID DREAMER');
@@ -383,7 +298,7 @@ function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'screen' }
       </div>
       <div className="card-info-column">
         <p className="card-info-job">
-          <span aria-hidden="true">{theme.emoji}</span>
+          <span aria-hidden="true">{emoji}</span>
           {job}
         </p>
         <h3>{name}</h3>
