@@ -1,14 +1,14 @@
 import { ArrowLeft, Check } from 'lucide-react';
-import type { AnswerChoice, Question } from '../../../types/career';
+import type { CareerAnswer, CareerQuestionV2 } from '../../../types/career';
 
 type QuestionPanelProps = {
   answeredCount: number;
-  currentAnswer?: AnswerChoice;
+  currentAnswer?: CareerAnswer;
   currentIndex: number;
-  currentQuestion: Question;
+  currentQuestion: CareerQuestionV2;
   isAdvancing: boolean;
-  questions: Question[];
-  onChooseAnswer: (choice: AnswerChoice) => void;
+  questions: CareerQuestionV2[];
+  onChooseAnswer: (choice: CareerAnswer) => void;
   onPrevious: () => void;
 };
 
@@ -26,20 +26,20 @@ export function QuestionPanel({
     <section className="question-panel" aria-live="polite">
       <div className="question-meta">
         <span>{String(currentIndex + 1).padStart(2, '0')}</span>
-        <p>{currentQuestion.eyebrow}</p>
+        <p>{currentQuestion.kind === 'activity' ? '활동 흥미' : '일하는 방식'}</p>
       </div>
 
       <h2>{currentQuestion.text}</h2>
 
       <div className="options-grid">
         {currentQuestion.options.map((option) => {
-          const selected = currentAnswer === option.choice;
+          const selected = currentAnswer === option.id;
           return (
             <button
               className={`option-card ${selected ? 'selected' : ''}`}
-              key={option.choice}
+              key={option.id}
               type="button"
-              onClick={() => onChooseAnswer(option.choice)}
+              onClick={() => onChooseAnswer(option.id)}
               aria-pressed={selected}
               disabled={isAdvancing}
             >
@@ -47,28 +47,20 @@ export function QuestionPanel({
                 {selected ? <Check size={18} /> : null}
               </span>
               <strong>{option.label}</strong>
-              <small>{option.helper}</small>
             </button>
           );
         })}
-        {(['uncertain', 'neither'] as const).map((choice) => {
-          const selected = currentAnswer === choice;
-          const label = choice === 'uncertain' ? '둘 다 비슷해요' : '둘 다 아니에요';
-          return (
-            <button
-              className={`option-card option-card-neutral ${selected ? 'selected' : ''}`}
-              key={choice}
-              type="button"
-              onClick={() => onChooseAnswer(choice)}
-              aria-pressed={selected}
-              disabled={isAdvancing}
-            >
-              <span className="option-check">{selected ? <Check size={18} /> : null}</span>
-              <strong>{label}</strong>
-              <small>두 선택지와 내 마음이 크게 다를 때 골라요</small>
-            </button>
-          );
-        })}
+        <button
+          className={`option-card option-card-neutral ${currentAnswer === 'unknown' ? 'selected' : ''}`}
+          type="button"
+          onClick={() => onChooseAnswer('unknown')}
+          aria-pressed={currentAnswer === 'unknown'}
+          disabled={isAdvancing}
+        >
+          <span className="option-check">{currentAnswer === 'unknown' ? <Check size={18} /> : null}</span>
+          <strong>아직 잘 모르겠어요</strong>
+          <small>고민이 더 필요하면 이 선택을 골라도 괜찮아요.</small>
+        </button>
       </div>
 
       <div className="question-footer">

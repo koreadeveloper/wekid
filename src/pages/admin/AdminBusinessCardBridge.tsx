@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchAdminResults, getCareerName, toAdminDate } from '../../lib/adminResults';
+import { fetchAdminResults, getResultCareerLabel, toAdminDate } from '../../lib/adminResults';
 import type { StoredTestResultRecord } from '../../types/firestore';
 
 export type BusinessCardPrefill = {
@@ -26,20 +26,20 @@ function normalize(value: string) {
 }
 
 function matchesRow(result: StoredTestResultRecord, cells: HTMLTableCellElement[]) {
-  if (cells.length < 7) {
+  if (cells.length < 9) {
     return false;
   }
 
   const rowDate = normalize(cells[0].textContent ?? '');
   const rowName = normalize(cells[1].textContent ?? '').replace('테스트 의심', '').trim();
   const rowCenter = normalize(cells[2].textContent ?? '');
-  const rowCareer = normalize(cells[3].textContent ?? '');
+  const rowCareer = normalize(cells[4].textContent ?? '');
 
   return (
     rowDate === normalize(formatDate(result.createdAt)) &&
     rowName === normalize(result.participantName ?? '이름 없음') &&
     rowCenter === normalize(result.centerName ?? '센터 없음') &&
-    rowCareer === normalize(getCareerName(result.topCareer))
+    rowCareer === normalize(getResultCareerLabel(result))
   );
 }
 
@@ -102,7 +102,7 @@ export function AdminBusinessCardBridge({ enabled, onCreateBusinessCard }: Admin
             sourceId: result.id,
             name: result.participantName?.trim() ?? '',
             email: result.participantEmail?.trim() ?? '',
-            job: getCareerName(result.topCareer),
+            job: getResultCareerLabel(result),
             school: result.centerName?.trim() ?? '',
             goal: result.resultSummary?.trim() ?? '',
           });

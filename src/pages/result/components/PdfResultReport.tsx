@@ -1,31 +1,19 @@
 import { forwardRef } from 'react';
-import { axisLabels } from '../../../data/axisLabels';
-import type { CareerMatches, CareerProfile, ExplorationAxis, ScoreMap } from '../../../types/career';
+import type { CareerResultV2, DreamChoice } from '../../../types/career';
+import { getDreamChoiceText } from './DreamChoicePanel';
 
 type PdfResultReportProps = {
-  careerMatches: CareerMatches;
-  profile: CareerProfile;
-  scores: ScoreMap;
+  result: CareerResultV2;
+  dreamChoice?: DreamChoice;
   userName: string;
 };
 
-const axisOrder: ExplorationAxis[] = ['energy', 'information', 'decision', 'pace'];
-
 export const PdfResultReport = forwardRef<HTMLDivElement, PdfResultReportProps>(function PdfResultReport(
-  { careerMatches, profile, scores, userName },
+  { result, dreamChoice, userName },
   ref,
 ) {
   const nameLabel = userName ? `${userName}의` : '나의';
-  const reportDate = new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date());
-
-  const recommendations = [
-    profile.topCareer,
-    ...careerMatches.primary.filter((career) => career.name !== profile.topCareer.name),
-  ].slice(0, 4);
+  const reportDate = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
 
   return (
     <div className="pdf-report-capture" ref={ref} aria-hidden="true">
@@ -33,59 +21,30 @@ export const PdfResultReport = forwardRef<HTMLDivElement, PdfResultReportProps>(
         <header className="pdf-report-header">
           <div>
             <p>위키드 직업 탐험</p>
-            <h2>{nameLabel} 직업 추천 결과지</h2>
+            <h2>{nameLabel} 진로 탐험 결과</h2>
           </div>
           <span>{reportDate}</span>
         </header>
-
         <section className="pdf-main-card">
-          <p>가장 잘 맞는 직업</p>
-          <h3>{profile.topCareer.name}</h3>
-          <strong>{profile.headline}</strong>
-          <span>
-            {profile.summary} {profile.topCareer.reason}
-          </span>
+          <p>내가 탐험한 세 가지 방향</p>
+          {result.recommendedFieldResults.map((field) => <h3 key={field.fieldId}>{field.label}</h3>)}
+          <span>{result.summary}</span>
         </section>
-
-        <section className="pdf-two-column">
-          <div className="pdf-box">
-            <h4>나의 강점</h4>
-            <div className="pdf-tag-row">
-              {profile.strengths.slice(0, 6).map((strength) => (
-                <span key={strength}>{strength}</span>
-              ))}
-            </div>
-          </div>
-          <div className="pdf-box">
-            <h4>선택에서 보인 모습</h4>
-            <ul className="pdf-mini-list">
-              {axisOrder.map((axis) => {
-                const axisInfo = axisLabels[axis];
-                const strongerLabel =
-                  scores[axisInfo.left] >= scores[axisInfo.right] ? axisInfo.leftLabel : axisInfo.rightLabel;
-                return (
-                  <li key={axis}>
-                    <b>{axisInfo.title}</b>
-                    <span>{strongerLabel}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        <section className="pdf-box pdf-dream-choice">
+          <h4>내가 고른 꿈</h4>
+          <strong>{getDreamChoiceText(dreamChoice)}</strong>
         </section>
-
         <section className="pdf-box">
-          <h4>추천 직업과 이유</h4>
+          <h4>분야별 추천 직업</h4>
           <div className="pdf-career-grid">
-            {recommendations.map((career) => (
-              <div className="pdf-career-card" key={career.name}>
+            {result.recommendedFieldResults.flatMap((field) => field.recommendedCareers.map((career) => (
+              <div className="pdf-career-card" key={`${field.fieldId}-${career.name}`}>
                 <strong>{career.name}</strong>
-                <p>{career.reason}</p>
+                <p>{field.label}</p>
               </div>
-            ))}
+            )))}
           </div>
         </section>
-
       </article>
     </div>
   );

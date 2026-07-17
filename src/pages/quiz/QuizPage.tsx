@@ -1,17 +1,17 @@
-import { questions } from '../../data/questions';
-import type { AnswerChoice, Question } from '../../types/career';
+import { careerQuestionsV2 } from '../../data/questionsV2';
+import type { CareerAnswer, CareerQuestionV2 } from '../../types/career';
 import { QuestionPanel } from './components/QuestionPanel';
 import { QuizIntro } from './components/QuizIntro';
 
 type QuizPageProps = {
   answeredCount: number;
-  currentAnswer?: AnswerChoice;
+  currentAnswer?: CareerAnswer;
   currentIndex: number;
-  currentQuestion: Question;
+  currentQuestion: CareerQuestionV2;
   isAdvancing: boolean;
   progress: number;
   userName: string;
-  onChooseAnswer: (choice: AnswerChoice) => void;
+  onChooseAnswer: (choice: CareerAnswer) => void;
   onPrevious: () => void;
 };
 
@@ -28,14 +28,14 @@ export function QuizPage({
 }: QuizPageProps) {
   return (
     <section className="quiz-layout">
-      <QuizIntro answeredCount={answeredCount} totalQuestions={questions.length} progress={progress} userName={userName} />
+      <QuizIntro answeredCount={answeredCount} totalQuestions={careerQuestionsV2.length} progress={progress} userName={userName} />
       <QuestionPanel
         answeredCount={answeredCount}
         currentAnswer={currentAnswer}
         currentIndex={currentIndex}
         currentQuestion={currentQuestion}
         isAdvancing={isAdvancing}
-        questions={questions}
+        questions={careerQuestionsV2}
         onChooseAnswer={onChooseAnswer}
         onPrevious={onPrevious}
       />

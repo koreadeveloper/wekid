@@ -15,7 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { questions } from '../../data/questions';
 import { auth } from '../../lib/firebase';
 import { getAdminProfile, isOwnerAdmin } from '../../lib/adminAuth';
 import {
@@ -25,9 +24,13 @@ import {
   detectSimilarCenterGroups,
   fetchAdminResults,
   filterResults,
-  getCareerName,
+  getAdminAnswerDetails,
+  getDreamChoiceLabel,
+  getRecommendedFieldLabels,
   getRecommendedCareerNames,
+  getResultCareerLabel,
   getResultDurationMinutes,
+  isV2Result,
   isSuspectedTestResult,
   paginateAdminResults,
   sortAdminResults,
@@ -38,7 +41,7 @@ import {
   type AdminSortKey,
   type SimilarCenterGroup,
 } from '../../lib/adminResults';
-import type { AdminProfile, StoredTestResultRecord, TestResultAnswer } from '../../types/firestore';
+import type { AdminProfile, StoredTestResultRecord } from '../../types/firestore';
 
 type AdminStatus =
   | { status: 'firebase-missing' }
@@ -76,7 +79,6 @@ const scoreLabels: Record<string, string> = {
   plan: '계획형',
   flex: '탐험형',
 };
-const questionMap = new Map(questions.map((question) => [String(question.id), question]));
 const interestScoreKeys = new Set(['realistic', 'investigative', 'artistic', 'social', 'enterprising', 'conventional']);
 const pageSizeOptions: AdminPageSize[] = [25, 50, 100, 'all'];
 const sortLabels: Record<AdminSortKey, string> = {
@@ -84,7 +86,7 @@ const sortLabels: Record<AdminSortKey, string> = {
   createdAt: '저장일',
   durationMinutes: '소요 시간',
   participantName: '이름',
-  topCareer: '대표 직업',
+  topCareer: '최종 꿈',
 };
 
 type AdminUiState = {
@@ -220,19 +222,6 @@ function getSourceLabel(source: StoredTestResultRecord['centerSource']) {
   }
 
   return '센터 없음';
-}
-
-function getAnswerDetail(answer: TestResultAnswer) {
-  const question = questionMap.get(String(answer.questionId));
-  const option = question?.options.find((candidate) => candidate.choice === answer.choice);
-
-  return {
-    choice: String(answer.choice),
-    helper: option?.helper ?? '',
-    optionLabel: option?.label ?? String(answer.choice),
-    questionEyebrow: question?.eyebrow ?? `문항 ${answer.questionId}`,
-    questionText: question?.text ?? '저장된 문항 정보를 찾을 수 없어요.',
-  };
 }
 
 function getLocalDateStamp(date = new Date()) {
@@ -706,7 +695,7 @@ export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
             <option value="createdAt">저장일</option>
             <option value="participantName">이름</option>
             <option value="centerName">센터명</option>
-            <option value="topCareer">대표 직업</option>
+            <option value="topCareer">최종 꿈</option>
             <option value="durationMinutes">소요 시간</option>
           </select>
         </label>
@@ -838,7 +827,7 @@ export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
           </div>
         </section>
         <section className="admin-card">
-          <h2>추천 직업 분포</h2>
+          <h2>선택한 꿈 분포</h2>
           <div className="admin-rank-list">
             {summary.byTopCareer.slice(0, 10).map((career) => (
               <div key={career.careerName}>
@@ -869,7 +858,9 @@ export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
                 <th>저장일</th>
                 <th>이름</th>
                 <th>센터</th>
-                <th>대표 직업</th>
+                <th>설문</th>
+                <th>최종 꿈</th>
+                <th>추천 분야</th>
                 <th>소요</th>
                 <th>요약</th>
                 <th>상세</th>
@@ -884,7 +875,9 @@ export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
                     {isSuspectedTestResult(result) && <span className="admin-test-badge">테스트 의심</span>}
                   </td>
                   <td>{result.centerName ?? '센터 없음'}</td>
-                  <td>{getCareerName(result.topCareer)}</td>
+                  <td>{isV2Result(result) ? '새 설문' : '기존 설문'}</td>
+                  <td>{getResultCareerLabel(result)}</td>
+                  <td>{getRecommendedFieldLabels(result) || '-'}</td>
                   <td>{formatDuration(getResultDurationMinutes(result))}</td>
                   <td>{result.resultSummary}</td>
                   <td>
@@ -932,15 +925,17 @@ export function AdminPage({ onOwnerStatusChange }: AdminPageProps) {
 function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResultRecord; onClose: () => void }) {
   const [areAnswersExpanded, setAreAnswersExpanded] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'failed'>('idle');
-  const answerDetails = result.answers.map(getAnswerDetail);
-  const scoreEntries = Object.entries(result.scores).sort((left, right) => Number(right[1]) - Number(left[1]));
+  const isV2 = isV2Result(result);
+  const answerDetails = getAdminAnswerDetails(result);
+  const scoreEntries = isV2 ? [] : Object.entries(result.scores).sort((left, right) => Number(right[1]) - Number(left[1]));
   const maxScore = Math.max(...scoreEntries.map(([, score]) => Number(score)), 1);
   const interestScoreEntries = scoreEntries.filter(([scoreKey]) => interestScoreKeys.has(scoreKey));
   const styleScoreEntries = scoreEntries.filter(([scoreKey]) => !interestScoreKeys.has(scoreKey));
-  const recommendedCareerNames = getRecommendedCareerNames(result.recommendedCareers)
-    .split(' / ')
-    .filter(Boolean);
-  const visibleAnswers = areAnswersExpanded ? answerDetails : answerDetails.slice(0, 8);
+  const recommendedCareerNames = isV2
+    ? result.recommendedFieldResults.flatMap((field) => field.recommendedCareers.map((career) => career.name))
+    : getRecommendedCareerNames(result.recommendedCareers).split(' / ').filter(Boolean);
+  const recommendedFields = getRecommendedFieldLabels(result).split(' / ').filter(Boolean);
+  const visibleAnswers = isV2 || areAnswersExpanded ? answerDetails : answerDetails.slice(0, 8);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -958,7 +953,9 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
       `이름: ${result.participantName ?? '이름 없음'}`,
       `이메일: ${result.participantEmail ?? '-'}`,
       `센터: ${result.centerName ?? '센터 없음'}`,
-      `대표 직업: ${getCareerName(result.topCareer)}`,
+      `설문: ${isV2 ? '새 설문 (v2)' : '기존 설문 (v1)'}`,
+      `최종 꿈: ${getResultCareerLabel(result)}`,
+      `추천 분야: ${recommendedFields.join(', ') || '-'}`,
       `추천 직업: ${recommendedCareerNames.join(', ') || '-'}`,
       `요약: ${result.resultSummary}`,
     ].join('\n');
@@ -993,8 +990,12 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
 
         <div className="admin-detail-meta">
           <div>
-            <span>대표 직업</span>
-            <strong>{getCareerName(result.topCareer)}</strong>
+            <span>최종 꿈</span>
+            <strong>{getResultCareerLabel(result)}</strong>
+          </div>
+          <div>
+            <span>설문 버전</span>
+            <strong>{isV2 ? '새 설문 v2' : '기존 설문 v1'}</strong>
           </div>
           <div>
             <span>검사 시작</span>
@@ -1028,8 +1029,13 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
           </div>
           <p>{result.resultSummary}</p>
           <div className="admin-chip-row">
-            <span className="strong">{getCareerName(result.topCareer)}</span>
+            <span className="strong">{getResultCareerLabel(result)}</span>
           </div>
+          {recommendedFields.length > 0 && (
+            <div className="admin-chip-row">
+              {recommendedFields.map((fieldLabel) => <span key={fieldLabel}>{fieldLabel}</span>)}
+            </div>
+          )}
           {recommendedCareerNames.length > 0 && (
             <div className="admin-chip-row">
               {recommendedCareerNames.map((careerName) => (
@@ -1041,18 +1047,20 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
           {copyStatus === 'failed' && <p className="admin-copy-status warning">복사하지 못했어요. 브라우저 권한을 확인해주세요.</p>}
         </section>
 
-        <section className="admin-detail-section">
-          <h3>점수</h3>
-          <div className="admin-score-groups">
-            <ScoreGroup title="관심 유형" entries={interestScoreEntries} maxScore={maxScore} />
-            <ScoreGroup title="스타일 유형" entries={styleScoreEntries} maxScore={maxScore} />
-          </div>
-        </section>
+        {!isV2 && (
+          <section className="admin-detail-section">
+            <h3>기존 설문 점수</h3>
+            <div className="admin-score-groups">
+              <ScoreGroup title="관심 유형" entries={interestScoreEntries} maxScore={maxScore} />
+              <ScoreGroup title="스타일 유형" entries={styleScoreEntries} maxScore={maxScore} />
+            </div>
+          </section>
+        )}
 
         <section className="admin-detail-section">
           <div className="admin-detail-section-heading">
             <h3>문항별 답변</h3>
-            {answerDetails.length > 8 && (
+            {!isV2 && answerDetails.length > 8 && (
               <button className="admin-text-button" type="button" onClick={() => setAreAnswersExpanded((current) => !current)}>
                 {areAnswersExpanded ? '접기' : `전체 ${answerDetails.length}개 보기`}
               </button>
@@ -1061,7 +1069,7 @@ function AdminResultDetailDialog({ result, onClose }: { result: StoredTestResult
           <div className="admin-answer-list">
             {visibleAnswers.map((answer, index) => (
               <article key={`${answer.questionEyebrow}-${index}`}>
-                <span>{answer.questionEyebrow}</span>
+                <span>{answer.questionEyebrow}{isV2 ? ' · v2' : ''}</span>
                 <strong>{answer.questionText}</strong>
                 <p>{answer.optionLabel}</p>
                 {answer.helper && <small>{answer.helper}</small>}
@@ -1139,7 +1147,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
           <h2>핵심 분석</h2>
           <ul>
             <li>가장 많은 센터: {analysis.topCenter ? `${analysis.topCenter.centerName} (${analysis.topCenter.count}건)` : '데이터 없음'}</li>
-            <li>가장 많은 대표 직업: {analysis.topCareer ? `${analysis.topCareer.careerName} (${analysis.topCareer.count}건)` : '데이터 없음'}</li>
+            <li>가장 많이 선택한 꿈: {analysis.topCareer ? `${analysis.topCareer.careerName} (${analysis.topCareer.count}건)` : '데이터 없음'}</li>
             <li>평균 답변 수: {formatAverage(analysis.averageAnsweredCount)}개</li>
             <li>
               상위 점수 평균:{' '}
@@ -1164,7 +1172,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
             ))}
           </section>
           <section>
-            <h2>대표 직업 분포</h2>
+            <h2>선택한 꿈 분포</h2>
             {summary.byTopCareer.slice(0, 8).map((career) => (
               <div className="admin-report-row" key={career.careerName}>
                 <span>{career.careerName}</span>
@@ -1195,7 +1203,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
                 <th>저장일</th>
                 <th>이름</th>
                 <th>센터</th>
-                <th>대표 직업</th>
+                <th>최종 꿈</th>
               </tr>
             </thead>
             <tbody>
@@ -1204,7 +1212,7 @@ const AdminReportDocument = forwardRef<HTMLDivElement, AdminReportDocumentProps>
                   <td>{formatDateShort(result.createdAt)}</td>
                   <td>{result.participantName ?? '이름 없음'}</td>
                   <td>{result.centerName ?? '센터 없음'}</td>
-                  <td>{getCareerName(result.topCareer)}</td>
+                  <td>{getResultCareerLabel(result)}</td>
                 </tr>
               ))}
             </tbody>

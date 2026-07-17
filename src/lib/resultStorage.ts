@@ -1,7 +1,14 @@
 import { addDoc, collection, serverTimestamp, type Firestore } from 'firebase/firestore';
 import { createCenterKey, normalizeCenterName } from './centerContext';
 import { firestore } from './firebase';
-import type { TestResultDocument, TestResultDraft } from '../types/firestore';
+import type {
+  TestResultDocument,
+  TestResultDraft,
+  TestResultDraftV1,
+  TestResultDraftV2,
+  TestResultV1Document,
+  TestResultV2Document,
+} from '../types/firestore';
 
 export type SaveTestResultResult =
   | {
@@ -38,6 +45,51 @@ function createFirestoreTestResultAdder(db: Firestore): AddTestResultDocument {
   };
 }
 
+function isV2Draft(draft: TestResultDraft): draft is TestResultDraftV2 {
+  return 'questionnaireVersion' in draft && draft.questionnaireVersion === 2;
+}
+
+function normalizedBase(draft: TestResultDraft, createdAt: TestResultDocument['createdAt']) {
+  return {
+    participantName: emptyStringToNull(draft.participantName),
+    participantEmail: emptyStringToNull(draft.participantEmail ?? null),
+    centerName: normalizeCenterName(draft.centerName),
+    centerKey: createCenterKey(draft.centerKey ?? draft.centerName),
+    centerSource: draft.centerName ? draft.centerSource : 'none' as const,
+    startedAt: draft.startedAt,
+    completedAt: draft.completedAt,
+    resultSummary: draft.resultSummary.trim(),
+    createdAt,
+  };
+}
+
+function serializeV1(draft: TestResultDraftV1, createdAt: TestResultDocument['createdAt']): TestResultV1Document {
+  return {
+    ...normalizedBase(draft, createdAt),
+    answers: draft.answers,
+    scores: draft.scores,
+    topCareer: draft.topCareer,
+    recommendedCareers: draft.recommendedCareers,
+    schemaVersion: 1,
+  };
+}
+
+function serializeV2(draft: TestResultDraftV2, createdAt: TestResultDocument['createdAt']): TestResultV2Document {
+  const dreamChoice = draft.dreamChoice.kind === 'undecided'
+    ? draft.dreamChoice
+    : { ...draft.dreamChoice, careerName: draft.dreamChoice.careerName.trim() };
+
+  return {
+    ...normalizedBase(draft, createdAt),
+    questionnaireVersion: 2,
+    answerSnapshots: draft.answerSnapshots,
+    fieldResults: draft.fieldResults,
+    recommendedFieldResults: draft.recommendedFieldResults,
+    dreamChoice,
+    schemaVersion: 2,
+  };
+}
+
 export async function saveTestResult(
   draft: TestResultDraft,
   dependencies: ResultStorageDependencies = {},
@@ -50,16 +102,10 @@ export async function saveTestResult(
 
   const addTestResult = dependencies.addTestResult ?? createFirestoreTestResultAdder(db);
   const getServerTimestamp = dependencies.getServerTimestamp ?? serverTimestamp;
-  const document: TestResultDocument = {
-    ...draft,
-    participantName: emptyStringToNull(draft.participantName),
-    participantEmail: emptyStringToNull(draft.participantEmail ?? null),
-    centerName: normalizeCenterName(draft.centerName),
-    centerKey: createCenterKey(draft.centerKey ?? draft.centerName),
-    centerSource: draft.centerName ? draft.centerSource : 'none',
-    createdAt: getServerTimestamp(),
-    schemaVersion: 1,
-  };
+  const createdAt = getServerTimestamp();
+  const document: TestResultDocument = isV2Draft(draft)
+    ? serializeV2(draft, createdAt)
+    : serializeV1(draft, createdAt);
 
   try {
     const created = await addTestResult(document);

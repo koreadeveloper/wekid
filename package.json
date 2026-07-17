@@ -7,8 +7,9 @@
     "dev": "vite --host 0.0.0.0",
     "test": "vitest run",
     "check:data": "node scripts/validate-data.mjs",
+    "check:distribution": "node scripts/simulate-career-distribution.mjs",
     "check:business-card": "node scripts/verify-business-card.mjs",
-    "build": "npm run check:data && npm run check:business-card && tsc && vite build",
+    "build": "npm run check:data && npm run check:distribution && npm run check:business-card && tsc && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 import { collection, getDocs, limit, orderBy, query, type Firestore, type Timestamp } from 'firebase/firestore';
+import { legacyQuestionsV1 } from '../data/legacyQuestionsV1';
 import { firestore } from './firebase';
 import type { StoredTestResultRecord, TestResultDocument } from '../types/firestore';
 
@@ -103,6 +104,58 @@ export function getCareerName(topCareer: StoredTestResultRecord['topCareer']) {
   return typeof topCareer.name === 'string' ? topCareer.name : '알 수 없음';
 }
 
+export function isV2Result(result: StoredTestResultRecord): result is Extract<StoredTestResultRecord, { schemaVersion: 2 }> {
+  return result.schemaVersion === 2;
+}
+
+export function getDreamChoiceLabel(result: StoredTestResultRecord) {
+  if (!isV2Result(result)) {
+    return '';
+  }
+
+  if (result.dreamChoice.kind === 'undecided') {
+    return '아직 더 찾아보는 중';
+  }
+
+  const kindLabel = {
+    recommended: '추천 선택',
+    catalog: '목록 선택',
+    custom: '직접 입력',
+  }[result.dreamChoice.kind];
+  return `${result.dreamChoice.careerName} (${kindLabel})`;
+}
+
+export function getResultCareerLabel(result: StoredTestResultRecord) {
+  return isV2Result(result) ? getDreamChoiceLabel(result) : getCareerName(result.topCareer);
+}
+
+export function getRecommendedFieldLabels(result: StoredTestResultRecord) {
+  return isV2Result(result) ? result.recommendedFieldResults.map((field) => field.label).join(' / ') : '';
+}
+
+export function getAdminAnswerDetails(result: StoredTestResultRecord) {
+  if (isV2Result(result)) {
+    return result.answerSnapshots.map((answer) => ({
+      questionEyebrow: '새 설문',
+      questionText: answer.questionText,
+      optionLabel: answer.optionLabel,
+      choice: answer.choice,
+      helper: '',
+    }));
+  }
+
+  return result.answers.map((answer) => {
+    const question = legacyQuestionsV1[String(answer.questionId)];
+    return {
+      questionEyebrow: question?.eyebrow ?? `문항 ${answer.questionId}`,
+      questionText: question?.text ?? '저장된 문항 정보를 찾을 수 없어요.',
+      optionLabel: String(answer.choice),
+      choice: String(answer.choice),
+      helper: '기존 설문 선택값',
+    };
+  });
+}
+
 export function getRecommendedCareerNames(careers: StoredTestResultRecord['recommendedCareers']) {
   return careers
     .map((career) => {
@@ -163,7 +216,8 @@ function resultMatchesSearch(result: StoredTestResultRecord, searchTerm: string)
     result.participantName,
     result.participantEmail,
     result.centerName,
-    getCareerName(result.topCareer),
+    getResultCareerLabel(result),
+    getRecommendedFieldLabels(result),
     result.resultSummary,
     result.id,
   ];
@@ -196,7 +250,7 @@ export function createAdminResultSummary(results: StoredTestResultRecord[], now 
     centerEntry.count += 1;
     byCenterMap.set(centerKey, centerEntry);
 
-    const careerName = getCareerName(result.topCareer);
+    const careerName = getResultCareerLabel(result);
     const careerEntry = byCareerMap.get(careerName) ?? { careerName, count: 0 };
     careerEntry.count += 1;
     byCareerMap.set(careerName, careerEntry);
@@ -278,7 +332,7 @@ function getSortValue(result: StoredTestResultRecord, key: AdminSortKey) {
   }
 
   if (key === 'topCareer') {
-    return getCareerName(result.topCareer);
+    return getResultCareerLabel(result);
   }
 
   return getResultDurationMinutes(result);
@@ -384,6 +438,20 @@ function toDateValue(value: StoredTestResultRecord['createdAt']) {
 }
 
 function toStoredTestResultRecord(id: string, data: TestResultDocument): StoredTestResultRecord {
+  if (data.schemaVersion === 2) {
+    return {
+      ...data,
+      id,
+      startedAt: data.startedAt as StoredTestResultRecord['startedAt'],
+      completedAt: data.completedAt as StoredTestResultRecord['completedAt'],
+      createdAt: data.createdAt as StoredTestResultRecord['createdAt'],
+      answers: [],
+      scores: {},
+      topCareer: '',
+      recommendedCareers: [],
+    };
+  }
+
   return {
     ...data,
     id,
@@ -410,9 +478,14 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
     '센터',
     '센터키',
     '센터입력경로',
+    '설문버전',
     '대표직업',
     '추천직업',
+    '추천분야',
+    '최종꿈',
+    '최종꿈유형',
     '답변수',
+    '답변스냅샷JSON',
     '요약',
     '점수JSON',
     '테스트의심여부',
@@ -439,16 +512,23 @@ export function toResultsCsv(results: StoredTestResultRecord[], options: Results
       result.centerName,
       result.centerKey,
       result.centerSource,
-      getCareerName(result.topCareer),
-      getRecommendedCareerNames(result.recommendedCareers),
-      result.answers.length,
+      isV2Result(result) ? result.questionnaireVersion : 1,
+      getResultCareerLabel(result),
+      isV2Result(result)
+        ? result.recommendedFieldResults.flatMap((field) => field.recommendedCareers.map((career) => career.name)).join(' / ')
+        : getRecommendedCareerNames(result.recommendedCareers),
+      getRecommendedFieldLabels(result),
+      getDreamChoiceLabel(result),
+      isV2Result(result) ? result.dreamChoice.kind : '',
+      isV2Result(result) ? result.answerSnapshots.length : result.answers.length,
+      isV2Result(result) ? JSON.stringify(result.answerSnapshots) : '',
       result.resultSummary,
       JSON.stringify(result.scores),
       isSuspectedTestResult(result) ? '예' : '아니오',
       options.filterMemo ?? '',
       durationSeconds == null ? '' : durationSeconds,
-      stringifyRawValue(result.topCareer),
-      JSON.stringify(result.recommendedCareers),
+      isV2Result(result) ? '' : stringifyRawValue(result.topCareer),
+      isV2Result(result) ? JSON.stringify(result.recommendedFieldResults) : JSON.stringify(result.recommendedCareers),
     ]
       .map(csvCell)
       .join(',');
@@ -501,7 +581,9 @@ export function createAdminResultAnalysis(results: StoredTestResultRecord[]): Ad
   const averageDurationMinutes =
     durations.length > 0 ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length : null;
   const averageAnsweredCount =
-    results.length > 0 ? results.reduce((sum, result) => sum + result.answers.length, 0) / results.length : 0;
+    results.length > 0
+      ? results.reduce((sum, result) => sum + (isV2Result(result) ? result.answerSnapshots.length : result.answers.length), 0) / results.length
+      : 0;
   const scoreTotals = new Map<string, number>();
 
   results.forEach((result) => {

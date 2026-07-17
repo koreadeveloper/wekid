@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TopBar } from './components/layout/TopBar';
-import { getCareerDetail } from './data/careerDetails';
 import { careerCategories } from './data/careerCategories';
-import { questions } from './data/questions';
+import { getCareerDetail } from './data/careerDetails';
+import { careerQuestionsV2 } from './data/questionsV2';
 import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
-import { getCareerResult, getScores } from './lib/careerScoring';
+import { getCareerResultV2 } from './lib/careerScoring';
+import { createAnswerSnapshots } from './lib/questionSnapshots';
 import { saveTestResult } from './lib/resultStorage';
-import {
-  AdminBusinessCardBridge,
-  type BusinessCardPrefill,
-} from './pages/admin/AdminBusinessCardBridge';
+import { AdminBusinessCardBridge, type BusinessCardPrefill } from './pages/admin/AdminBusinessCardBridge';
 import { AdminPage } from './pages/admin/AdminPage';
 import { AdminBusinessCardMakerPage } from './pages/business-card/AdminBusinessCardMakerPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
@@ -17,7 +15,7 @@ import { QuizPage } from './pages/quiz/QuizPage';
 import { CareerDetailModal } from './pages/result/components/CareerDetailModal';
 import { ResultPage } from './pages/result/ResultPage';
 import { StartPage } from './pages/start/StartPage';
-import type { AnswerChoice, AnswerMap, CareerDetail } from './types/career';
+import type { CareerAnswer, CareerAnswerMap, CareerDetail, DreamChoice } from './types/career';
 
 type AppMode = 'career' | 'business-card' | 'admin';
 
@@ -36,7 +34,7 @@ function App() {
     [],
   );
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<AnswerMap>({});
+  const [answers, setAnswers] = useState<CareerAnswerMap>({});
   const [showResult, setShowResult] = useState(false);
   const [nameStep, setNameStep] = useState(true);
   const [nameInput, setNameInput] = useState('');
@@ -47,6 +45,7 @@ function App() {
   const [userEmail, setUserEmail] = useState('');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>({ status: 'idle' });
+  const [dreamChoice, setDreamChoice] = useState<DreamChoice>();
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
   const [isAdvancing, setIsAdvancingState] = useState(false);
   const advanceTimerRef = useRef<number | undefined>(undefined);
@@ -67,95 +66,37 @@ function App() {
 
   useEffect(() => clearAdvanceTimer, []);
 
-  const scores = useMemo(() => getScores(answers), [answers]);
   const answeredCount = Object.keys(answers).length;
-  const isComplete = answeredCount === questions.length;
-  const result = useMemo(() => (isComplete ? getCareerResult(scores) : undefined), [isComplete, scores]);
-  const profile = result?.profile;
-  const progress = Math.round((answeredCount / questions.length) * 100);
-  const safeCurrentIndex = Math.min(Math.max(currentIndex, 0), questions.length - 1);
-  const currentQuestion = questions[safeCurrentIndex];
+  const isComplete = answeredCount === careerQuestionsV2.length;
+  const result = useMemo(() => (isComplete ? getCareerResultV2(answers) : undefined), [answers, isComplete]);
+  const progress = Math.round((answeredCount / careerQuestionsV2.length) * 100);
+  const safeCurrentIndex = Math.min(Math.max(currentIndex, 0), careerQuestionsV2.length - 1);
+  const currentQuestion = careerQuestionsV2[safeCurrentIndex];
   const currentAnswer = answers[currentQuestion.id];
-  const careerMatches = result?.matches ?? { primary: [], explore: [] };
   const centerContext = useMemo(
     () => resolveCenterContext({ centerInput, initialUrlCenterName, isManual: isCenterManual }),
     [centerInput, initialUrlCenterName, isCenterManual],
   );
-  const highlightedCareers = useMemo(() => {
-    if (!profile) {
-      return new Set<string>();
-    }
-
-    return new Set([
-      profile.topCareer.name,
-      ...careerMatches.primary.map((career) => career.name),
-      ...careerMatches.explore.map((career) => career.name),
-    ]);
-  }, [careerMatches, profile]);
   const totalCareerCount = useMemo(
     () => new Set(careerCategories.flatMap((category) => category.careers)).size,
     [],
   );
 
-  useEffect(() => {
-    if (!showResult || !profile || !isComplete) {
-      return;
-    }
-
-    const resultSignature = JSON.stringify({ answers, centerContext, topCareer: profile.topCareer.name, userName, userEmail });
-    if (savedResultSignatureRef.current === resultSignature) {
-      return;
-    }
-
-    savedResultSignatureRef.current = resultSignature;
-    setResultSaveStatus({ status: 'saving' });
-
-    const completedAt = new Date();
-    const resultStartedAt = startedAt ?? completedAt;
-
-    void saveTestResult({
-      participantName: userName || null,
-      participantEmail: userEmail || null,
-      centerName: centerContext.centerName,
-      centerKey: centerContext.centerKey,
-      centerSource: centerContext.centerSource,
-      startedAt: resultStartedAt,
-      completedAt,
-      answers: questions
-        .map((question) => ({ questionId: question.id, choice: answers[question.id] }))
-        .filter((answer) => Boolean(answer.choice)),
-      scores,
-      topCareer: profile.topCareer,
-      recommendedCareers: profile.recommendations,
-      resultSummary: profile.summary,
-    }).then((saveResult) => {
-      if (saveResult.ok) {
-        setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
-        return;
-      }
-
-      if (saveResult.reason === 'firebase-not-configured') {
-        setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
-        return;
-      }
-
-      setResultSaveStatus({ status: 'failed', error: saveResult.error });
-    });
-  }, [answers, centerContext, isComplete, profile, scores, showResult, startedAt, userName, userEmail]);
-
-  const chooseAnswer = (choice: AnswerChoice) => {
+  const chooseAnswer = (choice: CareerAnswer) => {
     if (advancingRef.current) {
       return;
     }
 
     setIsAdvancing(true);
     clearAdvanceTimer();
-
     const nextAnswers = { ...answers, [currentQuestion.id]: choice };
     const nextAnsweredCount = Object.keys(nextAnswers).length;
     setAnswers(nextAnswers);
+    setDreamChoice(undefined);
+    setResultSaveStatus({ status: 'idle' });
+    savedResultSignatureRef.current = null;
 
-    if (safeCurrentIndex < questions.length - 1) {
+    if (safeCurrentIndex < careerQuestionsV2.length - 1) {
       setShowResult(false);
       advanceTimerRef.current = window.setTimeout(() => {
         advanceTimerRef.current = undefined;
@@ -165,8 +106,8 @@ function App() {
       return;
     }
 
-    if (nextAnsweredCount < questions.length) {
-      const firstUnansweredIndex = questions.findIndex((question) => !(question.id in nextAnswers));
+    if (nextAnsweredCount < careerQuestionsV2.length) {
+      const firstUnansweredIndex = careerQuestionsV2.findIndex((question) => !(question.id in nextAnswers));
       setShowResult(false);
       setCurrentIndex(firstUnansweredIndex === -1 ? safeCurrentIndex : firstUnansweredIndex);
       setIsAdvancing(false);
@@ -181,6 +122,52 @@ function App() {
     }, 180);
   };
 
+  const confirmDreamChoice = (nextDreamChoice: DreamChoice) => {
+    if (!result || !isComplete) {
+      return;
+    }
+
+    setDreamChoice(nextDreamChoice);
+    const resultSignature = JSON.stringify({ answers, centerContext, nextDreamChoice, userName, userEmail });
+    if (savedResultSignatureRef.current === resultSignature) {
+      return;
+    }
+
+    savedResultSignatureRef.current = resultSignature;
+    setResultSaveStatus({ status: 'saving' });
+    const completedAt = new Date();
+    const resultStartedAt = startedAt ?? completedAt;
+
+    void saveTestResult({
+      participantName: userName || null,
+      participantEmail: userEmail || null,
+      centerName: centerContext.centerName,
+      centerKey: centerContext.centerKey,
+      centerSource: centerContext.centerSource,
+      startedAt: resultStartedAt,
+      completedAt,
+      questionnaireVersion: 2,
+      answerSnapshots: createAnswerSnapshots(answers),
+      fieldResults: result.fieldResults,
+      recommendedFieldResults: result.recommendedFieldResults,
+      dreamChoice: nextDreamChoice,
+      resultSummary: result.summary,
+    }).then((saveResult) => {
+      if (saveResult.ok) {
+        setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
+        return;
+      }
+
+      if (saveResult.reason === 'firebase-not-configured') {
+        setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
+        return;
+      }
+
+      savedResultSignatureRef.current = null;
+      setResultSaveStatus({ status: 'failed', error: saveResult.error });
+    });
+  };
+
   const reset = () => {
     clearAdvanceTimer();
     setIsAdvancing(false);
@@ -193,6 +180,7 @@ function App() {
     setUserName('');
     setUserEmail('');
     setStartedAt(null);
+    setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
     savedResultSignatureRef.current = null;
     setSelectedCareer(null);
@@ -203,7 +191,8 @@ function App() {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setShowResult(false);
-    setCurrentIndex(questions.length - 1);
+    setCurrentIndex(careerQuestionsV2.length - 1);
+    setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
     savedResultSignatureRef.current = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -223,6 +212,7 @@ function App() {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName('');
+    setUserEmail('');
     setNameStep(false);
     setStartedAt(new Date());
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -253,9 +243,7 @@ function App() {
 
   return (
     <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''}`}>
-      {mode === 'career' && selectedCareer && (
-        <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />
-      )}
+      {mode === 'career' && selectedCareer && <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />}
       <TopBar
         mode={mode}
         totalCareerCount={totalCareerCount}
@@ -263,10 +251,7 @@ function App() {
         onModeChange={handleModeChange}
         onReset={reset}
       />
-      <AdminBusinessCardBridge
-        enabled={mode === 'admin' && canUseBusinessCard}
-        onCreateBusinessCard={createBusinessCardFromResult}
-      />
+      <AdminBusinessCardBridge enabled={mode === 'admin' && canUseBusinessCard} onCreateBusinessCard={createBusinessCardFromResult} />
       {mode === 'admin' ? (
         <AdminPage onOwnerStatusChange={setCanUseBusinessCard} />
       ) : mode === 'business-card' ? (
@@ -291,16 +276,15 @@ function App() {
           onStart={startWithName}
           onSkip={skipName}
         />
-      ) : showResult && profile ? (
+      ) : showResult && result ? (
         <ResultPage
-          careerMatches={careerMatches}
-          highlightedCareers={highlightedCareers}
-          profile={profile}
-          scores={scores}
+          result={result}
+          dreamChoice={dreamChoice}
           resultSaveStatus={resultSaveStatus}
           userName={userName}
           hasCareerDetail={(careerName) => Boolean(getCareerDetail(careerName))}
           onCareerSelect={selectCareer}
+          onConfirmDreamChoice={confirmDreamChoice}
           onEditLastAnswer={editLastAnswer}
           onReset={reset}
         />

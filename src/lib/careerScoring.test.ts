@@ -1,35 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { getCategoryRecommendations, getCategoryScores, getScores, initialScores } from './careerScoring';
-import type { AnswerMap, ScoreMap } from '../types/career';
+import { getCareerResultV2 } from './careerScoring';
 
-const scoresWith = (values: Partial<ScoreMap>): ScoreMap => ({
-  ...initialScores,
-  ...values,
-});
+describe('normalized multi-field career recommendations', () => {
+  it('shows several careers without using a career-name fallback for a partial-answer tie', () => {
+    const result = getCareerResultV2({ 1: 'A', 5: 'A', 9: 'A', 13: 'A' });
 
-describe('balanced career recommendations', () => {
-  it('normalizes category scores to the same 0–1 scale', () => {
-    const scores = scoresWith({ realistic: 4, artistic: 2, social: 1 });
-    const categoryScores = getCategoryScores(scores);
-
-    expect(Object.keys(categoryScores)).toHaveLength(8);
-    expect(Object.values(categoryScores).every((score) => score >= 0 && score <= 1)).toBe(true);
+    expect(result.fieldResults[0].recommendedCareers.length).toBeGreaterThan(1);
   });
 
-  it('returns multiple category recommendations without repeating a category first', () => {
-    const scores = scoresWith({ artistic: 4, enterprising: 3, realistic: 2 });
-    const result = getCategoryRecommendations(scores);
+  it('excludes unknown answers from both numerator and denominator', () => {
+    const known = getCareerResultV2({ 1: 'A' });
+    const knownAndUnknown = getCareerResultV2({ 1: 'A', 2: 'unknown' });
 
-    expect(result).toHaveLength(3);
-    expect(result.every((group) => group.careers.length > 0 && group.careers.length <= 2)).toBe(true);
-    expect(new Set(result.map((group) => group.category)).size).toBe(3);
+    expect(known.fieldResults).toEqual(knownAndUnknown.fieldResults);
   });
 
-  it('does not award an axis point for ambiguous or neither answers', () => {
-    const answers: AnswerMap = { 1: 'uncertain', 2: 'neither', 3: 'artistic' };
-    const scores = getScores(answers);
+  it('makes a research-oriented scenario favor the research field', () => {
+    const result = getCareerResultV2({ 1: 'A', 5: 'A', 9: 'A', 13: 'A', 14: 'A' });
 
-    expect(scores.artistic).toBe(1);
-    expect(Object.values(scores).reduce((sum, score) => sum + score, 0)).toBe(1);
+    expect(result.fieldResults[0].fieldId).toBe('research');
   });
 });

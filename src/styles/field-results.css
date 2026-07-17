@@ -1,0 +1,259 @@
+.field-hero-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.field-hero-list div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.52);
+  border-radius: 16px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.field-hero-list strong,
+.field-hero-list span {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.field-results,
+.dream-choice-panel {
+  padding: 32px 0 0;
+}
+
+.field-result-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.field-result-card,
+.dream-choice-panel {
+  padding: 20px;
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  background: var(--canvas);
+  box-shadow: var(--shadow-card);
+}
+
+.field-result-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.field-result-heading p {
+  margin: 0 0 5px;
+  color: var(--duo-green-dark);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.field-result-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 1000;
+  line-height: 1.3;
+}
+
+.field-result-heading > strong {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border-radius: 14px;
+  color: var(--duo-green-dark);
+  background: var(--duo-green-soft);
+  font-size: 16px;
+}
+
+.field-evidence {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.field-career-list,
+.dream-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.field-career-chip,
+.dream-chip,
+.dream-undecided {
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 2px solid #84d8ff;
+  border-radius: 999px;
+  color: var(--duo-blue-dark);
+  background: #f4fbff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.field-career-chip:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.dream-choice-panel .section-heading > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.dream-choice-block + .dream-choice-block {
+  margin-top: 24px;
+}
+
+.dream-choice-block h3,
+.dream-custom-label {
+  display: block;
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.dream-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 0 14px;
+  border: 2px solid #84d8ff;
+  border-radius: 16px;
+  color: var(--duo-blue-dark);
+  background: #f4fbff;
+}
+
+.dream-search input,
+.dream-custom-input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+}
+
+.dream-library {
+  display: grid;
+  gap: 18px;
+  max-height: 390px;
+  margin-top: 14px;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.dream-library-group h3 {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dream-chip {
+  min-height: 40px;
+  border-color: var(--line);
+  color: var(--ink);
+  background: var(--canvas);
+  font-size: 13px;
+}
+
+.dream-chip.selected,
+.dream-undecided.selected {
+  border-color: var(--duo-green-dark);
+  color: #ffffff;
+  background: var(--duo-green);
+}
+
+.dream-custom-input {
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--canvas);
+}
+
+.dream-choice-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.dream-undecided {
+  border-color: var(--line);
+  color: var(--muted);
+  background: var(--canvas);
+}
+
+.dream-selected,
+.dream-empty {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dream-selected strong {
+  color: var(--duo-green-dark);
+}
+
+.pdf-dream-choice strong {
+  color: var(--duo-green-dark);
+  font-size: 22px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 760px) {
+  .field-result-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dream-choice-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .field-result-card,
+  .dream-choice-panel {
+    padding: 17px;
+  }
+
+  .field-result-heading h3 {
+    font-size: 18px;
+  }
+
+  .field-hero-list div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
