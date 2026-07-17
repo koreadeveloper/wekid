@@ -40,6 +40,54 @@ export type UpdateTestResultDreamChoiceDependencies = {
   updateDreamChoice?: UpdateTestResultDreamChoice;
 };
 
+export type ResultSaveSession = {
+  invalidate: () => void;
+  enqueue: (
+    save: (resultId: string | null) => Promise<SaveTestResultResult>,
+    onCurrentResult: (result: SaveTestResultResult) => void,
+  ) => Promise<void>;
+};
+
+export function createResultSaveSession(): ResultSaveSession {
+  let generation = 0;
+  let latestRequestId = 0;
+  let resultId: string | null = null;
+  let pendingSave: Promise<void> = Promise.resolve();
+
+  return {
+    invalidate() {
+      generation += 1;
+      resultId = null;
+      pendingSave = Promise.resolve();
+    },
+    enqueue(save, onCurrentResult) {
+      const requestGeneration = generation;
+      const requestId = ++latestRequestId;
+      const completion = pendingSave.then(async () => {
+        if (requestGeneration !== generation) {
+          return;
+        }
+
+        const saveResult = await save(resultId);
+        if (requestGeneration !== generation) {
+          return;
+        }
+
+        if (saveResult.ok) {
+          resultId = saveResult.resultId;
+        }
+
+        if (requestId === latestRequestId) {
+          onCurrentResult(saveResult);
+        }
+      });
+
+      pendingSave = completion.catch(() => undefined);
+      return completion;
+    },
+  };
+}
+
 function emptyStringToNull(value: string | null): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;

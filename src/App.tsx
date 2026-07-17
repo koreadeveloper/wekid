@@ -6,7 +6,7 @@ import { careerQuestionsV2 } from './data/questionsV2';
 import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
 import { getCareerResultV2 } from './lib/careerScoring';
 import { createAnswerSnapshots } from './lib/questionSnapshots';
-import { saveTestResult, updateTestResultDreamChoice } from './lib/resultStorage';
+import { createResultSaveSession, saveTestResult, updateTestResultDreamChoice } from './lib/resultStorage';
 import { AdminPage } from './pages/admin/AdminPage';
 import { BusinessCardMakerPage } from './pages/business-card/BusinessCardMakerPage';
 import { QuizPage } from './pages/quiz/QuizPage';
@@ -48,8 +48,8 @@ function App() {
   const advanceTimerRef = useRef<number | undefined>(undefined);
   const advancingRef = useRef(false);
   const automaticSaveStartedRef = useRef(false);
-  const savedResultIdRef = useRef<string | null>(null);
   const savedResultSignatureRef = useRef<string | null>(null);
+  const resultSaveSession = useMemo(() => createResultSaveSession(), []);
 
   const setIsAdvancing = (value: boolean) => {
     advancingRef.current = value;
@@ -94,8 +94,8 @@ function App() {
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
     automaticSaveStartedRef.current = false;
-    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
+    resultSaveSession.invalidate();
 
     if (safeCurrentIndex < careerQuestionsV2.length - 1) {
       setShowResult(false);
@@ -130,26 +130,6 @@ function App() {
 
     setDreamChoice(nextDreamChoice);
 
-    if (savedResultIdRef.current) {
-      const resultId = savedResultIdRef.current;
-      setResultSaveStatus({ status: 'saving' });
-
-      void updateTestResultDreamChoice(resultId, nextDreamChoice).then((saveResult) => {
-        if (saveResult.ok) {
-          setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
-          return;
-        }
-
-        if (saveResult.reason === 'firebase-not-configured') {
-          setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
-          return;
-        }
-
-        setResultSaveStatus({ status: 'failed', error: saveResult.error });
-      });
-      return;
-    }
-
     const resultSignature = JSON.stringify({ answers, centerContext, nextDreamChoice, userName, userEmail });
     if (savedResultSignatureRef.current === resultSignature) {
       return;
@@ -160,7 +140,7 @@ function App() {
     const completedAt = new Date();
     const resultStartedAt = startedAt ?? completedAt;
 
-    void saveTestResult({
+    const resultDraft = {
       participantName: userName || null,
       participantEmail: userEmail || null,
       centerName: centerContext.centerName,
@@ -168,27 +148,33 @@ function App() {
       centerSource: centerContext.centerSource,
       startedAt: resultStartedAt,
       completedAt,
-      questionnaireVersion: 2,
+      questionnaireVersion: 2 as const,
       answerSnapshots: createAnswerSnapshots(answers),
       fieldResults: result.fieldResults,
       recommendedFieldResults: result.recommendedFieldResults,
       dreamChoice: nextDreamChoice,
       resultSummary: result.summary,
-    }).then((saveResult) => {
-      if (saveResult.ok) {
-        savedResultIdRef.current = saveResult.resultId;
-        setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
-        return;
-      }
+    };
 
-      if (saveResult.reason === 'firebase-not-configured') {
-        setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
-        return;
-      }
+    void resultSaveSession.enqueue(
+      (resultId) => resultId
+        ? updateTestResultDreamChoice(resultId, nextDreamChoice)
+        : saveTestResult(resultDraft),
+      (saveResult) => {
+        if (saveResult.ok) {
+          setResultSaveStatus({ status: 'saved', resultId: saveResult.resultId });
+          return;
+        }
 
-      savedResultSignatureRef.current = null;
-      setResultSaveStatus({ status: 'failed', error: saveResult.error });
-    });
+        if (saveResult.reason === 'firebase-not-configured') {
+          setResultSaveStatus({ status: 'skipped', reason: saveResult.reason });
+          return;
+        }
+
+        savedResultSignatureRef.current = null;
+        setResultSaveStatus({ status: 'failed', error: saveResult.error });
+      },
+    );
   };
 
   useEffect(() => {
@@ -215,8 +201,8 @@ function App() {
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
     automaticSaveStartedRef.current = false;
-    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
+    resultSaveSession.invalidate();
     setSelectedCareer(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -229,8 +215,8 @@ function App() {
     setDreamChoice(undefined);
     setResultSaveStatus({ status: 'idle' });
     automaticSaveStartedRef.current = false;
-    savedResultIdRef.current = null;
     savedResultSignatureRef.current = null;
+    resultSaveSession.invalidate();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
