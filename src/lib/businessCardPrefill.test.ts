@@ -85,17 +85,33 @@ describe('searchBusinessCardResults', () => {
       .toEqual(['latest-result', 'older-result']);
   });
 
-  it('matches normalized Korean name, email, school, and job values', () => {
+  it('matches only partial and full normalized Korean names', () => {
     const result = v2Result({
+      participantName: ' 김 하 늘 ',
+    });
+
+    expect(searchBusinessCardResults([result], '김하')).toHaveLength(1);
+    expect(searchBusinessCardResults([result], '김 하 늘')).toHaveLength(1);
+  });
+
+  it('does not match email, school, job, goal, or source ID values', () => {
+    const result = v2Result({
+      id: 'survey-result-42',
       participantName: ' 김 하 늘 ',
       participantEmail: 'SKY@EXAMPLE.COM',
       centerName: '별빛 초등학교',
       dreamChoice: { kind: 'custom', careerName: ' 천문학자 ' },
+      resultSummary: '별을 관찰하는 일을 좋아해요.',
     });
 
-    expect(searchBusinessCardResults([result], '김하늘')).toHaveLength(1);
-    expect(searchBusinessCardResults([result], 'sky@example.com')).toHaveLength(1);
-    expect(searchBusinessCardResults([result], '별빛초등학교')).toHaveLength(1);
-    expect(searchBusinessCardResults([result], '천문학자')).toHaveLength(1);
+    for (const query of [
+      'sky@example.com',
+      '별빛초등학교',
+      '천문학자',
+      '별을관찰',
+      'survey-result-42',
+    ]) {
+      expect(searchBusinessCardResults([result], query)).toHaveLength(0);
+    }
   });
 });

@@ -45,9 +45,7 @@ export function searchBusinessCardResults(results: StoredTestResultRecord[], que
         return true;
       }
 
-      return [prefill.name, prefill.email, prefill.school, prefill.job, prefill.goal, prefill.sourceId].some((value) =>
-        normalizeSearchValue(value).includes(normalizedQuery),
-      );
+      return normalizeSearchValue(prefill.name).includes(normalizedQuery);
     })
     .sort((left, right) => {
       const leftTime = toAdminDate(left.result.createdAt)?.getTime() ?? Number.NEGATIVE_INFINITY;

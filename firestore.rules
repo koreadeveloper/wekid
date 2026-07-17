@@ -69,9 +69,21 @@ service cloud.firestore {
 
     function validV2DreamChoice(value) {
       return value is map &&
-        value.keys().hasOnly(['kind', 'careerName']) &&
-        value.kind in ['recommended', 'catalog', 'custom', 'undecided'] &&
-        (value.kind == 'undecided' || (value.careerName is string && value.careerName.size() <= 40));
+        (
+          (
+            value.keys().hasOnly(['kind']) &&
+            value.keys().hasAll(['kind']) &&
+            value.kind == 'undecided'
+          ) ||
+          (
+            value.keys().hasOnly(['kind', 'careerName']) &&
+            value.keys().hasAll(['kind', 'careerName']) &&
+            value.kind in ['recommended', 'catalog', 'custom'] &&
+            value.careerName is string &&
+            value.careerName.size() > 0 &&
+            value.careerName.size() <= 40
+          )
+        );
     }
 
     function validV2AnswerSnapshots(value) {
