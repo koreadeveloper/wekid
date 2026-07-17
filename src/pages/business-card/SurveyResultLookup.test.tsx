@@ -30,6 +30,14 @@ function surveyResult(overrides: Partial<StoredTestResultRecord> = {}): StoredTe
 }
 
 describe('SurveyResultLookup', () => {
+  it('announces the asynchronous loading state to screen readers', () => {
+    const markup = renderToStaticMarkup(<SurveyResultLookup onSelect={() => undefined} />);
+
+    expect(markup).toContain('role="status"');
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain('설문 결과를 불러오는 중이에요.');
+  });
+
   it('shows email, center, date, and final dream for duplicate name matches', () => {
     const kimAtSkyCenter = surveyResult();
     const kimAtStarSchool = surveyResult({

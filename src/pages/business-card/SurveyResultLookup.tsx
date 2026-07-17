@@ -72,12 +72,20 @@ export function SurveyResultLookup({ onSelect, initialResults }: SurveyResultLoo
         />
       </label>
 
-      {status === 'loading' && <p className="survey-result-status">설문 결과를 불러오는 중이에요.</p>}
+      {status === 'loading' && (
+        <p className="survey-result-status" role="status" aria-live="polite">
+          설문 결과를 불러오는 중이에요.
+        </p>
+      )}
       {status === 'unavailable' && (
-        <p className="survey-result-status error">설문 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+        <p className="survey-result-status error" role="alert">
+          설문 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
+        </p>
       )}
       {status === 'ready' && query.trim() && matches.length === 0 && (
-        <p className="survey-result-status">이름이 일치하는 설문 결과가 없어요.</p>
+        <p className="survey-result-status" role="status" aria-live="polite">
+          이름이 일치하는 설문 결과가 없어요.
+        </p>
       )}
 
       {matches.length > 0 && (
