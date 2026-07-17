@@ -34,18 +34,16 @@ function normalizeSearchValue(value: string) {
 export function searchBusinessCardResults(results: StoredTestResultRecord[], query: string) {
   const normalizedQuery = normalizeSearchValue(query);
 
+  if (!normalizedQuery) {
+    return [];
+  }
+
   return results
     .map((result, index) => ({ index, result, prefill: createBusinessCardPrefill(result) }))
     .filter(({ prefill }) => {
-      if (!prefill.name) {
-        return false;
-      }
+      const normalizedName = normalizeSearchValue(prefill.name);
 
-      if (!normalizedQuery) {
-        return true;
-      }
-
-      return normalizeSearchValue(prefill.name).includes(normalizedQuery);
+      return normalizedName.length > 0 && normalizedName.includes(normalizedQuery);
     })
     .sort((left, right) => {
       const leftTime = toAdminDate(left.result.createdAt)?.getTime() ?? Number.NEGATIVE_INFINITY;

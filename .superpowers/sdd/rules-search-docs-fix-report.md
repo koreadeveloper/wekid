@@ -23,7 +23,7 @@
 ## GREEN
 
 - 검색 필터의 매칭 대상을 `normalizeSearchValue(prefill.name)` 하나로 줄였다.
-- 이름 없는 결과 제외, 빈 쿼리 처리, 최신순 및 동일 시각의 입력 순서 정렬은 변경하지 않았다.
+- 초기 수정에서는 이름 없는 결과 제외, 빈 쿼리 처리, 최신순 및 동일 시각의 입력 순서 정렬을 변경하지 않았다.
 - 실행: `npm test -- src/lib/businessCardPrefill.test.ts`
 - 결과: 1 test file, 6 tests passed.
 
@@ -51,4 +51,33 @@ Firebase CLI와 `firebase.json`, Firestore Rules 테스트 도구가 현재 환�
 - Full: `npm test` — 18 files, 71 tests passed.
 - Build: `npm run build` — data 4 files/7 tests, distribution 1 file/2 tests, business-card 검사, TypeScript, Vite build passed.
 - Diff whitespace: `git diff --check -- firestore.rules README.md src/lib/businessCardPrefill.ts src/lib/businessCardPrefill.test.ts` — 오류 없음.
+- Vite는 기존 500 kB 초과 chunk 경고를 출력했지만 build exit code는 0이었다.
+
+## Follow-up review P2/P3
+
+### P2 RED
+
+- 구두점 전용 검색어는 결과가 없어야 하고, 정규화하면 빈 값이 되는 참여자 이름은 제외돼야 한다는 테스트를 구현보다 먼저 추가했다.
+- 실행: `npm test -- src/lib/businessCardPrefill.test.ts`
+- 결과: 1 test file failed, 1 test failed, 7 tests passed.
+- 기대한 실패: `---` 검색어가 빈 문자열로 정규화된 뒤 기존 분기에서 전체 결과를 반환해 `toHaveLength(0)`가 1개 결과로 실패했다. 구두점 전용 이름 제외 사양도 같은 RED 실행에 포함했다.
+
+### P2 GREEN
+
+- 정규화 검색어가 비면 즉시 빈 배열을 반환하도록 했다. `SurveyResultLookup`은 공백 원문이면 함수를 호출하지 않으며, 구두점처럼 원문은 있지만 유효한 검색 문자가 없는 입력도 이제 결과를 노출하지 않는다.
+- 각 결과의 참여자 이름도 먼저 정규화하고, 정규화 이름이 비지 않은 경우에만 이름 일부/전체 일치를 검사한다.
+- 이름 없는 결과 제외와 최신순 및 동일 시각 입력 순서 정렬은 유지했다.
+- 실행: `npm test -- src/lib/businessCardPrefill.test.ts`
+- 결과: 1 test file, 8 tests passed.
+
+### P3 README
+
+- 자동 저장 뒤 결과 확인에서 `결과 이미지·PDF 저장`과 `나의 꿈 직접 선택`이 별도 분기로 이어지도록 서비스 흐름을 고쳤다.
+- 꿈 선택 전에도 이미지/PDF를 저장할 수 있고, 꿈을 선택하면 같은 저장 결과의 `dreamChoice`만 갱신된다고 명시했다.
+
+### Follow-up verification
+
+- Focused: `npm test -- src/lib/businessCardPrefill.test.ts src/pages/business-card/SurveyResultLookup.test.tsx` — 2 files, 10 tests passed.
+- Full: `npm test` — 18 files, 73 tests passed.
+- Build: `npm run build` — data 4 files/7 tests, distribution 1 file/2 tests, business-card 검사, TypeScript, Vite build passed.
 - Vite는 기존 500 kB 초과 chunk 경고를 출력했지만 build exit code는 0이었다.

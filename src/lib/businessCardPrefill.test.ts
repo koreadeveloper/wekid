@@ -94,6 +94,18 @@ describe('searchBusinessCardResults', () => {
     expect(searchBusinessCardResults([result], '김 하 늘')).toHaveLength(1);
   });
 
+  it('returns no results for a punctuation-only query', () => {
+    expect(searchBusinessCardResults([v1Result()], '---')).toHaveLength(0);
+  });
+
+  it('excludes names that normalize to empty', () => {
+    const punctuationOnlyName = v1Result({ id: 'punctuation-name', participantName: ' -.- ' });
+    const namedResult = v2Result({ id: 'named-result', participantName: '김하늘' });
+
+    expect(searchBusinessCardResults([punctuationOnlyName, namedResult], '김하늘').map((result) => result.id))
+      .toEqual(['named-result']);
+  });
+
   it('does not match email, school, job, goal, or source ID values', () => {
     const result = v2Result({
       id: 'survey-result-42',
