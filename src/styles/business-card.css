@@ -38,6 +38,143 @@
   margin-bottom: 14px;
 }
 
+.business-card-lookup-area {
+  margin-bottom: 18px;
+}
+
+.survey-result-lookup {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.survey-result-lookup-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+}
+
+.survey-result-lookup-heading h2 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 1000;
+}
+
+.survey-result-lookup-heading > p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.survey-result-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 2px solid var(--line);
+  border-radius: 17px;
+  color: var(--duo-blue-dark);
+  background: var(--page);
+}
+
+.survey-result-search:focus-within {
+  border-color: var(--duo-green);
+  box-shadow: 0 0 0 4px rgba(88, 204, 2, 0.15);
+}
+
+.survey-result-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.survey-result-status,
+.survey-result-selection {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--page);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.survey-result-status.error {
+  color: #a93535;
+  background: #fff1f1;
+}
+
+.survey-result-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.survey-result-row {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px;
+  border: 2px solid var(--line);
+  border-radius: 17px;
+  color: var(--muted);
+  background: var(--canvas);
+  box-shadow: 0 4px 0 var(--line);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.survey-result-row:hover,
+.survey-result-row:focus-visible {
+  border-color: var(--duo-blue);
+  outline: none;
+  background: #f4fbff;
+  box-shadow: 0 4px 0 #84d8ff;
+}
+
+.survey-result-row-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--ink);
+}
+
+.survey-result-row-title strong {
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.survey-result-row-title time {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.survey-result-dream {
+  color: var(--duo-green-dark);
+  font-weight: 1000;
+}
+
+.survey-result-selection {
+  color: var(--duo-blue-dark);
+  background: #ddf4ff;
+}
+
 .business-card-page-heading h1 {
   margin: 6px 0 0;
   color: var(--ink);
@@ -604,6 +741,10 @@
 }
 
 @media (max-width: 620px) {
+  .survey-result-lookup-heading {
+    display: grid;
+  }
+
   .topbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;

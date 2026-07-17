@@ -3,6 +3,8 @@ import { romanizeKoreanName } from '../../lib/romanizeKoreanName';
 import { BriefcaseBusiness, ImagePlus, Printer, Sparkles, UserRound } from 'lucide-react';
 import { careerByName } from '../../data/careerCatalog';
 import { CareerPicker } from './CareerPicker';
+import { SurveyResultLookup } from './SurveyResultLookup';
+import type { BusinessCardPrefill } from '../../lib/businessCardPrefill';
 
 const PRINT_CARD_COUNT = 10;
 
@@ -113,6 +115,20 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
     setCardData((current) => ({ ...current, job: careerName }));
   };
 
+  const applySurveyResult = (prefill: BusinessCardPrefill) => {
+    const englishName = romanizeKoreanName(prefill.name);
+    autoEnglishNameRef.current = englishName;
+    setCardData((current) => ({
+      ...current,
+      name: prefill.name,
+      englishName,
+      email: prefill.email,
+      school: prefill.school,
+      job: prefill.job,
+      goal: prefill.goal,
+    }));
+  };
+
   const updatePhoto = (file: File | undefined) => {
     if (photoObjectUrlRef.current) {
       URL.revokeObjectURL(photoObjectUrlRef.current);
@@ -134,6 +150,10 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
       <div className="business-card-screen business-card-page-heading">
         <p className="section-kicker">꿈 명함</p>
         <h1>위키드 명함 제작</h1>
+      </div>
+
+      <div className="business-card-screen business-card-lookup-area">
+        <SurveyResultLookup onSelect={applySurveyResult} />
       </div>
 
       <div className="business-card-screen business-card-editor">
