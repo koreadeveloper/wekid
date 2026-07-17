@@ -81,7 +81,8 @@ service cloud.firestore {
             value.kind in ['recommended', 'catalog', 'custom'] &&
             value.careerName is string &&
             value.careerName.size() > 0 &&
-            value.careerName.size() <= 40
+            value.careerName.size() <= 40 &&
+            value.careerName.matches('[\\s\\S]*\\S[\\s\\S]*')
           )
         );
     }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { careerCatalog } from '../data/careerCatalog';
 import type { StoredTestResultRecord } from '../types/firestore';
 import { createBusinessCardPrefill, searchBusinessCardResults } from './businessCardPrefill';
 
@@ -72,6 +73,25 @@ describe('createBusinessCardPrefill', () => {
 
   it('leaves a v2 undecided dream blank', () => {
     expect(createBusinessCardPrefill(v2Result({ dreamChoice: { kind: 'undecided' } })).job).toBe('');
+  });
+
+  it('leaves custom and non-catalog v2 dreams blank', () => {
+    expect(createBusinessCardPrefill(v2Result({
+      dreamChoice: { kind: 'custom', careerName: '천문학자' },
+    })).job).toBe('');
+    expect(createBusinessCardPrefill(v2Result({
+      dreamChoice: { kind: 'catalog', careerName: '우주 해적' },
+    })).job).toBe('');
+  });
+
+  it('keeps all 107 catalog careers as v2 card jobs', () => {
+    expect(careerCatalog).toHaveLength(107);
+
+    for (const career of careerCatalog) {
+      expect(createBusinessCardPrefill(v2Result({
+        dreamChoice: { kind: 'catalog', careerName: career.name },
+      })).job).toBe(career.name);
+    }
   });
 });
 

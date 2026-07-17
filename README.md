@@ -24,8 +24,8 @@
 - 아이돌, 모델, 유튜버, 크리에이터, CEO, 수학자, 정보보안 전문가, 음악가를 포함한 초등학생 친화적 107개 직업을 14개 분야로 정리했습니다.
 - `아직 잘 모르겠어요` 응답은 추천 점수에 넣지 않아, 모르는 답 때문에 특정 직업으로 치우치지 않도록 했습니다.
 - 결과는 상위 3개 분야와 분야별 여러 직업을 보여 주며, 동점은 이름순으로 억지로 가르지 않습니다.
-- Firestore에는 문항별 응답, 분야별 점수, 추천 결과, 아이가 최종 선택한 꿈을 저장합니다. 관리자는 응답 상세와 CSV를 확인할 수 있습니다.
-- 명함 제작 화면에서 관리자는 이름으로 설문 응답을 찾아 불러오고 107개 직업 중 하나를 선택할 수 있습니다.
+- Firestore에는 문항별 응답, 분야별 점수, 추천 결과, 아이가 최종 선택한 꿈을 저장합니다. owner 관리자는 응답 상세와 CSV를 확인할 수 있습니다.
+- 명함 제작 화면에서 owner 관리자는 이름으로 설문 응답을 찾아 불러오고 107개 직업 중 하나를 선택할 수 있습니다.
 
 검증 명령:
 
@@ -90,7 +90,7 @@ README의 화면 이미지는 `docs/readme/` 폴더에서 관리합니다. 화�
 | 문항 수 | 총 24문항: 활동 흥미 16개 + 일하는 방식 8개 |
 | 직업 데이터 | 초등학생 친화적 직업 107개, 직업 지도 14개 분야 |
 | 결과 방식 | 상위 3개 진로 분야 + 분야별 여러 직업 + 최종 꿈 선택 |
-| 관리자 기능 | 응답별 문항 선택, 분야 점수, 추천 결과, 최종 꿈, CSV 조회 |
+| owner 관리자 기능 | 응답별 문항 선택, 분야 점수, 추천 결과, 최종 꿈, CSV 조회 |
 | 디자인 방향 | 듀오링고에서 영감을 받은 초록/노랑 중심, 둥글고 말랑한 모바일 우선 UI |
 | 기술 스택 | React, TypeScript, Vite, Firebase, CSS, lucide-react, html2canvas, jsPDF |
 
@@ -369,8 +369,8 @@ wekid/
 | `src/lib/careerScoring.ts` | 정규화된 다분야·다직업 추천 알고리즘 |
 | `src/lib/resultStorage.ts` | v1/v2 결과와 최종 꿈 선택 저장 |
 | `src/pages/result/` | 분야별 결과, 직업 상세, 꿈 선택, 이미지/PDF 저장 UI |
-| `src/pages/admin/` | v1/v2 응답을 함께 조회하는 관리자 화면 |
-| `firestore.rules` | 공개 응답 생성과 관리자 전용 조회를 제한하는 Firestore 규칙 |
+| `src/pages/admin/` | v1/v2 응답을 함께 조회하는 owner 관리자 화면 |
+| `firestore.rules` | 공개 응답 생성과 owner 전용 조회를 제한하는 Firestore 규칙 |
 
 ---
 
@@ -410,7 +410,7 @@ npm run check:data
 | 결과 분야 | 8개 분야와 표시 이름 |
 | 직업 목록 | 107개 직업, 중복 없는 이름과 태그 |
 | 직업 상세 | 모든 직업의 상세 정보 존재 |
-| 문항 스냅샷 | 관리자 화면에 보일 응답 문항 정보 생성 |
+| 문항 스냅샷 | owner 관리자 화면에 보일 응답 문항 정보 생성 |
 
 ### 4. 분포 검사
 
@@ -442,7 +442,7 @@ npm run preview
 
 ## Firebase 설정
 
-응답을 저장하거나 관리자 조회를 사용하려면 Firebase 프로젝트를 연결해야 합니다. 자세한 현장 배포 절차는 [기관 설문 안내서](docs/기관_설문_안내서.md)와 [Firebase 설정 안내](docs/firebase-setup.md)를 확인하세요.
+응답을 저장하거나 owner 전용 조회를 사용하려면 Firebase 프로젝트를 연결해야 합니다. 자세한 현장 배포 절차는 [기관 설문 안내서](docs/기관_설문_안내서.md)와 [Firebase 설정 안내](docs/firebase-setup.md)를 확인하세요.
 
 ### 환경 변수
 
@@ -462,10 +462,10 @@ VITE_FIREBASE_APP_ID=
 | 대상 | 권한 |
 | --- | --- |
 | 설문 참여자 | 설문 완주 시 새 응답을 생성하고, 이후 같은 v2 응답의 `dreamChoice`만 갱신 가능 |
-| 관리자 | 본인의 관리자 문서가 있을 때 응답 조회 가능 |
+| owner 관리자 | 본인의 `admins/{UID}` 문서에 `role: "owner"`가 있을 때 응답 조회 가능 |
 | 모든 클라이언트 | `dreamChoice` 외의 기존 답변·참여자 정보 등은 수정할 수 없고, 기존 응답 삭제도 불가 |
 
-배포 전에는 `firestore.rules`의 내용을 Firebase Console의 Firestore Rules에 저장하고, 관리자 계정 UID로 `admins/{UID}` 문서에 `role: "owner"`를 설정해야 합니다.
+배포 전에는 `firestore.rules`의 내용을 Firebase Console의 Firestore Rules에 저장하고, owner 관리자 계정 UID로 `admins/{UID}` 문서에 `role: "owner"`를 설정해야 합니다.
 
 ---
 
@@ -536,7 +536,7 @@ npm run check:distribution
 | 문서 | 설명 |
 | --- | --- |
 | `docs/기관_설문_안내서.md` | 기관 관계자가 설문을 배포·관리하는 방법과 배포 전 점검표 |
-| `firebase-setup.md` | Firebase 환경 변수, 인증, 관리자 설정 안내 |
+| `firebase-setup.md` | Firebase 환경 변수, 인증, owner 관리자 설정 안내 |
 | `청소년센터_RIASEC_진로상담_가이드북.docx` | 청소년센터/복지센터 실무자를 위한 RIASEC 기반 상담 가이드 |
 | `위키드_직업탐험_검사_전체_설계서.docx` | 기존 문항·선택지·직업 구성 설계 문서 |
 | `위키드_직업탐험_검사_전체_설계서.pdf` | 설계서 PDF 버전 |
@@ -555,7 +555,7 @@ npm run check:distribution
 | TypeScript/Vite 빌드 | `npm run build` |
 | 24문항 완료 후 결과 진입 | 브라우저에서 직접 테스트 |
 | 최종 꿈 선택 및 저장 | 추천·목록·직접입력·더 탐색하기 각각 확인 |
-| 관리자 응답 조회 | 문항별 응답, 분야 점수, 최종 꿈, CSV 확인 |
+| owner 관리자 응답 조회 | 문항별 응답, 분야 점수, 최종 꿈, CSV 확인 |
 | 모바일 화면 | 390px 안팎의 휴대폰 폭에서 확인 |
 
 ---
@@ -583,7 +583,7 @@ npm run check:distribution
 | UI | React |
 | 언어 | TypeScript |
 | 빌드 도구 | Vite |
-| 데이터·관리자 | Firebase Authentication, Cloud Firestore |
+| 데이터·owner 관리자 | Firebase Authentication, Cloud Firestore |
 | 아이콘 | lucide-react |
 | 결과 이미지 저장 | html2canvas |
 | PDF 저장 | jsPDF |

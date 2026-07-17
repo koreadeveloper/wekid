@@ -1,5 +1,6 @@
-import { getCareerName, isV2Result, toAdminDate } from './adminResults';
+import { careerByName } from '../data/careerCatalog';
 import type { StoredTestResultRecord } from '../types/firestore';
+import { getCareerName, isV2Result, toAdminDate } from './adminResults';
 
 export type BusinessCardPrefill = {
   sourceId: string;
@@ -12,9 +13,9 @@ export type BusinessCardPrefill = {
 
 export function createBusinessCardPrefill(result: StoredTestResultRecord): BusinessCardPrefill {
   const job = isV2Result(result)
-    ? result.dreamChoice.kind === 'undecided'
+    ? result.dreamChoice.kind === 'undecided' || result.dreamChoice.kind === 'custom'
       ? ''
-      : result.dreamChoice.careerName.trim()
+      : careerByName[result.dreamChoice.careerName.trim()]?.name ?? ''
     : getCareerName(result.topCareer).trim();
 
   return {

@@ -1,5 +1,9 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { careerCatalog } from '../../../data/careerCatalog';
 import {
+  DreamChoicePanel,
   canAutoSaveCareerChoice,
   canConfirmDreamChoice,
   getAutoSaveDreamChoice,
@@ -30,11 +34,28 @@ describe('DreamChoicePanel helpers', () => {
     expect(getAutoSaveDreamChoice({ kind: 'undecided' })).toBeUndefined();
   });
 
-  it('allows changing a saved career choice but prevents changes while it is saving', () => {
+  it('allows recommendation and catalog choices to enter the save queue while a save is pending', () => {
     const choice = { kind: 'recommended', careerName: '아이돌' } as const;
 
     expect(canAutoSaveCareerChoice(choice, false, undefined)).toBe(true);
-    expect(canAutoSaveCareerChoice(choice, true, undefined)).toBe(false);
+    expect(canAutoSaveCareerChoice(choice, true, undefined)).toBe(true);
     expect(canAutoSaveCareerChoice(choice, false, choice)).toBe(true);
+  });
+
+  it('keeps recommendation and catalog buttons enabled while a save is pending', () => {
+    const markup = renderToStaticMarkup(createElement(DreamChoicePanel, {
+      careers: careerCatalog.slice(0, 1),
+      recommendedCareerNames: ['아이돌'],
+      onConfirm: () => undefined,
+      isSaving: true,
+    }));
+
+    const recommendationButton = markup.match(/<button[^>]*>아이돌<\/button>/)?.[0];
+    const catalogButton = markup.match(new RegExp(`<button[^>]*>${careerCatalog[0].name}</button>`))?.[0];
+
+    expect(recommendationButton).toBeDefined();
+    expect(catalogButton).toBeDefined();
+    expect(recommendationButton).not.toContain('disabled');
+    expect(catalogButton).not.toContain('disabled');
   });
 });

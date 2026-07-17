@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CareerDefinition, DreamChoice } from '../../../types/career';
 
 type DreamChoicePanelProps = {
@@ -28,10 +28,10 @@ export function canConfirmDreamChoice(choice: DreamChoice | undefined, _savedCho
 
 export function canAutoSaveCareerChoice(
   choice: DreamChoice | undefined,
-  isSaving: boolean,
+  _isSaving: boolean,
   _savedChoice: DreamChoice | undefined,
 ) {
-  return Boolean(getAutoSaveDreamChoice(choice)) && !isSaving;
+  return Boolean(getAutoSaveDreamChoice(choice));
 }
 
 export function getDreamChoiceText(choice: DreamChoice | undefined) {
@@ -52,15 +52,8 @@ export function DreamChoicePanel({
   const [choice, setChoice] = useState<DreamChoice>();
   const [searchTerm, setSearchTerm] = useState('');
   const [customName, setCustomName] = useState('');
-  const automaticSaveStartedRef = useRef(false);
   const trimmedSearch = searchTerm.trim().toLocaleLowerCase('ko-KR');
   const selectionLocked = isSaving;
-
-  useEffect(() => {
-    if (!isSaving) {
-      automaticSaveStartedRef.current = false;
-    }
-  }, [isSaving]);
 
   useEffect(() => {
     if (savedChoice) {
@@ -88,11 +81,10 @@ export function DreamChoicePanel({
   };
 
   const selectCareer = (nextChoice: Extract<DreamChoice, { kind: 'recommended' | 'catalog' }>) => {
-    if (automaticSaveStartedRef.current || !canAutoSaveCareerChoice(nextChoice, isSaving, savedChoice)) {
+    if (!canAutoSaveCareerChoice(nextChoice, isSaving, savedChoice)) {
       return;
     }
 
-    automaticSaveStartedRef.current = true;
     setChoice(nextChoice);
     onConfirm(nextChoice);
   };
@@ -116,7 +108,6 @@ export function DreamChoicePanel({
               type="button"
               onClick={() => selectCareer({ kind: 'recommended', careerName })}
               aria-pressed={choice?.kind === 'recommended' && choice.careerName === careerName}
-              disabled={selectionLocked}
             >
               {careerName}
             </button>
@@ -149,7 +140,6 @@ export function DreamChoicePanel({
                     type="button"
                     onClick={() => selectCareer({ kind: 'catalog', careerName: career.name })}
                     aria-pressed={choice?.kind === 'catalog' && choice.careerName === career.name}
-                    disabled={selectionLocked}
                   >
                     {career.name}
                   </button>
