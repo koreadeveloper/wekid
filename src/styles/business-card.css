@@ -417,7 +417,7 @@
   width: min(100%, 570px);
   aspect-ratio: 1672 / 929;
   border: 2px solid rgba(60, 60, 60, 0.16);
-  border-radius: 4.8%;
+  border-radius: 0;
   color: var(--ink);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   container-type: inline-size;
@@ -963,7 +963,7 @@
     height: var(--card-height);
     aspect-ratio: auto;
     border: 0.25mm solid rgba(60, 60, 60, 0.16);
-    border-radius: 2mm;
+    border-radius: 0;
     box-shadow: none;
     break-inside: avoid;
     print-color-adjust: exact;

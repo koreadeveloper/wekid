@@ -23,6 +23,8 @@ const css = readIfExists('src/styles/business-card.css');
 const page = readIfExists('src/pages/business-card/BusinessCardMakerPage.tsx');
 const picker = readIfExists('src/pages/business-card/CareerPicker.tsx');
 const pickerTest = readIfExists('src/pages/business-card/CareerPicker.test.ts');
+const cardFaceRule = css.match(/\.business-card-face\s*\{[\s\S]*?\n\}/)?.[0] ?? '';
+const printCardFaceRule = css.match(/@media print\s*\{[\s\S]*?\.business-card-face\s*\{[\s\S]*?\n  \}/)?.[0] ?? '';
 
 const requiredChecks = [
   [app.includes('BusinessCardMakerPage'), 'App must import and render BusinessCardMakerPage'],
@@ -61,6 +63,8 @@ const requiredChecks = [
   [css.includes('--back-green: #49bf12'), 'card back must use the green top stripe'],
   [css.includes('.card-back-road'), 'card back must include the road accent CSS'],
   [css.includes('.card-back-wekid-logo'), 'CSS must position the back Wekid logo'],
+  [cardFaceRule.includes('border-radius: 0'), 'card corners must be square in screen preview'],
+  [printCardFaceRule.includes('border-radius: 0'), 'card corners must be square when printed'],
 ];
 
 for (const [passes, message] of requiredChecks) {
