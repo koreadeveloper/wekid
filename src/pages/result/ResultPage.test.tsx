@@ -18,39 +18,44 @@ const result = {
 };
 
 describe('ResultPage', () => {
-  it('shows field labels and never renders a single-best-career heading', () => {
+  it('shows field labels and the representative career heading', () => {
     const markup = renderToStaticMarkup(
       <ResultPage
+        focusRequest={0}
         result={result}
         userName="김탐험"
         resultSaveStatus={{ status: 'idle' }}
         hasCareerDetail={() => true}
         onCareerSelect={() => undefined}
         onEditLastAnswer={() => undefined}
+        onRetryResultSave={() => undefined}
         onReset={() => undefined}
         onConfirmDreamChoice={() => undefined}
       />,
     );
 
     expect(markup).toContain('호기심 많은 탐구자 — 과학·연구');
-    expect(markup).not.toContain('가장 잘 맞는 직업은');
+    expect(markup).toContain('가장 잘 맞는 직업은');
+    expect(markup).toContain('과학자');
   });
 
   it('does not invent three directions for an all-unknown result', () => {
     const markup = renderToStaticMarkup(
       <ResultPage
+        focusRequest={0}
         result={{ ...result, recommendedFieldResults: [], summary: '아직 마음이 끌리는 활동을 찾는 중이에요.' }}
         userName="김탐험"
         resultSaveStatus={{ status: 'idle' }}
         hasCareerDetail={() => true}
         onCareerSelect={() => undefined}
         onEditLastAnswer={() => undefined}
+        onRetryResultSave={() => undefined}
         onReset={() => undefined}
         onConfirmDreamChoice={() => undefined}
       />,
     );
 
-    expect(markup).toContain('나만의 진로를 찾아볼 시간이에요');
+    expect(markup).toContain('직업 탐험');
     expect(markup).not.toContain('세 가지 방향을 탐험했어요');
   });
 });

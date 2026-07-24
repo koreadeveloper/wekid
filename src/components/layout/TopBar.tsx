@@ -1,16 +1,18 @@
 import { RotateCcw } from 'lucide-react';
+import { ResetConfirmButton } from './ResetConfirmButton';
 
 type AppMode = 'career' | 'business-card' | 'admin';
 
 type TopBarProps = {
-  mode: AppMode;
-  totalCareerCount: number;
   canUseBusinessCard: boolean;
+  mode: AppMode;
+  showReset: boolean;
+  totalCareerCount: number;
   onModeChange: (mode: AppMode) => void;
   onReset: () => void;
 };
 
-export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChange, onReset }: TopBarProps) {
+export function TopBar({ canUseBusinessCard, mode, showReset, totalCareerCount, onModeChange, onReset }: TopBarProps) {
   return (
     <section className="topbar" aria-label="상단 정보">
       <div className="brand">
@@ -23,7 +25,7 @@ export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChang
         </div>
       </div>
       <div className="topbar-actions">
-        <div className="mode-switch" aria-label="화면 선택">
+        <div className="mode-switch" role="group" aria-label="화면 선택">
           <button
             className={`mode-button ${mode === 'career' ? 'active' : ''}`}
             type="button"
@@ -32,14 +34,16 @@ export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChang
           >
             진로 탐험
           </button>
-          {canUseBusinessCard && <button
-            className={`mode-button ${mode === 'business-card' ? 'active' : ''}`}
-            type="button"
-            onClick={() => onModeChange('business-card')}
-            aria-pressed={mode === 'business-card'}
-          >
-            명함 제작
-          </button>}
+          {canUseBusinessCard && (
+            <button
+              className={`mode-button ${mode === 'business-card' ? 'active' : ''}`}
+              type="button"
+              onClick={() => onModeChange('business-card')}
+              aria-pressed={mode === 'business-card'}
+            >
+              명함 제작
+            </button>
+          )}
           <button
             className={`mode-button ${mode === 'admin' ? 'active' : ''}`}
             type="button"
@@ -50,9 +54,11 @@ export function TopBar({ mode, totalCareerCount, canUseBusinessCard, onModeChang
           </button>
         </div>
         <span className="career-count">{totalCareerCount}개 직업</span>
-        <button className="icon-button" type="button" onClick={onReset} aria-label="처음부터 다시 하기">
-          <RotateCcw size={19} />
-        </button>
+        {showReset && (
+          <ResetConfirmButton className="icon-button" onConfirm={onReset} ariaLabel="처음부터 다시 하기">
+            <RotateCcw size={19} />
+          </ResetConfirmButton>
+        )}
       </div>
     </section>
   );

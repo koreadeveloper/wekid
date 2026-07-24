@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react';
 import type { CenterSource } from '../../lib/centerContext';
 
 type StartPageProps = {
@@ -10,8 +9,8 @@ type StartPageProps = {
   onCenterChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onNameChange: (value: string) => void;
-  onStart: () => void;
-  onSkip: () => void;
+  onStart: (shouldFocusQuiz?: boolean) => void;
+  onSkip: (shouldFocusQuiz?: boolean) => void;
 };
 
 export function StartPage({
@@ -28,23 +27,27 @@ export function StartPage({
 }: StartPageProps) {
   const hasName = Boolean(nameInput.trim());
   const hasUrlCenter = Boolean(initialUrlCenterName);
+  const startTest = (shouldFocusQuiz = false) => {
+    if (hasName) {
+      onStart(shouldFocusQuiz);
+      return;
+    }
+
+    onSkip(shouldFocusQuiz);
+  };
 
   return (
     <section className="name-step-layout">
       <div className="name-step-card">
-        <div className="name-step-emoji">
+        <div className="name-step-logo">
           <img src="/wekid-logo.png" alt="위키드 로고" />
         </div>
-        <p className="section-kicker">탐험 시작</p>
-        <h1>
-          나에게 맞는 미래 직업을
-          <br />
-          찾아봐요
-        </h1>
+        <p className="section-kicker">탐험 준비</p>
+        <h1>누가 탐험하나요?</h1>
         <p className="name-step-sub">
-          몇 가지 질문에 답하면 나에게 어울리는 분야와 직업을
+          이름과 센터명은 선택이에요.
           <br />
-          찾아드려요. 이름과 센터명, 이메일은 선택이에요.
+          답변과 결과는 저장될 수 있어요.
         </p>
         <input
           className="name-input"
@@ -55,8 +58,8 @@ export function StartPage({
           maxLength={10}
           onChange={(event) => onNameChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && hasName) {
-              onStart();
+            if (event.key === 'Enter') {
+              startTest(true);
             }
           }}
           autoFocus
@@ -84,13 +87,8 @@ export function StartPage({
             onChange={(event) => onEmailChange(event.target.value)}
           />
         </label>
-        <button className="primary-button name-start-btn" type="button" disabled={!hasName} onClick={onStart}>
-          <Sparkles size={18} />
-          탐험 시작!
-        </button>
-        {!hasName && <p className="name-helper">이름을 쓰거나 아래에서 이름 없이 시작할 수 있어요.</p>}
-        <button className="ghost-button name-skip-btn" type="button" onClick={onSkip}>
-          이름 없이 시작하기
+        <button className="primary-button name-start-btn" type="button" onClick={() => startTest(false)}>
+          검사 시작
         </button>
       </div>
     </section>

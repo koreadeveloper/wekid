@@ -107,13 +107,14 @@ try {
   const browser = await launchBrowser();
   const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
   await page.goto(baseUrl, { waitUntil: 'load' });
-  await page.waitForSelector('.mode-button.active');
+  await page.waitForSelector('.topbar');
 
   const state = await page.evaluate(() => {
     const addFixture = () => {
       const fixture = document.createElement('section');
       fixture.className = 'touch-contrast-fixture';
       fixture.innerHTML = `
+        <button class="mode-button active" type="button">진로 탐험</button>
         <article class="admin-stat-card"><span>검사 수</span><strong>10</strong></article>
         <button class="icon-button" type="button" aria-label="검사 처음부터 다시 하기">x</button>
         <div class="admin-center-chips">
@@ -149,7 +150,7 @@ try {
       adminStrongChip: rectFor('.touch-contrast-fixture .admin-chip-row span.strong'),
       adminStatCard: rectFor('.touch-contrast-fixture .admin-stat-card'),
       iconButton: rectFor('.touch-contrast-fixture .icon-button'),
-      modeButton: rectFor('.mode-button.active'),
+      modeButton: rectFor('.touch-contrast-fixture .mode-button.active'),
     };
     fixture.remove();
     return metrics;

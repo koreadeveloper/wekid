@@ -5,6 +5,7 @@ const requiredFiles = [
   'src/pages/business-card/CareerPicker.tsx',
   'src/pages/business-card/CareerPicker.test.ts',
   'src/styles/business-card.css',
+  'public/brand/wekid-logo.png',
   'public/goyang-volunteer-center.png',
 ];
 const failures = [];
@@ -44,14 +45,22 @@ const requiredChecks = [
   [page.includes('card-front-english-name'), 'front card must render an editable English name layer'],
   [page.includes('card-front-contact'), 'front card must render the contact block (phone/email)'],
   [page.includes('card-front-wekid-mark'), 'front card must render the Wekid logo mark'],
+  [page.includes('src="/brand/wekid-logo.png"'), 'front card must use the full Wekid brand logo'],
+  [page.indexOf('card-front-wekid-mark') < page.indexOf('card-front-center-logo'), 'front card must place Wekid as the leading logo'],
   [!page.includes('<p>나의 미래 명함</p>'), 'front card must remove the old future-card label'],
   [css.includes('.card-front-center-logo'), 'CSS must position the center logo'],
   [css.includes('.card-front-identity'), 'CSS must position the front identity block'],
   [css.includes('.card-front-contact'), 'CSS must position the front contact block'],
   [css.includes('.card-front-wekid-mark'), 'CSS must position the front Wekid logo mark'],
-  [css.includes('#ff7b70'), 'card back must include the coral edge accent'],
-  [css.includes('#ffc928'), 'card back must include the yellow sun accent'],
-  [css.includes('#2eb85c'), 'card back must include the green smile accent'],
+  [css.includes('--wekid-green: #58cc02'), 'front card must use the Wekid green top stripe'],
+  [css.includes('bottom: 8.4%'), 'front card must move the center logo to the lower-right area'],
+  [page.includes('card-back-wekid-logo'), 'back card must render the Wekid brand logo'],
+  [page.includes('card-back-road'), 'back card must render the lower-right road accent'],
+  [page.includes('card-info-english'), 'back card must render the English name'],
+  [page.includes('card-detail-item card-goal-band'), 'back card must render the goal row'],
+  [css.includes('--back-green: #49bf12'), 'card back must use the green top stripe'],
+  [css.includes('.card-back-road'), 'card back must include the road accent CSS'],
+  [css.includes('.card-back-wekid-logo'), 'CSS must position the back Wekid logo'],
 ];
 
 for (const [passes, message] of requiredChecks) {

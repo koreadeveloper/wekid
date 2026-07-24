@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { romanizeKoreanName } from '../../lib/romanizeKoreanName';
 import { BriefcaseBusiness, ImagePlus, Printer, Sparkles, UserRound } from 'lucide-react';
-import { careerByName } from '../../data/careerCatalog';
 import { CareerPicker } from './CareerPicker';
 import { SurveyResultLookup } from './SurveyResultLookup';
 import type { BusinessCardPrefill } from '../../lib/businessCardPrefill';
@@ -25,9 +24,9 @@ const defaultCardData: BusinessCardData = {
   englishName: 'KIM WEKID',
   job: '경찰관',
   school: '위키드 초등학교',
-  phone: '010-0000-0000',
-  email: 'dream@wekid.kr',
-  goal: '사람들이 즐거운 순간을 만들고 싶어요.',
+  phone: '',
+  email: '',
+  goal: '',
 };
 
 const fields: Array<{
@@ -39,7 +38,7 @@ const fields: Array<{
   { id: 'name', label: '이름', maxLength: 12, placeholder: '김위키드' },
   { id: 'englishName', label: '영문 이름', maxLength: 24, placeholder: 'KIM WEKID' },
   { id: 'school', label: '학교 / 소속', maxLength: 24, placeholder: '위키드 초등학교' },
-  { id: 'phone', label: '전화번호 (선택)', maxLength: 18, placeholder: '010-0000-0000' },
+  { id: 'phone', label: '연락처 (선택)', maxLength: 24, placeholder: '010-0000-0000' },
   { id: 'email', label: '이메일 (선택)', maxLength: 36, placeholder: 'dream@wekid.kr' },
   { id: 'goal', label: '한 줄 목표', maxLength: 36, placeholder: '사람들이 즐거운 순간을 만들고 싶어요.' },
 ];
@@ -61,7 +60,7 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
       ...defaultCardData,
       name,
       englishName: autoEnglish || defaultCardData.englishName,
-      email: initialEmail?.trim() || defaultCardData.email,
+      email: initialEmail?.trim() || '',
     };
   });
   // 마지막으로 자동 생성한 영문 이름 — 사용자가 직접 고치기 전까지만 이름을 따라간다
@@ -69,7 +68,6 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [printSide, setPrintSide] = useState<PrintSide>('front');
   const photoObjectUrlRef = useRef<string | null>(null);
-  const selectedCareerEmoji = careerByName[cardData.job]?.detail.emoji ?? '💼';
 
   useEffect(
     () => () => {
@@ -211,8 +209,8 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
           </div>
 
           <div className="business-card-preview-grid">
-            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="front" emoji={selectedCareerEmoji} />
-            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="back" emoji={selectedCareerEmoji} />
+            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="front" />
+            <BusinessCardPreview data={cardData} photoUrl={photoUrl} side="back" />
           </div>
 
           <div className="business-card-print-controls" aria-label="인쇄 설정">
@@ -249,7 +247,6 @@ export function BusinessCardMakerPage({ initialName, initialEmail }: BusinessCar
               key={`${printSide}-${copy}`}
               photoUrl={photoUrl}
               side={printSide}
-              emoji={selectedCareerEmoji}
               variant="print"
             />
           ))}
@@ -263,11 +260,10 @@ type BusinessCardPreviewProps = {
   data: BusinessCardData;
   photoUrl: string | null;
   side: PrintSide;
-  emoji: string;
   variant?: 'screen' | 'print';
 };
 
-function BusinessCardPreview({ data, photoUrl, side, emoji, variant = 'screen' }: BusinessCardPreviewProps) {
+function BusinessCardPreview({ data, photoUrl, side, variant = 'screen' }: BusinessCardPreviewProps) {
   const value = (text: string, fallback: string) => text.trim() || fallback;
   const name = value(data.name, '이름');
   const englishName = value(data.englishName, 'WEKID DREAMER');
@@ -275,16 +271,15 @@ function BusinessCardPreview({ data, photoUrl, side, emoji, variant = 'screen' }
   const school = value(data.school, '학교 / 소속');
   const phoneText = data.phone.trim();
   const emailText = data.email.trim();
-  const goal = value(data.goal, '나의 목표를 적어보세요.');
+  const goal = data.goal.trim();
+  const nameSize = name.length > 9 ? 'is-very-long' : name.length > 6 ? 'is-long' : '';
+  const englishNameSize = englishName.length > 18 ? 'is-very-long' : englishName.length > 13 ? 'is-long' : '';
 
   if (side === 'front') {
-    const nameSize = name.length > 9 ? 'is-very-long' : name.length > 6 ? 'is-long' : '';
-    const englishNameSize = englishName.length > 18 ? 'is-very-long' : englishName.length > 13 ? 'is-long' : '';
-
     return (
       <article className={`business-card-face business-card-front ${variant}`} aria-label="명함 앞면">
         <span className="card-front-topline" aria-hidden="true" />
-        <img className="card-front-center-logo" src="/goyang-volunteer-center.png" alt="고양시자원봉사센터" />
+        <img className="card-front-wekid-mark" src="/brand/wekid-logo.png" alt="위키드" />
         <div className="card-front-identity" aria-label={`${name}의 ${job} 꿈 명함`}>
           <strong className={nameSize}>{name}</strong>
           <span className={`card-front-english-name ${englishNameSize}`}>{englishName}</span>
@@ -295,15 +290,18 @@ function BusinessCardPreview({ data, photoUrl, side, emoji, variant = 'screen' }
           {phoneText && <span>{phoneText}</span>}
           {emailText && <span>{emailText}</span>}
         </div>
-        <img className="card-front-wekid-mark" src="/wekid-logo.png" alt="위키드" />
+        <img className="card-front-center-logo" src="/goyang-volunteer-center.png" alt="고양시자원봉사센터" />
       </article>
     );
   }
 
   return (
     <article className={`business-card-face business-card-back ${variant}`} aria-label="명함 뒷면">
+      <span className="card-back-topline" aria-hidden="true" />
+      <span className="card-back-road" aria-hidden="true" />
+      <span className="card-back-star" aria-hidden="true" />
       <span className="card-back-smile" aria-hidden="true" />
-      <div className="card-photo-frame">
+      <div className={`card-photo-frame${photoUrl ? ' has-photo' : ' is-empty'}`}>
         {photoUrl ? (
           <img
             alt=""
@@ -317,25 +315,29 @@ function BusinessCardPreview({ data, photoUrl, side, emoji, variant = 'screen' }
         )}
       </div>
       <div className="card-info-column">
+        <img className="card-back-wekid-logo" src="/brand/wekid-logo.png" alt="위키드" />
         <p className="card-info-job">
-          <span aria-hidden="true">{emoji}</span>
-          {job}
+          <strong>{job}</strong>
         </p>
-        <h3>{name}</h3>
-        <dl>
-          <div>
+        <h3 className={nameSize}>{name}</h3>
+        <p className={`card-info-english ${englishNameSize}`}>{englishName}</p>
+        <span className="card-back-divider" aria-hidden="true" />
+        <dl className="card-back-details">
+          <div className="card-detail-item">
             <dt>소속</dt>
             <dd>{school}</dd>
           </div>
           {(phoneText || emailText) && (
-            <div>
+            <div className="card-detail-item">
               <dt>연락</dt>
               <dd>{[phoneText, emailText].filter(Boolean).join(' · ')}</dd>
             </div>
           )}
-          <div>
+          <div className="card-detail-item card-goal-band">
             <dt>목표</dt>
-            <dd>{goal}</dd>
+            <dd>
+              <strong>{goal}</strong>
+            </dd>
           </div>
         </dl>
       </div>

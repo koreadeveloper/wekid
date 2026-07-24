@@ -1,19 +1,51 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Download, FileText } from 'lucide-react';
+import { getReadableKoreanLines } from '../../../lib/readableKoreanLines';
 import type { CareerResultV2 } from '../../../types/career';
 
 type ResultHeroProps = {
+  exportErrorMessage: string;
+  focusRequest: number;
+  hasCareerDetail: (careerName: string) => boolean;
   result: CareerResultV2;
   userName: string;
+  onCareerSelect: (careerName: string) => void;
+  onExportError: (message: string) => void;
   onSavePdf: () => void;
   isPdfSaving: boolean;
 };
 
 const waitForPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultHeroProps) {
+export function ResultHero({
+  exportErrorMessage,
+  focusRequest,
+  hasCareerDetail,
+  result,
+  userName,
+  onCareerSelect,
+  onExportError,
+  onSavePdf,
+  isPdfSaving,
+}: ResultHeroProps) {
   const [isSavingImage, setIsSavingImage] = useState(false);
   const shareCardRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const profile = {
+    summary: result.summary,
+    topCareer: result.recommendedFieldResults[0]?.recommendedCareers[0] ?? {
+      name: '직업 탐험',
+      reason: '마음에 드는 직업을 직접 골라 보세요.',
+    },
+  };
+  const hasTopCareerDetail = hasCareerDetail(profile.topCareer.name);
+  const summaryLines = getReadableKoreanLines(profile.summary);
+
+  useEffect(() => {
+    if (focusRequest > 0) {
+      titleRef.current?.focus({ preventScroll: true });
+    }
+  }, [focusRequest]);
 
   const handleSaveImage = async () => {
     const shareCard = shareCardRef.current;
@@ -22,6 +54,7 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
     }
 
     setIsSavingImage(true);
+    onExportError('');
     shareCard.classList.add('is-exporting');
     try {
       await waitForPaint();
@@ -32,7 +65,7 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch {
-      alert('결과 이미지를 저장하지 못했어요. 다시 시도해 주세요.');
+      onExportError('결과 이미지를 저장하지 못했어요. 다시 시도해 주세요.');
     } finally {
       shareCard.classList.remove('is-exporting');
       setIsSavingImage(false);
@@ -43,9 +76,16 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
     <section className="result-hero career-result-hero" ref={shareCardRef}>
       <div>
         <p className="section-kicker">{userName ? `${userName}의 진로 탐험 결과` : '나의 진로 탐험 결과'}</p>
-        <h1 className="result-title">{result.recommendedFieldResults.length ? '세 가지 방향을 탐험했어요' : '나만의 진로를 찾아볼 시간이에요'}</h1>
+        <h1 className="result-title" ref={titleRef} tabIndex={-1}>
+          <span className="result-title-prefix">가장 잘 맞는 직업은</span>
+          <span className="result-title-career">{profile.topCareer.name}</span>
+        </h1>
         <p className="result-subtitle">{result.recommendedFieldResults.length ? '한 가지 직업으로 정하지 않아도 괜찮아요.' : '마음에 드는 직업을 고르고, 다음에 다시 탐험해도 괜찮아요.'}</p>
-        <p className="result-description">{result.summary}</p>
+        <p className="result-description">
+          {summaryLines.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </p>
         <div className="field-hero-list">
           {result.recommendedFieldResults.map((field) => (
             <div key={field.fieldId}>
@@ -55,6 +95,18 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
           ))}
         </div>
       </div>
+      {result.recommendedFieldResults.length > 0 && (
+        <button
+          className="top-career-card"
+          type="button"
+          disabled={!hasTopCareerDetail}
+          onClick={() => hasTopCareerDetail && onCareerSelect(profile.topCareer.name)}
+          aria-label={hasTopCareerDetail ? `대표 추천 ${profile.topCareer.name} 자세히 보기` : undefined}
+        >
+          <span>대표 추천 직업</span>
+          <strong>{profile.topCareer.name}</strong>
+        </button>
+      )}
       <div className="share-row">
         <button className="share-button" type="button" onClick={handleSaveImage} disabled={isSavingImage || isPdfSaving}>
           <Download size={18} />
@@ -65,6 +117,11 @@ export function ResultHero({ result, userName, onSavePdf, isPdfSaving }: ResultH
           {isPdfSaving ? 'PDF 만드는 중' : 'PDF 결과지 저장'}
         </button>
       </div>
+      {exportErrorMessage && (
+        <p className="result-export-status" role="status" aria-live="polite" aria-atomic="true">
+          {exportErrorMessage}
+        </p>
+      )}
     </section>
   );
 }

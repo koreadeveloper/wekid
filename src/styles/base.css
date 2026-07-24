@@ -9,6 +9,7 @@
   --duo-green: #58cc02;
   --duo-green-dark: #46a302;
   --duo-green-soft: #d7ffb8;
+  --duo-on-green: #172414;
   --duo-blue: #1cb0f6;
   --duo-blue-dark: #1899d6;
   --duo-yellow: #ffc800;
@@ -156,4 +157,80 @@ button {
 .career-card:active {
   transform: translateY(4px);
   box-shadow: none;
+}
+
+.reset-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.reset-confirm-card {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 30px 24px 22px;
+  border: 2px solid var(--line);
+  border-radius: 28px;
+  background: var(--canvas);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.16), 0 24px 64px rgba(0, 0, 0, 0.24);
+  text-align: center;
+}
+
+.reset-confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--canvas);
+  cursor: pointer;
+}
+
+.reset-confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  color: var(--duo-green-dark);
+  background: var(--duo-green-soft);
+}
+
+.reset-confirm-card h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 25px;
+  font-weight: 1000;
+  letter-spacing: 0;
+}
+
+.reset-confirm-card p:not(.section-kicker) {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.reset-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.reset-confirm-primary {
+  background: var(--duo-red);
+  box-shadow: 0 5px 0 #d33535;
 }

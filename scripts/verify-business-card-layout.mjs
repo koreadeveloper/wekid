@@ -7,7 +7,6 @@ const failures = [];
 const port = 5187;
 const baseUrl = `http://127.0.0.1:${port}/?mode=business-card`;
 const auditDir = 'audits/business-card-layout-20260705';
-const businessCardDraftStorageKey = 'wekid.businessCardDraft.v1';
 const maxStressCardData = {
   englishName: 'ABCDEFGHIJKLMNOPQRSTUVWX',
   goal: '사람들이 즐거운 순간을 만들고 싶어요.',
@@ -15,6 +14,11 @@ const maxStressCardData = {
   name: '가가가가가가가가가가가가',
   phone: '010-0000-0000',
   school: '위키드 초등학교',
+};
+const layoutCardData = {
+  email: 'dream@wekid.kr',
+  goal: '사람들이 즐거운 순간을 만들고 싶어요.',
+  phone: '010-0000-0000',
 };
 
 const wait = (ms) => new Promise((resolve) => {
@@ -82,19 +86,28 @@ async function launchBrowser() {
   return chromium.launch({ headless: true });
 }
 
-async function installMaxStressDraft(page) {
-  await page.addInitScript(
-    ({ data, key }) => {
-      window.sessionStorage.setItem(key, JSON.stringify(data));
-    },
-    { data: maxStressCardData, key: businessCardDraftStorageKey },
-  );
+async function fillCardData(page, data) {
+  const fills = [
+    ['이름', data.name],
+    ['영문 이름', data.englishName],
+    ['학교 / 소속', data.school],
+    ['연락처 (선택)', data.phone],
+    ['이메일 (선택)', data.email],
+    ['한 줄 목표', data.goal],
+  ];
+
+  for (const [label, value] of fills) {
+    if (value !== undefined) {
+      await page.getByLabel(label, { exact: true }).fill(value);
+    }
+  }
 }
 
 async function collectFrontCardMetrics(page, selector, minGapPx) {
   return page.evaluate(
     ({ minGapPx: gapPx, selector: cardSelector }) => {
-      const overlapX = (first, second) => first.left < second.right && second.left < first.right;
+      const overlap = (first, second) =>
+        first.left < second.right && second.left < first.right && first.top < second.bottom && second.top < first.bottom;
       const rectFor = (element) => {
         const rect = element.getBoundingClientRect();
         return {
@@ -106,70 +119,62 @@ async function collectFrontCardMetrics(page, selector, minGapPx) {
           width: rect.width,
         };
       };
-      const clipsOwnOverflow = (element) => {
-        const style = getComputedStyle(element);
-        return style.overflowX !== 'visible' || style.overflowY !== 'visible';
-      };
-
       return [...document.querySelectorAll(cardSelector)]
         .filter((card) => {
           const style = getComputedStyle(card);
           return style.display !== 'none' && style.visibility !== 'hidden' && card.clientWidth > 0 && card.clientHeight > 0;
         })
         .map((card, index) => {
-          const name = card.querySelector('.card-name-overlay');
-          const english = card.querySelector('.card-english-overlay');
-          const logo = card.querySelector('.card-front-logo');
-          const badge = card.querySelector('.card-front-job-badge');
-          const badgeText = card.querySelector('.card-front-job-badge span');
-          if (!name || !english || !logo || !badge || !badgeText) {
+          const name = card.querySelector('.card-front-identity strong');
+          const english = card.querySelector('.card-front-english-name');
+          const logo = card.querySelector('.card-front-wekid-mark');
+          const job = card.querySelector('.card-front-job');
+          const centerLogo = card.querySelector('.card-front-center-logo');
+          const contact = card.querySelector('.card-front-contact');
+          if (!name || !english || !logo || !job || !centerLogo || !contact) {
             return { index, missingElements: true };
           }
 
           const nameRect = rectFor(name);
           const englishRect = rectFor(english);
           const logoRect = rectFor(logo);
-          const nameClipsOwnOverflow = clipsOwnOverflow(name);
-          const englishClipsOwnOverflow = clipsOwnOverflow(english);
-          const badgeRect = rectFor(badge);
+          const jobRect = rectFor(job);
+          const centerLogoRect = rectFor(centerLogo);
+          const contactRect = rectFor(contact);
           const nameBottom = Math.max(nameRect.bottom, englishRect.bottom);
-          const horizontalOverlap = overlapX(englishRect, badgeRect) || overlapX(nameRect, badgeRect);
-          const gapToBadge = badgeRect.top - nameBottom;
-          const logoHorizontalOverlap = overlapX(logoRect, nameRect) || overlapX(logoRect, englishRect);
+          const gapToJob = jobRect.top - nameBottom;
           const gapFromLogoToName = nameRect.top - logoRect.bottom;
-          const badgeStyle = getComputedStyle(badge);
-          const badgeTextStyle = getComputedStyle(badgeText);
+          const jobStyle = getComputedStyle(job);
 
           return {
-            badgeBorderStyle: badgeStyle.borderStyle,
-            badgeOutlineStyle: badgeStyle.outlineStyle,
-            badgeTextDecoration: badgeTextStyle.textDecorationLine,
             card: rectFor(card),
+            centerContactOverlap: overlap(centerLogoRect, contactRect),
+            centerLogo: centerLogoRect,
+            contact: contactRect,
             english: rectFor(english),
             englishFontSize: getComputedStyle(english).fontSize,
             englishFontSizePx: Number.parseFloat(getComputedStyle(english).fontSize),
-            englishHasOverflow:
-              englishClipsOwnOverflow &&
-              (english.scrollWidth > english.clientWidth + 1 || english.scrollHeight > english.clientHeight + 1),
+            englishHasOverflow: english.scrollWidth > english.clientWidth + 1,
             englishOverflow: {
               clientHeight: english.clientHeight,
               clientWidth: english.clientWidth,
               scrollHeight: english.scrollHeight,
               scrollWidth: english.scrollWidth,
             },
-            gapToBadge,
+            gapToJob,
             gapFromLogoToName,
-            horizontalOverlap,
             index,
-            isPassing: !horizontalOverlap || gapToBadge >= gapPx,
+            isPassing: gapToJob >= gapPx && gapFromLogoToName >= gapPx && !overlap(logoRect, nameRect),
+            job: jobRect,
+            jobBorderStyle: jobStyle.borderStyle,
+            jobOutlineStyle: jobStyle.outlineStyle,
+            jobTextDecoration: jobStyle.textDecorationLine,
             logo: rectFor(logo),
-            logoHorizontalOverlap,
             minGapPx: gapPx,
             name: rectFor(name),
             nameFontSize: getComputedStyle(name).fontSize,
             nameFontSizePx: Number.parseFloat(getComputedStyle(name).fontSize),
-            nameHasOverflow:
-              nameClipsOwnOverflow && (name.scrollWidth > name.clientWidth + 1 || name.scrollHeight > name.clientHeight + 1),
+            nameHasOverflow: name.scrollWidth > name.clientWidth + 1,
             nameOverflow: {
               clientHeight: name.clientHeight,
               clientWidth: name.clientWidth,
@@ -191,22 +196,26 @@ function assertMetrics(label, metrics, fontMinimums) {
 
   for (const metric of metrics) {
     if (metric.missingElements) {
-      failures.push(`${label} card ${metric.index}: missing logo, name, English name, or job badge elements`);
+      failures.push(`${label} card ${metric.index}: missing Wekid logo, center logo, name, English name, contact, or job elements`);
       continue;
     }
 
     if (!metric.isPassing) {
       failures.push(
-        `${label} card ${metric.index}: front name stack overlaps job badge; gap ${metric.gapToBadge.toFixed(1)}px, required ${metric.minGapPx}px`,
+        `${label} card ${metric.index}: front logo/name/job stack is too tight; logo-name gap ${metric.gapFromLogoToName.toFixed(1)}px, name-job gap ${metric.gapToJob.toFixed(1)}px, required ${metric.minGapPx}px`,
       );
     }
 
-    if (metric.badgeBorderStyle !== 'none' || metric.badgeOutlineStyle !== 'none') {
-      failures.push(`${label} card ${metric.index}: job badge must not show border/outline decoration`);
+    if (metric.centerContactOverlap) {
+      failures.push(`${label} card ${metric.index}: center logo overlaps the contact block`);
     }
 
-    if (metric.badgeTextDecoration !== 'none') {
-      failures.push(`${label} card ${metric.index}: job badge text must not show text decoration`);
+    if (metric.jobBorderStyle !== 'none' || metric.jobOutlineStyle !== 'none') {
+      failures.push(`${label} card ${metric.index}: job text must not show border/outline decoration`);
+    }
+
+    if (metric.jobTextDecoration !== 'none') {
+      failures.push(`${label} card ${metric.index}: job text must not show text decoration`);
     }
 
     if (metric.name.left < metric.card.left - 1 || metric.name.right > metric.card.right + 1) {
@@ -221,9 +230,9 @@ function assertMetrics(label, metrics, fontMinimums) {
       );
     }
 
-    if (metric.logoHorizontalOverlap && metric.gapFromLogoToName < 2) {
+    if (metric.gapFromLogoToName < metric.minGapPx) {
       failures.push(
-        `${label} card ${metric.index}: Wekid logo overlaps the enlarged name; gap ${metric.gapFromLogoToName.toFixed(1)}px, required 2px`,
+        `${label} card ${metric.index}: Wekid logo is too close to the name; gap ${metric.gapFromLogoToName.toFixed(1)}px, required ${metric.minGapPx}px`,
       );
     }
 
@@ -249,49 +258,46 @@ function assertMetrics(label, metrics, fontMinimums) {
   }
 }
 
-async function verifyViewport(page, width, height) {
+async function prepareBusinessCardPage(page, { height, media, stress = false, width }) {
   await page.setViewportSize({ width, height });
   await page.emulateMedia({ media: 'screen' });
   await page.goto(baseUrl, { waitUntil: 'load' });
   await waitForVisibleCard(page, '.business-card-front.screen');
+  await fillCardData(page, stress ? maxStressCardData : layoutCardData);
+  if (media === 'print') {
+    await page.emulateMedia({ media: 'print' });
+    await waitForVisibleCard(page, '.business-card-front.print');
+  }
   await page.evaluate(() => document.fonts?.ready);
+}
+
+async function verifyViewport(page, width, height) {
+  await prepareBusinessCardPage(page, { height, media: 'screen', width });
   const metrics = await collectFrontCardMetrics(page, '.business-card-front.screen', 4);
-  const fontMinimums = width <= 420 ? { english: 23, name: 54 } : width <= 900 ? { english: 28, name: 58 } : { english: 38, name: 82 };
+  const fontMinimums = width <= 420 ? { english: 8, name: 23 } : width <= 900 ? { english: 8, name: 24 } : { english: 12, name: 38 };
   assertMetrics(`screen ${width}x${height}`, metrics, fontMinimums);
   return metrics;
 }
 
 async function verifyPrint(page) {
-  await page.setViewportSize({ width: 1000, height: 1400 });
-  await page.emulateMedia({ media: 'print' });
-  await page.goto(baseUrl, { waitUntil: 'load' });
-  await waitForVisibleCard(page, '.business-card-front.print');
-  await page.evaluate(() => document.fonts?.ready);
+  await prepareBusinessCardPage(page, { height: 1400, media: 'print', width: 1000 });
   const metrics = await collectFrontCardMetrics(page, '.business-card-front.print', 8);
-  assertMetrics('print front', metrics, { english: 26, name: 72 });
+  assertMetrics('print front', metrics, { english: 8, name: 23 });
   return metrics;
 }
 
 async function verifyStressViewport(page, width, height) {
-  await page.setViewportSize({ width, height });
-  await page.emulateMedia({ media: 'screen' });
-  await page.goto(baseUrl, { waitUntil: 'load' });
-  await waitForVisibleCard(page, '.business-card-front.screen');
-  await page.evaluate(() => document.fonts?.ready);
+  await prepareBusinessCardPage(page, { height, media: 'screen', stress: true, width });
   const metrics = await collectFrontCardMetrics(page, '.business-card-front.screen', 4);
-  const fontMinimums = width <= 420 ? { english: 12, name: 22 } : width <= 900 ? { english: 13, name: 24 } : { english: 17, name: 32 };
+  const fontMinimums = width <= 420 ? { english: 5, name: 14 } : width <= 900 ? { english: 5, name: 15 } : { english: 7, name: 24 };
   assertMetrics(`max-name screen ${width}x${height}`, metrics, fontMinimums);
   return metrics;
 }
 
 async function verifyStressPrint(page) {
-  await page.setViewportSize({ width: 1000, height: 1400 });
-  await page.emulateMedia({ media: 'print' });
-  await page.goto(baseUrl, { waitUntil: 'load' });
-  await waitForVisibleCard(page, '.business-card-front.print');
-  await page.evaluate(() => document.fonts?.ready);
+  await prepareBusinessCardPage(page, { height: 1400, media: 'print', stress: true, width: 1000 });
   const metrics = await collectFrontCardMetrics(page, '.business-card-front.print', 8);
-  assertMetrics('max-name print front', metrics, { english: 12, name: 24 });
+  assertMetrics('max-name print front', metrics, { english: 5, name: 14 });
   return metrics;
 }
 
@@ -314,7 +320,6 @@ try {
   const browser = await launchBrowser();
   const page = await browser.newPage();
   const stressPage = await browser.newPage();
-  await installMaxStressDraft(stressPage);
   const report = {
     print: await verifyPrint(page),
     screen375: await verifyViewport(page, 375, 812),

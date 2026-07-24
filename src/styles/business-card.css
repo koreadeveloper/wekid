@@ -26,6 +26,11 @@
   background: var(--duo-green);
 }
 
+.mode-button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--duo-blue) 24%, transparent);
+}
+
 .business-card-app {
   width: min(100%, 1180px);
 }
@@ -248,6 +253,17 @@
   background: #f4fbff;
 }
 
+.direct-job-field {
+  padding: 10px;
+  border: 2px solid rgba(88, 204, 2, 0.22);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.direct-job-field span {
+  color: var(--duo-green-dark);
+}
+
 .business-card-field {
   display: grid;
   gap: 7px;
@@ -410,6 +426,7 @@
 .business-card-front {
   --gvc-pink: #d81b60;
   --front-ink: #1e2430;
+  --wekid-green: #58cc02;
   display: block;
   background: #ffffff;
 }
@@ -419,25 +436,25 @@
   top: 0;
   right: 0;
   left: 0;
-  height: 2.6%;
-  background: var(--gvc-pink);
+  height: 3%;
+  background: var(--wekid-green);
 }
 
 .card-front-center-logo {
   position: absolute;
-  top: 9%;
-  left: 6.8%;
-  width: 33%;
+  right: 6.3%;
+  bottom: 8.4%;
+  width: 31%;
   height: auto;
 }
 
 .card-front-identity {
   position: absolute;
-  top: 37%;
+  top: 33%;
   left: 7%;
   display: grid;
-  width: 70%;
-  gap: 1.2cqw;
+  width: 62%;
+  gap: 1.8cqw;
   color: var(--front-ink);
 }
 
@@ -451,41 +468,41 @@
 }
 
 .card-front-identity strong {
-  font-size: 7.4cqw;
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  font-size: 8cqw;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.22;
 }
 
 .card-front-identity strong.is-long {
-  font-size: 5.8cqw;
+  font-size: 6.2cqw;
 }
 
 .card-front-identity strong.is-very-long {
-  font-size: 4.5cqw;
+  font-size: 4.8cqw;
 }
 
 .card-front-english-name {
   color: #8a91a0;
-  font-size: 2.5cqw;
+  font-size: 2.9cqw;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: 1.25;
   text-transform: uppercase;
 }
 
 .card-front-english-name.is-long {
-  font-size: 2.1cqw;
-  letter-spacing: 0.09em;
+  font-size: 2.35cqw;
+  letter-spacing: 0;
 }
 
 .card-front-english-name.is-very-long {
-  font-size: 1.8cqw;
-  letter-spacing: 0.05em;
+  font-size: 1.95cqw;
+  letter-spacing: 0;
 }
 
 .card-front-job {
-  margin-top: 0.7cqw;
+  margin-top: 0.8cqw;
   color: var(--gvc-pink);
   font-size: 3.1cqw;
   font-weight: 700;
@@ -493,7 +510,7 @@
 
 .card-front-divider {
   position: absolute;
-  top: 71.5%;
+  top: 75%;
   right: 7%;
   left: 7%;
   height: 1px;
@@ -502,7 +519,7 @@
 
 .card-front-contact {
   position: absolute;
-  bottom: 7.5%;
+  bottom: 6.8%;
   left: 7%;
   display: grid;
   gap: 1cqw;
@@ -514,67 +531,74 @@
 
 .card-front-wekid-mark {
   position: absolute;
-  right: 6.6%;
-  bottom: 7.5%;
-  width: 7.4%;
+  top: 4.5%;
+  left: 3.8%;
+  width: 26.5%;
   height: auto;
-  border-radius: 18%;
-  opacity: 0.92;
+  opacity: 1;
 }
 
 .business-card-back {
-  align-items: stretch;
-  gap: 16px;
-  padding: 18px;
-  border-color: #ff7b70;
-  background: #fffaf2;
+  --back-green: #49bf12;
+  --back-green-dark: #2f9b08;
+  --back-ink: #111827;
+  --back-muted: #9ca3af;
+  align-items: center;
+  gap: 3.2%;
+  padding: 4.2% 5.2% 4.2%;
+  border-color: rgba(17, 24, 39, 0.16);
+  background: #ffffff;
 }
 
-.business-card-back::before {
+.card-back-topline {
   position: absolute;
-  right: 4%;
-  bottom: -24%;
-  z-index: 0;
-  width: 38%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #ffc928;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 3%;
+  background: var(--back-green);
   content: "";
 }
 
-.business-card-back::after {
+.card-back-road {
   position: absolute;
   right: 0;
-  top: 0;
   bottom: 0;
   z-index: 0;
-  width: 8px;
-  background: #ff7b70;
+  width: 34%;
+  aspect-ratio: 310 / 320;
+  border: 0;
+  border-radius: 0;
+  background: url("/assets/card-back-corner-decoration.png") right bottom / contain no-repeat;
   content: "";
+}
+
+.card-back-road::after {
+  display: none;
+}
+
+.card-back-star {
+  display: none;
 }
 
 .card-back-smile {
-  position: absolute;
-  right: 10%;
-  bottom: 11%;
-  z-index: 1;
-  width: 18%;
-  height: 9%;
-  border: 7px solid #2eb85c;
-  border-top: 0;
-  border-radius: 0 0 999px 999px;
-  transform: rotate(-8deg);
+  display: none;
 }
 
 .card-photo-frame {
   display: grid;
   place-items: center;
-  flex: 0 0 32%;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 26.8%;
+  height: 74%;
   min-width: 92px;
-  border: 2px solid #84d8ff;
-  border-radius: 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4.5%;
   color: var(--duo-blue-dark);
-  background: #ddf4ff;
+  background: linear-gradient(135deg, #f1f8ff 0%, #dcefff 100%);
 }
 
 .card-photo-frame img {
@@ -585,61 +609,134 @@
 
 .card-info-column {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
-  padding-bottom: 8px;
+  align-self: stretch;
+  padding-top: 0;
+  padding-right: 1.5%;
+}
+
+.card-back-wekid-logo {
+  width: 27%;
+  height: auto;
+  margin-bottom: 1.4%;
+  transform: translateX(-14.8%);
 }
 
 .card-info-job {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin: 0 0 4px;
-  color: var(--duo-green-dark);
-  font-size: 13px;
+  margin: 0 0 1.2%;
+  color: var(--back-green-dark);
+  font-size: 5.2cqw;
   font-weight: 1000;
-  line-height: 1.2;
+  line-height: 1.08;
 }
 
 .card-info-column h3 {
-  margin: 0 0 10px;
-  color: var(--ink);
-  font-size: 30px;
+  display: block;
+  overflow: hidden;
+  max-width: 96%;
+  min-height: 1.08em;
+  margin: 0;
+  color: var(--back-ink);
+  font-size: 5.2cqw;
   font-weight: 1000;
-  line-height: 1;
+  line-height: 1.08;
   letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.card-info-column dl {
+.card-info-column h3.is-long {
+  font-size: 4.7cqw;
+}
+
+.card-info-column h3.is-very-long {
+  font-size: 4.2cqw;
+}
+
+.card-info-english {
+  display: block;
+  overflow: hidden;
+  max-width: 96%;
+  min-height: 1.15em;
+  margin: 0.6% 0 0;
+  color: var(--back-muted);
+  font-size: 3.65cqw;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card-info-english.is-long {
+  font-size: 3.5cqw;
+  letter-spacing: 0.08em;
+}
+
+.card-info-english.is-very-long {
+  font-size: 3.6cqw;
+  letter-spacing: 0.04em;
+}
+
+.card-back-divider {
+  display: block;
+  width: 97%;
+  height: 1px;
+  margin: 1.15% 0 1%;
+  background: #d5dbe4;
+}
+
+.card-back-details {
   display: grid;
-  gap: 5px;
+  gap: 0;
+  width: 97%;
   margin: 0;
 }
 
-.card-info-column dl div {
+.card-detail-item {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 14% minmax(0, 1fr);
+  gap: 3%;
   align-items: baseline;
+  padding: 0.35% 0;
+  border-bottom: 2px dotted #dbe2eb;
+}
+
+.card-detail-item:first-child {
+  padding-top: 0;
+}
+
+.card-detail-item:last-child {
+  border-bottom: 0;
 }
 
 .card-info-column dt {
-  color: var(--duo-blue-dark);
-  font-size: 11px;
+  color: var(--back-green-dark);
+  font-size: 3.15cqw;
   font-weight: 1000;
 }
 
 .card-info-column dd {
   margin: 0;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1.28;
+  color: var(--back-ink);
+  font-size: 3.25cqw;
+  font-weight: 850;
+  line-height: 1.22;
   overflow-wrap: anywhere;
+}
+
+.card-goal-band dd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .business-card-print-controls {
@@ -865,7 +962,7 @@
     width: var(--card-width);
     height: var(--card-height);
     aspect-ratio: auto;
-    border: 0.35mm dashed rgba(60, 60, 60, 0.35);
+    border: 0.25mm solid rgba(60, 60, 60, 0.16);
     border-radius: 2mm;
     box-shadow: none;
     break-inside: avoid;
@@ -878,48 +975,33 @@
   }
 
   .business-card-back.print {
-    gap: 3.6mm;
-    padding: 4mm;
+    gap: 3.2%;
+    padding: 4.2% 5.2% 4.2%;
   }
 
   .card-photo-frame {
     min-width: 0;
-    border-width: 0.4mm;
     border-radius: 2mm;
   }
 
-  .card-info-job {
-    font-size: 7pt;
+  .business-card-back.print .card-photo-frame.is-empty {
+    color: transparent;
+    background: #ffffff;
+  }
+
+  .business-card-back.print .card-photo-frame.is-empty svg {
+    display: none;
   }
 
   .card-info-column h3 {
-    margin-bottom: 2mm;
-    font-size: 16pt;
+    line-height: 1.08;
   }
 
-  .card-info-column dl {
-    gap: 1.2mm;
+  .card-detail-item {
+    border-bottom-width: 0.3mm;
   }
 
-  .card-info-column dl div {
-    grid-template-columns: 10mm minmax(0, 1fr);
-    gap: 2mm;
-  }
-
-  .card-info-column dt {
-    font-size: 6.2pt;
-  }
-
-  .card-info-column dd {
-    font-size: 6.6pt;
-  }
-
-  .business-card-back::after {
-    width: 1.4mm;
-  }
-
-  .card-back-smile {
-    border-width: 1.2mm;
-    border-top: 0;
+  .card-goal-band dd {
+    white-space: nowrap;
   }
 }

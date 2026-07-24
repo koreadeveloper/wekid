@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { TopBar } from './components/layout/TopBar';
 import { careerCategories } from './data/careerCategories';
 import { getCareerDetail } from './data/careerDetails';
 import { careerQuestionsV2 } from './data/questionsV2';
+import { getAdminProfile, isOwnerAdmin } from './lib/adminAuth';
 import { getCenterNameFromSearch, resolveCenterContext } from './lib/centerContext';
 import { getCareerResultV2 } from './lib/careerScoring';
+import { auth } from './lib/firebaseAuth';
 import { createAnswerSnapshots } from './lib/questionSnapshots';
 import { createResultSaveSession, saveTestResult, updateTestResultDreamChoice } from './lib/resultStorage';
 import { AdminPage } from './pages/admin/AdminPage';
@@ -17,6 +20,15 @@ import type { CareerAnswer, CareerAnswerMap, CareerDetail, DreamChoice } from '.
 
 type AppMode = 'career' | 'business-card' | 'admin';
 
+function getInitialMode(): AppMode {
+  if (typeof window === 'undefined') {
+    return 'career';
+  }
+
+  const modeParam = new URLSearchParams(window.location.search).get('mode');
+  return modeParam === 'business-card' || modeParam === 'admin' ? modeParam : 'career';
+}
+
 type ResultSaveStatus =
   | { status: 'idle' | 'saving' }
   | { status: 'saved'; resultId: string }
@@ -24,7 +36,7 @@ type ResultSaveStatus =
   | { status: 'failed'; error: unknown };
 
 function App() {
-  const [mode, setMode] = useState<AppMode>('career');
+  const [mode, setMode] = useState<AppMode>(() => getInitialMode());
   const [canUseBusinessCard, setCanUseBusinessCard] = useState(false);
   const initialUrlCenterName = useMemo(
     () => getCenterNameFromSearch(typeof window === 'undefined' ? '' : window.location.search),
@@ -45,6 +57,8 @@ function App() {
   const [dreamChoice, setDreamChoice] = useState<DreamChoice>();
   const [selectedCareer, setSelectedCareer] = useState<CareerDetail | null>(null);
   const [isAdvancing, setIsAdvancingState] = useState(false);
+  const [quizFocusRequest, setQuizFocusRequest] = useState(0);
+  const [resultFocusRequest, setResultFocusRequest] = useState(0);
   const advanceTimerRef = useRef<number | undefined>(undefined);
   const advancingRef = useRef(false);
   const automaticSaveStartedRef = useRef(false);
@@ -64,6 +78,39 @@ function App() {
   };
 
   useEffect(() => clearAdvanceTimer, []);
+
+  useEffect(() => {
+    if (!auth) {
+      setCanUseBusinessCard(false);
+      return undefined;
+    }
+
+    let requestId = 0;
+
+    return onAuthStateChanged(auth, (user) => {
+      requestId += 1;
+      const currentRequestId = requestId;
+
+      if (!user) {
+        setCanUseBusinessCard(false);
+        return;
+      }
+
+      void getAdminProfile(user.uid)
+        .then((profile) => {
+          if (currentRequestId !== requestId) {
+            return;
+          }
+
+          setCanUseBusinessCard(profile.ok && isOwnerAdmin(profile.admin));
+        })
+        .catch(() => {
+          if (currentRequestId === requestId) {
+            setCanUseBusinessCard(false);
+          }
+        });
+    });
+  }, []);
 
   const answeredCount = Object.keys(answers).length;
   const isComplete = answeredCount === careerQuestionsV2.length;
@@ -118,6 +165,7 @@ function App() {
     advanceTimerRef.current = window.setTimeout(() => {
       advanceTimerRef.current = undefined;
       setShowResult(true);
+      setResultFocusRequest((request) => request + 1);
       setIsAdvancing(false);
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }, 180);
@@ -220,23 +268,33 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const startWithName = () => {
+  const startWithName = (shouldFocusQuiz = false) => {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName(nameInput.trim());
     setUserEmail(emailInput.trim());
     setNameStep(false);
     setStartedAt(new Date());
+    if (shouldFocusQuiz) {
+      setQuizFocusRequest((request) => request + 1);
+      return;
+    }
+
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
-  const skipName = () => {
+  const skipName = (shouldFocusQuiz = false) => {
     clearAdvanceTimer();
     setIsAdvancing(false);
     setUserName('');
     setUserEmail('');
     setNameStep(false);
     setStartedAt(new Date());
+    if (shouldFocusQuiz) {
+      setQuizFocusRequest((request) => request + 1);
+      return;
+    }
+
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
@@ -253,13 +311,18 @@ function App() {
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
+  const retryResultSave = () => {
+    confirmDreamChoice(dreamChoice ?? { kind: 'undecided' });
+  };
+
   return (
-    <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''}`}>
+    <main className={`app ${mode === 'business-card' ? 'business-card-app' : ''} ${mode === 'career' && nameStep ? 'name-step-app' : ''}`}>
       {mode === 'career' && selectedCareer && <CareerDetailModal detail={selectedCareer} onClose={() => setSelectedCareer(null)} />}
       <TopBar
-        mode={mode}
-        totalCareerCount={totalCareerCount}
         canUseBusinessCard={canUseBusinessCard}
+        mode={mode}
+        showReset={mode === 'career' && !nameStep && !showResult}
+        totalCareerCount={totalCareerCount}
         onModeChange={handleModeChange}
         onReset={reset}
       />
@@ -287,12 +350,14 @@ function App() {
         <ResultPage
           result={result}
           dreamChoice={dreamChoice}
+          focusRequest={resultFocusRequest}
           resultSaveStatus={resultSaveStatus}
           userName={userName}
           hasCareerDetail={(careerName) => Boolean(getCareerDetail(careerName))}
           onCareerSelect={selectCareer}
           onConfirmDreamChoice={confirmDreamChoice}
           onEditLastAnswer={editLastAnswer}
+          onRetryResultSave={retryResultSave}
           onReset={reset}
         />
       ) : (
@@ -303,6 +368,7 @@ function App() {
           currentQuestion={currentQuestion}
           isAdvancing={isAdvancing}
           progress={progress}
+          focusRequest={quizFocusRequest}
           userName={userName}
           onChooseAnswer={chooseAnswer}
           onPrevious={() => {

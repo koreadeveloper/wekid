@@ -1,9 +1,13 @@
+.name-step-app {
+  padding-bottom: clamp(12px, 2vh, 20px);
+}
+
 .name-step-layout {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 86px);
-  padding-top: clamp(8px, 3vh, 16px);
+  min-height: calc(100dvh - 86px);
+  padding-top: clamp(22px, 5vh, 56px);
 }
 
 .name-step-card {
@@ -26,26 +30,17 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.name-step-emoji {
-  width: clamp(64px, 16vw, 88px);
-  height: clamp(64px, 16vw, 88px);
-  font-size: clamp(48px, 12vw, 62px);
-  line-height: 1;
+.name-step-logo {
+  width: clamp(68px, 16vw, 92px);
+  height: clamp(68px, 16vw, 92px);
   margin-bottom: 14px;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
-  animation: float 3s ease-in-out infinite;
 }
 
-.name-step-emoji img {
+.name-step-logo img {
   width: 100%;
   height: 100%;
   border-radius: 24%;
   object-fit: cover;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
 }
 
 .name-step-card .section-kicker {
@@ -58,6 +53,8 @@
   font-weight: 1000;
   line-height: 1.12;
   color: var(--ink);
+  text-wrap: balance;
+  word-break: keep-all;
 }
 
 .name-step-sub {
@@ -65,6 +62,9 @@
   color: var(--muted);
   font-size: 15px;
   font-weight: 800;
+  line-height: 1.5;
+  text-wrap: pretty;
+  word-break: keep-all;
 }
 
 .name-input {
@@ -141,33 +141,6 @@
   margin-top: 14px;
   font-size: 17px;
 }
-.name-start-btn:disabled {
-  border-color: #b6d8a6;
-  color: #6b8c5e;
-  background: #dff2d4;
-  opacity: 0.72;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-  filter: grayscale(0.15);
-}
-
-.name-helper {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.name-skip-btn {
-  width: 100%;
-  margin-top: 8px;
-  font-size: 13px;
-  min-height: 40px;
-  color: #aaa;
-  border-color: transparent;
-  box-shadow: none;
-}
 
 /* ===== 직업 상세 모달 ===== */
 
@@ -189,5 +162,11 @@
   .center-input {
     min-height: 60px;
     font-size: 18px;
+  }
+}
+
+@media (max-width: 620px) {
+  .name-step-layout {
+    min-height: calc(100dvh - 112px);
   }
 }

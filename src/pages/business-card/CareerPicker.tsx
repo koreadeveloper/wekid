@@ -24,6 +24,16 @@ export function CareerPicker({ value, onChange }: CareerPickerProps) {
 
   return (
     <div className="business-card-job-selector">
+      <label className="business-card-field direct-job-field">
+        <span>직업명 직접 입력</span>
+        <input
+          type="text"
+          value={value}
+          maxLength={18}
+          placeholder="예: 경찰관, 영상 편집자"
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </label>
       <label className="business-card-field">
         <span>희망 직업 검색</span>
         <div className="job-search-box">

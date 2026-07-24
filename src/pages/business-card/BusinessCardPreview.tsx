@@ -30,7 +30,7 @@ export function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'sc
   const job = value(data.job, '희망 직업');
   const school = value(data.school, '학교 또는 센터');
   const phone = data.phone.trim();
-  const goal = value(data.goal, '나의 목표를 적어보세요.');
+  const goal = data.goal.trim();
 
   const jobBadgeLength = [...job].length;
   const jobBadgeSizeClass = jobBadgeLength >= 11 ? ' dense' : jobBadgeLength >= 6 ? ' compact' : '';
@@ -68,7 +68,7 @@ export function BusinessCardPreview({ data, photoUrl, side, theme, variant = 'sc
         <span>WEKID DREAM CARD</span>
       </div>
       <div className="card-back-identity">
-        <div className="card-photo-frame">
+        <div className={`card-photo-frame${photoUrl ? ' has-photo' : ' is-empty'}`}>
           {photoUrl ? (
             <img
               alt=""

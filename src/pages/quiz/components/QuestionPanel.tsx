@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import type { CareerAnswer, CareerQuestionV2 } from '../../../types/career';
 
@@ -6,6 +7,7 @@ type QuestionPanelProps = {
   currentAnswer?: CareerAnswer;
   currentIndex: number;
   currentQuestion: CareerQuestionV2;
+  focusRequest: number;
   isAdvancing: boolean;
   questions: CareerQuestionV2[];
   onChooseAnswer: (choice: CareerAnswer) => void;
@@ -17,11 +19,20 @@ export function QuestionPanel({
   currentAnswer,
   currentIndex,
   currentQuestion,
+  focusRequest,
   isAdvancing,
   questions,
   onChooseAnswer,
   onPrevious,
 }: QuestionPanelProps) {
+  const firstOptionRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (focusRequest > 0) {
+      firstOptionRef.current?.focus({ preventScroll: true });
+    }
+  }, [currentQuestion.id, focusRequest]);
+
   return (
     <section className="question-panel" aria-live="polite">
       <div className="question-meta">
@@ -39,6 +50,7 @@ export function QuestionPanel({
               className={`option-card ${selected ? 'selected' : ''}`}
               key={option.id}
               type="button"
+              ref={option === currentQuestion.options[0] ? firstOptionRef : undefined}
               onClick={() => onChooseAnswer(option.id)}
               aria-pressed={selected}
               disabled={isAdvancing}

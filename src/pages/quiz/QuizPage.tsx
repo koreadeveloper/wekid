@@ -8,6 +8,7 @@ type QuizPageProps = {
   currentAnswer?: CareerAnswer;
   currentIndex: number;
   currentQuestion: CareerQuestionV2;
+  focusRequest: number;
   isAdvancing: boolean;
   progress: number;
   userName: string;
@@ -20,6 +21,7 @@ export function QuizPage({
   currentAnswer,
   currentIndex,
   currentQuestion,
+  focusRequest,
   isAdvancing,
   progress,
   userName,
@@ -34,6 +36,7 @@ export function QuizPage({
         currentAnswer={currentAnswer}
         currentIndex={currentIndex}
         currentQuestion={currentQuestion}
+        focusRequest={focusRequest}
         isAdvancing={isAdvancing}
         questions={careerQuestionsV2}
         onChooseAnswer={onChooseAnswer}

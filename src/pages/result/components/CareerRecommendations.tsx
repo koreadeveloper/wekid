@@ -43,6 +43,7 @@ export function CareerRecommendations({ fieldResults, hasCareerDetail, onCareerS
                     type="button"
                     disabled={!hasDetail}
                     onClick={() => hasDetail && onCareerSelect(career.name)}
+                    aria-label={hasDetail ? `${career.name} 자세히 보기` : undefined}
                     title={career.reason}
                   >
                     {career.name}
