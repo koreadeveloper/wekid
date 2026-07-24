@@ -1,15 +1,28 @@
 import { careerFits } from '../data/careerFits';
+import { careerCategories } from '../data/careerCategories';
+import { careerCatalog } from '../data/careerCatalog';
+import { careerFields } from '../data/careerFields';
 import { interestLabels } from '../data/interestLabels';
 import { questions } from '../data/questions';
+import { careerQuestionsV2 } from '../data/questionsV2';
 import type {
+  ActivityTag,
   AnswerMap,
+  CareerAnswerMap,
+  CareerFieldResult,
   CareerMatches,
   CareerProfile,
+  CareerQuestionOption,
+  CareerQuestionV2,
+  CareerResultV2,
   ExplorationAxis,
   InterestKey,
   ScoreMap,
   ScoredCareer,
+  ScoredCareerV2,
   StyleKey,
+  WorkStyleTag,
+  CategoryRecommendationGroup,
 } from '../types/career';
 
 export const interestKeys: InterestKey[] = [
@@ -77,7 +90,9 @@ export function getScores(answers: AnswerMap) {
   const scores: ScoreMap = { ...initialScores };
 
   Object.values(answers).forEach((choice) => {
-    scores[choice] += 1;
+    if (choice in scores) {
+      scores[choice as keyof ScoreMap] += 1;
+    }
   });
 
   return scores;
@@ -120,10 +135,46 @@ const scoreCareer = (scores: ScoreMap, careerNameOrder: number): ScoredCareer =>
   };
 };
 
-export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; matches: CareerMatches } {
-  const ranked = careerFits
+const scoredCareers = (scores: ScoreMap) =>
+  careerFits
     .map((_, index) => scoreCareer(scores, index))
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'ko'));
+
+export function getCategoryScores(scores: ScoreMap): Record<string, number> {
+  const ranked = scoredCareers(scores);
+
+  return Object.fromEntries(
+    careerCategories.map((category) => {
+      const categoryScores = ranked
+        .filter((career) => category.careers.includes(career.name))
+        .slice(0, 3)
+        .map((career) => career.score);
+      const normalized = categoryScores.length
+        ? categoryScores.reduce((sum, score) => sum + score, 0) / categoryScores.length
+        : 0;
+      return [category.title, normalized];
+    }),
+  );
+}
+
+export function getCategoryRecommendations(scores: ScoreMap): CategoryRecommendationGroup[] {
+  const ranked = scoredCareers(scores);
+  const categoryScores = getCategoryScores(scores);
+
+  return careerCategories
+    .map((category) => ({
+      category: category.title,
+      score: categoryScores[category.title] ?? 0,
+      careers: ranked
+        .filter((career) => category.careers.includes(career.name))
+        .slice(0, 2),
+    }))
+    .sort((a, b) => b.score - a.score || a.category.localeCompare(b.category, 'ko'))
+    .slice(0, 3);
+}
+
+export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; matches: CareerMatches } {
+  const ranked = scoredCareers(scores);
   const topCareer = ranked[0] ?? fallbackCareer;
   const topInterests = getTopInterests(scores);
   const mainInterest = topInterests[0];
@@ -149,6 +200,7 @@ export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; mat
       `${interestInfo.label}: ${interestInfo.keywords}`,
       `${interestLabels[topInterests[1]].label}: ${interestLabels[topInterests[1]].keywords}`,
     ],
+    categoryRecommendations: getCategoryRecommendations(scores),
   };
 
   return {
@@ -157,5 +209,197 @@ export function getCareerResult(scores: ScoreMap): { profile: CareerProfile; mat
       primary: recommendations,
       explore: ranked.slice(7, 25),
     },
+  };
+}
+
+const SCORE_EPSILON = 0.0000001;
+
+function dot<Tag extends string>(
+  left: Partial<Record<Tag, number>> | undefined,
+  right: Partial<Record<Tag, number>> | undefined,
+) {
+  return Object.entries(left ?? {}).reduce(
+    (sum, [tag, weight]) => sum + Number(weight ?? 0) * Number(right?.[tag as Tag] ?? 0),
+    0,
+  );
+}
+
+export function normalizedAffinity<Tag extends string>(
+  quizQuestions: CareerQuestionV2[],
+  answers: CareerAnswerMap,
+  profile: Partial<Record<Tag, number>>,
+  selector: (option: CareerQuestionOption) => Partial<Record<Tag, number>> | undefined,
+) {
+  let actual = 0;
+  let maximum = 0;
+
+  for (const question of quizQuestions) {
+    const answer = answers[question.id];
+    if (answer !== 'A' && answer !== 'B') {
+      continue;
+    }
+
+    const selected = question.options[answer === 'A' ? 0 : 1];
+    const score = (option: CareerQuestionOption) => dot(selector(option), profile);
+    actual += score(selected);
+    maximum += Math.max(...question.options.map(score));
+  }
+
+  return maximum === 0 ? 0 : actual / maximum;
+}
+
+type AffinityMatrix = Array<{ a: number; b: number; maximum: number }>;
+
+function createAffinityMatrix<Tag extends string>(
+  profile: Partial<Record<Tag, number>>,
+  selector: (option: CareerQuestionOption) => Partial<Record<Tag, number>> | undefined,
+): AffinityMatrix {
+  return careerQuestionsV2.map((question) => {
+    const a = dot(selector(question.options[0]), profile);
+    const b = dot(selector(question.options[1]), profile);
+    return { a, b, maximum: Math.max(a, b) };
+  });
+}
+
+function normalizedMatrixAffinity(matrix: AffinityMatrix, answers: CareerAnswerMap) {
+  let actual = 0;
+  let maximum = 0;
+  for (let index = 0; index < careerQuestionsV2.length; index += 1) {
+    const answer = answers[careerQuestionsV2[index].id];
+    if (answer !== 'A' && answer !== 'B') {
+      continue;
+    }
+
+    const scores = matrix[index];
+    actual += answer === 'A' ? scores.a : scores.b;
+    maximum += scores.maximum;
+  }
+
+  return maximum === 0 ? 0 : actual / maximum;
+}
+
+const fieldActivityMatrices = new Map(
+  careerFields.map((field) => [field.id, createAffinityMatrix<ActivityTag>(field.activityTags, (option) => option.activityTags)]),
+);
+
+const careerAffinityMatrices = new Map(
+  careerCatalog.map((career) => [
+    career.name,
+    {
+      activity: createAffinityMatrix<ActivityTag>(career.activityTags, (option) => option.activityTags),
+      style: createAffinityMatrix<WorkStyleTag>(career.workStyleTags, (option) => option.workStyleTags),
+    },
+  ]),
+);
+
+function scoreBand(score: number): CareerFieldResult['scoreBand'] {
+  if (score >= 0.75) {
+    return 'very-high';
+  }
+
+  if (score >= 0.5) {
+    return 'high';
+  }
+
+  return 'explore';
+}
+
+function evidenceForField(
+  answers: CareerAnswerMap,
+  profile: Partial<Record<ActivityTag, number>>,
+) {
+  return careerQuestionsV2
+    .flatMap((question) => {
+      const answer = answers[question.id];
+      if (answer !== 'A' && answer !== 'B') {
+        return [];
+      }
+
+      const selected = question.options[answer === 'A' ? 0 : 1];
+      const contribution = dot(selected.activityTags, profile);
+      return contribution > 0 ? [{ contribution, label: selected.label }] : [];
+    })
+    .sort((left, right) => right.contribution - left.contribution)
+    .slice(0, 2)
+    .map((item) => item.label);
+}
+
+function topWithTies<T extends { score: number }>(items: T[], count: number) {
+  if (items.length <= count) {
+    return items;
+  }
+
+  const cutoff = items[count - 1]?.score ?? 0;
+  return items.filter((item) => item.score >= cutoff - SCORE_EPSILON);
+}
+
+function scoreCareerV2(
+  career: typeof careerCatalog[number],
+  primaryFieldAffinity: number,
+  answers: CareerAnswerMap,
+): ScoredCareerV2 {
+  const matrices = careerAffinityMatrices.get(career.name);
+  const activityAffinity = normalizedMatrixAffinity(matrices?.activity ?? [], answers);
+  const styleAffinity = normalizedMatrixAffinity(matrices?.style ?? [], answers);
+  const score = primaryFieldAffinity * 0.65 + activityAffinity * 0.2 + styleAffinity * 0.15;
+
+  return {
+    name: career.name,
+    score,
+    primaryField: career.primaryField,
+    secondaryField: career.secondaryField,
+    reason: `${career.detail.tagline} 활동과 연결해 탐험해 볼 수 있어요.`,
+  };
+}
+
+export function getCareerScoresV2(answers: CareerAnswerMap) {
+  const fieldAffinities = new Map(
+    careerFields.map((field) => [
+      field.id,
+      normalizedMatrixAffinity(fieldActivityMatrices.get(field.id) ?? [], answers),
+    ]),
+  );
+  const careerScores = careerCatalog.map((career) => scoreCareerV2(career, fieldAffinities.get(career.primaryField) ?? 0, answers));
+
+  return { fieldAffinities, careerScores };
+}
+
+export function getCareerResultV2(answers: CareerAnswerMap): CareerResultV2 {
+  const { fieldAffinities, careerScores } = getCareerScoresV2(answers);
+  const scoredCareersByField = new Map<string, ScoredCareerV2[]>();
+
+  for (const careerScore of careerScores) {
+    const scored = scoredCareersByField.get(careerScore.primaryField) ?? [];
+    scored.push(careerScore);
+    scoredCareersByField.set(careerScore.primaryField, scored);
+  }
+
+  const fieldResults = careerFields
+    .map((field): CareerFieldResult => {
+      const careers = [...(scoredCareersByField.get(field.id) ?? [])].sort((left, right) => right.score - left.score);
+      const score = fieldAffinities.get(field.id) ?? 0;
+      return {
+        fieldId: field.id,
+        label: field.label,
+        score,
+        scoreBand: scoreBand(score),
+        evidence: evidenceForField(answers, field.activityTags),
+        recommendedCareers: topWithTies(careers, 3),
+      };
+    })
+    .sort((left, right) => right.score - left.score);
+
+  const hasKnownAnswer = Object.values(answers).some((answer) => answer === 'A' || answer === 'B');
+  const recommendedFieldResults = hasKnownAnswer ? fieldResults.slice(0, 3) : [];
+  const strengths = recommendedFieldResults.map((field) => field.label.split(' — ')[0]);
+
+  return {
+    questionnaireVersion: 2,
+    fieldResults,
+    recommendedFieldResults,
+    strengths,
+    summary: hasKnownAnswer
+      ? '답변 속에서 여러 가지 흥미로운 방향을 찾았어요. 아래 분야와 직업을 차례로 탐험해 보세요.'
+      : '아직 마음이 끌리는 활동을 찾는 중이에요. 마음에 드는 직업을 직접 골라 보고, 다음에는 조금 더 답해 보세요.',
   };
 }

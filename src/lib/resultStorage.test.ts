@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { saveTestResult } from './resultStorage';
+import * as resultStorage from './resultStorage';
 import type { TestResultDraft } from '../types/firestore';
 
 const draft: TestResultDraft = {
@@ -39,6 +40,7 @@ describe('saveTestResult', () => {
     expect(addTestResult).toHaveBeenCalledWith({
       ...draft,
       participantName: '김탐험',
+      participantEmail: null,
       centerName: '강남 청소년센터',
       centerKey: '강남 청소년센터',
       centerSource: 'manual',
@@ -59,4 +61,102 @@ describe('saveTestResult', () => {
 
     expect(result).toEqual({ ok: false, reason: 'write-failed', error });
   });
+
+  it('writes a schema v2 result with snapshots, fields, and dream choice', async () => {
+    const addTestResult = vi.fn().mockResolvedValue({ id: 'result-v2' });
+    const v2Draft = {
+      participantName: '김탐험',
+      centerName: '강남 청소년센터',
+      centerKey: '강남 청소년센터',
+      centerSource: 'manual' as const,
+      startedAt: new Date('2026-07-04T00:00:00.000Z'),
+      completedAt: new Date('2026-07-04T00:05:00.000Z'),
+      questionnaireVersion: 2 as const,
+      answerSnapshots: [{
+        questionId: 1,
+        questionText: '체험 수업에서 더 해보고 싶은 것은?',
+        choice: 'A' as const,
+        optionLabel: '별과 우주를 관찰하며 궁금한 점 알아보기',
+      }],
+      fieldResults: [{
+        fieldId: 'research' as const,
+        label: '호기심 많은 탐구자 — 과학·연구',
+        score: 0.9,
+        scoreBand: 'very-high' as const,
+        evidence: ['별과 우주를 관찰하며 궁금한 점 알아보기'],
+        recommendedCareers: [{
+          name: '과학자',
+          score: 0.9,
+          primaryField: 'research' as const,
+          reason: '궁금한 세상을 탐험해요.',
+        }],
+      }],
+      recommendedFieldResults: [{
+        fieldId: 'research' as const,
+        label: '호기심 많은 탐구자 — 과학·연구',
+        score: 0.9,
+        scoreBand: 'very-high' as const,
+        evidence: ['별과 우주를 관찰하며 궁금한 점 알아보기'],
+        recommendedCareers: [],
+      }],
+      dreamChoice: { kind: 'catalog' as const, careerName: '유튜버' },
+      resultSummary: '여러 방향을 탐험했어요.',
+    };
+
+    await saveTestResult(v2Draft, { db: {} as never, addTestResult, getServerTimestamp: () => new Date() });
+
+    expect(addTestResult).toHaveBeenCalledWith(expect.objectContaining({
+      schemaVersion: 2,
+      questionnaireVersion: 2,
+      answerSnapshots: expect.any(Array),
+      recommendedFieldResults: expect.any(Array),
+      dreamChoice: { kind: 'catalog', careerName: '유튜버' },
+    }));
+  });
+
+  it('defaults a completed v2 result to undecided when no dream has been chosen', async () => {
+    const addTestResult = vi.fn().mockResolvedValue({ id: 'result-without-dream' });
+    const completedDraftWithoutDream = {
+      participantName: '김탐험',
+      centerName: '강남 청소년센터',
+      centerKey: '강남 청소년센터',
+      centerSource: 'manual' as const,
+      startedAt: new Date('2026-07-04T00:00:00.000Z'),
+      completedAt: new Date('2026-07-04T00:05:00.000Z'),
+      questionnaireVersion: 2 as const,
+      answerSnapshots: [],
+      fieldResults: [],
+      recommendedFieldResults: [],
+      resultSummary: '여러 방향을 탐험했어요.',
+    };
+
+    await expect(saveTestResult(completedDraftWithoutDream as TestResultDraft, {
+      db: {} as never,
+      addTestResult,
+    })).resolves.toEqual({ ok: true, resultId: 'result-without-dream' });
+
+    expect(addTestResult).toHaveBeenCalledWith(expect.objectContaining({
+      dreamChoice: { kind: 'undecided' },
+    }));
+  });
+
+  it('updates the saved result when a participant chooses a dream later', async () => {
+    type ResultStorageWithDreamUpdater = typeof resultStorage & {
+      updateTestResultDreamChoice?: (
+        resultId: string,
+        dreamChoice: { kind: 'recommended'; careerName: string },
+        dependencies: { db: never; updateDreamChoice: ReturnType<typeof vi.fn> },
+      ) => Promise<unknown>;
+    };
+    const updateDreamChoice = vi.fn().mockResolvedValue(undefined);
+    const updateTestResultDreamChoice = (resultStorage as ResultStorageWithDreamUpdater).updateTestResultDreamChoice;
+
+    expect(updateTestResultDreamChoice).toBeTypeOf('function');
+    await expect(updateTestResultDreamChoice!('result-123', { kind: 'recommended', careerName: '과학자' }, {
+      db: {} as never,
+      updateDreamChoice,
+    })).resolves.toEqual({ ok: true, resultId: 'result-123' });
+    expect(updateDreamChoice).toHaveBeenCalledWith('result-123', { kind: 'recommended', careerName: '과학자' });
+  });
+
 });

@@ -1,105 +1,68 @@
 import { useRef, useState } from 'react';
-import { axisLabels } from '../../data/axisLabels';
+import { careerCatalog } from '../../data/careerCatalog';
 import { careerCategories } from '../../data/careerCategories';
-import type { CareerMatches, CareerProfile, ScoreMap } from '../../types/career';
-import { CareerExplorer } from './components/CareerExplorer';
+import type { CareerResultV2, DreamChoice } from '../../types/career';
 import { CareerLibrary } from './components/CareerLibrary';
 import { CareerRecommendations } from './components/CareerRecommendations';
-import { InsightPanels } from './components/InsightPanels';
+import { DreamChoicePanel } from './components/DreamChoicePanel';
 import { PdfResultReport } from './components/PdfResultReport';
 import { ResultActions } from './components/ResultActions';
 import { ResultHero } from './components/ResultHero';
-import { WhyPanel } from './components/WhyPanel';
+
+export type ResultSaveStatus =
+  | { status: 'idle' | 'saving' }
+  | { status: 'saved'; resultId: string }
+  | { status: 'skipped'; reason: 'firebase-not-configured' }
+  | { status: 'failed'; error: unknown };
 
 export type ResultPageProps = {
-  careerMatches: CareerMatches;
-  focusRequest: number;
-  highlightedCareers: Set<string>;
-  profile: CareerProfile;
-  resultSaveErrorMessage: string | null;
-  scores: ScoreMap;
+  result: CareerResultV2;
+  dreamChoice?: DreamChoice;
+  resultSaveStatus: ResultSaveStatus;
   userName: string;
   hasCareerDetail: (careerName: string) => boolean;
   onCareerSelect: (careerName: string) => void;
-  onCreateBusinessCard: (careerName: string) => void;
+  onConfirmDreamChoice: (choice: DreamChoice) => void;
   onEditLastAnswer: () => void;
   onReset: () => void;
-  onRetryResultSave: () => void;
 };
 
 const sanitizeFileNamePart = (value: string) => value.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
 
-const getPdfFileName = (userName: string, careerName: string) => {
-  const safeName = sanitizeFileNamePart(userName);
-  const safeCareerName = sanitizeFileNamePart(careerName);
-  const baseName = safeName
-    ? `${safeName}_위키드_직업탐험_${safeCareerName}_결과지`
-    : `위키드_직업탐험_${safeCareerName}_결과지`;
-
-  return `${baseName}.pdf`;
-};
-
 export function ResultPage({
-  careerMatches,
-  focusRequest,
-  highlightedCareers,
-  profile,
-  resultSaveErrorMessage,
-  scores,
+  result,
+  dreamChoice,
+  resultSaveStatus,
   userName,
   hasCareerDetail,
   onCareerSelect,
-  onCreateBusinessCard,
+  onConfirmDreamChoice,
   onEditLastAnswer,
   onReset,
-  onRetryResultSave,
 }: ResultPageProps) {
   const pdfReportRef = useRef<HTMLDivElement>(null);
   const [isPdfSaving, setIsPdfSaving] = useState(false);
-  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(null);
+  const recommendedCareerNames = result.recommendedFieldResults.flatMap((field) =>
+    field.recommendedCareers.map((career) => career.name),
+  );
+  const highlightedCareers = new Set(recommendedCareerNames);
 
   const handleSavePdf = async () => {
     if (!pdfReportRef.current) {
       return;
     }
 
-    setExportErrorMessage(null);
     setIsPdfSaving(true);
     try {
       await document.fonts?.ready;
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
-      const canvas = await html2canvas(pdfReportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        windowWidth: pdfReportRef.current.scrollWidth,
-      });
+      const canvas = await html2canvas(pdfReportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-      const imageData = canvas.toDataURL('image/png');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const naturalImageHeight = (canvas.height * pageWidth) / canvas.width;
-      const pageOverflowTolerance = 8;
-      const imageHeight =
-        naturalImageHeight > pageHeight && naturalImageHeight - pageHeight <= pageOverflowTolerance
-          ? pageHeight
-          : naturalImageHeight;
-      let remainingHeight = imageHeight;
-      let position = 0;
-
-      pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
-      remainingHeight -= pageHeight;
-
-      while (remainingHeight > pageOverflowTolerance) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imageData, 'PNG', 0, position, pageWidth, imageHeight);
-        remainingHeight -= pageHeight;
-      }
-
-      pdf.save(getPdfFileName(userName, profile.topCareer.name));
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+      const safeName = sanitizeFileNamePart(userName);
+      pdf.save(safeName ? `${safeName}_나의_진로_탐험_결과.pdf` : '나의_진로_탐험_결과.pdf');
     } catch {
-      setExportErrorMessage('PDF 결과지를 만들지 못했어요. 다시 시도해 주세요.');
+      alert('PDF 결과지를 만들지 못했어요. 다시 시도해 주세요.');
     } finally {
       setIsPdfSaving(false);
     }
@@ -107,39 +70,19 @@ export function ResultPage({
 
   return (
     <section className="result-layout">
-      <ResultHero
-        profile={profile}
-        focusRequest={focusRequest}
-        userName={userName}
-        hasCareerDetail={hasCareerDetail}
-        onCareerSelect={onCareerSelect}
-        onCreateBusinessCard={onCreateBusinessCard}
-        onSavePdf={handleSavePdf}
-        isPdfSaving={isPdfSaving}
-        exportErrorMessage={exportErrorMessage}
-        onClearExportError={() => setExportErrorMessage(null)}
-        onExportError={setExportErrorMessage}
-      />
-      {resultSaveErrorMessage && (
-        <div className="result-save-notice warning" role="status" aria-live="polite" aria-atomic="true">
-          <p>{resultSaveErrorMessage}</p>
-          <button type="button" onClick={onRetryResultSave}>
-            다시 시도
-          </button>
-        </div>
-      )}
-      <ResultActions onEditLastAnswer={onEditLastAnswer} onReset={onReset} />
-      <WhyPanel profile={profile} />
-      <InsightPanels axisLabels={axisLabels} profile={profile} scores={scores} />
+      <ResultHero result={result} userName={userName} onSavePdf={handleSavePdf} isPdfSaving={isPdfSaving} />
+      <ResultSaveNotice resultSaveStatus={resultSaveStatus} dreamChoice={dreamChoice} />
       <CareerRecommendations
-        careers={careerMatches.primary}
+        fieldResults={result.recommendedFieldResults}
         hasCareerDetail={hasCareerDetail}
         onCareerSelect={onCareerSelect}
       />
-      <CareerExplorer
-        careers={careerMatches.explore}
-        hasCareerDetail={hasCareerDetail}
-        onCareerSelect={onCareerSelect}
+      <DreamChoicePanel
+        careers={careerCatalog}
+        recommendedCareerNames={recommendedCareerNames}
+        onConfirm={onConfirmDreamChoice}
+        isSaving={resultSaveStatus.status === 'saving'}
+        savedChoice={resultSaveStatus.status === 'saved' ? dreamChoice : undefined}
       />
       <CareerLibrary
         categories={careerCategories}
@@ -147,13 +90,30 @@ export function ResultPage({
         hasCareerDetail={hasCareerDetail}
         onCareerSelect={onCareerSelect}
       />
-      <PdfResultReport
-        ref={pdfReportRef}
-        careerMatches={careerMatches}
-        profile={profile}
-        scores={scores}
-        userName={userName}
-      />
+      <ResultActions onEditLastAnswer={onEditLastAnswer} onReset={onReset} />
+      <PdfResultReport ref={pdfReportRef} result={result} dreamChoice={dreamChoice} userName={userName} />
     </section>
   );
+}
+
+function ResultSaveNotice({ resultSaveStatus, dreamChoice }: Pick<ResultPageProps, 'resultSaveStatus' | 'dreamChoice'>) {
+  if (resultSaveStatus.status === 'idle') {
+    return <p className="result-save-notice muted">모든 문항을 마치면 답변이 자동으로 저장돼요.</p>;
+  }
+
+  if (resultSaveStatus.status === 'saving') {
+    return <p className="result-save-notice">결과를 안전하게 저장하는 중이에요.</p>;
+  }
+
+  if (resultSaveStatus.status === 'saved') {
+    return dreamChoice?.kind === 'undecided'
+      ? <p className="result-save-notice success">모든 답변을 자동으로 저장했어요.</p>
+      : <p className="result-save-notice success">내가 고른 꿈과 모든 답변을 저장했어요.</p>;
+  }
+
+  if (resultSaveStatus.status === 'skipped') {
+    return <p className="result-save-notice muted">Firebase 연결 전이라 이 결과는 이 기기에서만 확인돼요.</p>;
+  }
+
+  return <p className="result-save-notice warning">결과 저장에 실패했어요. 다시 저장해 주세요.</p>;
 }

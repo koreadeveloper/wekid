@@ -1,15 +1,9 @@
-.name-step-app {
-  padding-bottom: clamp(12px, 2vh, 20px);
-}
-
 .name-step-layout {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  min-height: calc(100dvh - 86px);
-  padding-top: clamp(22px, 5vh, 56px);
-  padding-bottom: clamp(16px, 4vh, 34px);
+  min-height: calc(100vh - 86px);
+  padding-top: clamp(8px, 3vh, 16px);
 }
 
 .name-step-card {
@@ -18,23 +12,40 @@
   align-items: center;
   width: 100%;
   max-width: 500px;
-  padding: clamp(22px, 4.5vw, 32px) clamp(20px, 5vw, 28px) clamp(20px, 4.5vw, 28px);
+  padding: clamp(24px, 5vw, 34px) clamp(20px, 5vw, 28px) clamp(22px, 5vw, 30px);
   border: 2px solid var(--line);
   border-radius: 32px;
   background: var(--canvas);
-  box-shadow: 0 6px 0 var(--line), 0 16px 36px rgba(0,0,0,0.07);
+  box-shadow: 0 8px 0 var(--line), 0 20px 48px rgba(0,0,0,0.08);
   text-align: center;
   animation: slideUp 400ms cubic-bezier(0.34,1.56,0.64,1) both;
-}
-
-.name-step-copy,
-.name-step-form {
-  width: 100%;
 }
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(32px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.name-step-emoji {
+  width: clamp(64px, 16vw, 88px);
+  height: clamp(64px, 16vw, 88px);
+  font-size: clamp(48px, 12vw, 62px);
+  line-height: 1;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
+  animation: float 3s ease-in-out infinite;
+}
+
+.name-step-emoji img {
+  width: 100%;
+  height: 100%;
+  border-radius: 24%;
+  object-fit: cover;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
 }
 
 .name-step-card .section-kicker {
@@ -47,9 +58,6 @@
   font-weight: 1000;
   line-height: 1.12;
   color: var(--ink);
-  text-wrap: balance;
-  word-break: keep-all;
-  overflow-wrap: break-word;
 }
 
 .name-step-sub {
@@ -57,10 +65,6 @@
   color: var(--muted);
   font-size: 15px;
   font-weight: 800;
-  line-height: 1.55;
-  text-wrap: pretty;
-  word-break: keep-all;
-  overflow-wrap: break-word;
 }
 
 .name-input {
@@ -99,8 +103,6 @@
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
-  word-break: keep-all;
-  overflow-wrap: break-word;
 }
 
 .center-input {
@@ -139,23 +141,40 @@
   margin-top: 14px;
   font-size: 17px;
 }
+.name-start-btn:disabled {
+  border-color: #b6d8a6;
+  color: #6b8c5e;
+  background: #dff2d4;
+  opacity: 0.72;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: grayscale(0.15);
+}
+
+.name-helper {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.name-skip-btn {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  min-height: 40px;
+  color: #aaa;
+  border-color: transparent;
+  box-shadow: none;
+}
 
 /* ===== 직업 상세 모달 ===== */
 
-@media (max-width: 620px) {
-  .name-step-layout {
-    min-height: calc(100dvh - 112px);
-  }
-}
-
 @media (min-width: 760px) {
   .name-step-card {
-    max-width: 640px;
-    padding: 40px 42px 34px;
-  }
-
-  .name-step-card h1 {
-    font-size: 46px;
+    max-width: 540px;
+    padding: 40px 36px 34px;
   }
 
   .name-step-sub {
@@ -170,46 +189,5 @@
   .center-input {
     min-height: 60px;
     font-size: 18px;
-  }
-}
-
-@media (min-width: 1180px) {
-  .name-step-layout {
-    padding-top: clamp(32px, 7vh, 72px);
-  }
-
-  .name-step-card {
-    display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(380px, 1.05fr);
-    align-items: center;
-    max-width: 1040px;
-    gap: 36px;
-    padding: 48px 52px;
-    text-align: left;
-  }
-
-  .name-step-card .section-kicker {
-    margin-bottom: 10px;
-  }
-
-  .name-step-card h1 {
-    margin-bottom: 16px;
-    font-size: 54px;
-  }
-
-  .name-step-sub {
-    max-width: 36ch;
-    margin-bottom: 0;
-    font-size: 17px;
-    line-height: 1.55;
-  }
-
-  .name-input,
-  .center-input {
-    text-align: left;
-  }
-
-  .name-start-btn {
-    margin-top: 18px;
   }
 }

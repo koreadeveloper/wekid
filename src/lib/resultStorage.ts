@@ -1,7 +1,15 @@
-import { addDoc, collection, serverTimestamp, type Firestore } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc, type Firestore } from 'firebase/firestore';
 import { createCenterKey, normalizeCenterName } from './centerContext';
-import { firestore } from './firebaseFirestore';
-import type { TestResultDocument, TestResultDraft } from '../types/firestore';
+import { firestore } from './firebase';
+import type {
+  TestResultDocument,
+  TestResultDraft,
+  TestResultDraftV1,
+  TestResultDraftV2,
+  TestResultV1Document,
+  TestResultV2Document,
+} from '../types/firestore';
+import type { DreamChoice } from '../types/career';
 
 export type SaveTestResultResult =
   | {
@@ -19,12 +27,66 @@ export type SaveTestResultResult =
     };
 
 export type AddTestResultDocument = (data: TestResultDocument) => Promise<{ id: string }>;
+export type UpdateTestResultDreamChoice = (resultId: string, dreamChoice: DreamChoice) => Promise<void>;
 
 export type ResultStorageDependencies = {
   db?: Firestore | null;
   addTestResult?: AddTestResultDocument;
   getServerTimestamp?: () => TestResultDocument['createdAt'];
 };
+
+export type UpdateTestResultDreamChoiceDependencies = {
+  db?: Firestore | null;
+  updateDreamChoice?: UpdateTestResultDreamChoice;
+};
+
+export type ResultSaveSession = {
+  invalidate: () => void;
+  enqueue: (
+    save: (resultId: string | null) => Promise<SaveTestResultResult>,
+    onCurrentResult: (result: SaveTestResultResult) => void,
+  ) => Promise<void>;
+};
+
+export function createResultSaveSession(): ResultSaveSession {
+  let generation = 0;
+  let latestRequestId = 0;
+  let resultId: string | null = null;
+  let pendingSave: Promise<void> = Promise.resolve();
+
+  return {
+    invalidate() {
+      generation += 1;
+      resultId = null;
+      pendingSave = Promise.resolve();
+    },
+    enqueue(save, onCurrentResult) {
+      const requestGeneration = generation;
+      const requestId = ++latestRequestId;
+      const completion = pendingSave.then(async () => {
+        if (requestGeneration !== generation) {
+          return;
+        }
+
+        const saveResult = await save(resultId);
+        if (requestGeneration !== generation) {
+          return;
+        }
+
+        if (saveResult.ok) {
+          resultId = saveResult.resultId;
+        }
+
+        if (requestId === latestRequestId) {
+          onCurrentResult(saveResult);
+        }
+      });
+
+      pendingSave = completion.catch(() => undefined);
+      return completion;
+    },
+  };
+}
 
 function emptyStringToNull(value: string | null): string | null {
   const trimmed = value?.trim();
@@ -35,6 +97,60 @@ function createFirestoreTestResultAdder(db: Firestore): AddTestResultDocument {
   return async (data) => {
     const documentReference = await addDoc(collection(db, 'testResults'), data);
     return { id: documentReference.id };
+  };
+}
+
+function createFirestoreDreamChoiceUpdater(db: Firestore): UpdateTestResultDreamChoice {
+  return (resultId, dreamChoice) => updateDoc(doc(db, 'testResults', resultId), { dreamChoice });
+}
+
+function isV2Draft(draft: TestResultDraft): draft is TestResultDraftV2 {
+  return 'questionnaireVersion' in draft && draft.questionnaireVersion === 2;
+}
+
+function normalizedBase(draft: TestResultDraft, createdAt: TestResultDocument['createdAt']) {
+  return {
+    participantName: emptyStringToNull(draft.participantName),
+    participantEmail: emptyStringToNull(draft.participantEmail ?? null),
+    centerName: normalizeCenterName(draft.centerName),
+    centerKey: createCenterKey(draft.centerKey ?? draft.centerName),
+    centerSource: draft.centerName ? draft.centerSource : 'none' as const,
+    startedAt: draft.startedAt,
+    completedAt: draft.completedAt,
+    resultSummary: draft.resultSummary.trim(),
+    createdAt,
+  };
+}
+
+function serializeV1(draft: TestResultDraftV1, createdAt: TestResultDocument['createdAt']): TestResultV1Document {
+  return {
+    ...normalizedBase(draft, createdAt),
+    answers: draft.answers,
+    scores: draft.scores,
+    topCareer: draft.topCareer,
+    recommendedCareers: draft.recommendedCareers,
+    schemaVersion: 1,
+  };
+}
+
+function normalizeDreamChoice(dreamChoice: DreamChoice): DreamChoice {
+  return dreamChoice.kind === 'undecided'
+    ? dreamChoice
+    : { ...dreamChoice, careerName: dreamChoice.careerName.trim() };
+}
+
+function serializeV2(draft: TestResultDraftV2, createdAt: TestResultDocument['createdAt']): TestResultV2Document {
+  const selectedDreamChoice = draft.dreamChoice ?? { kind: 'undecided' as const };
+  const dreamChoice = normalizeDreamChoice(selectedDreamChoice);
+
+  return {
+    ...normalizedBase(draft, createdAt),
+    questionnaireVersion: 2,
+    answerSnapshots: draft.answerSnapshots,
+    fieldResults: draft.fieldResults,
+    recommendedFieldResults: draft.recommendedFieldResults,
+    dreamChoice,
+    schemaVersion: 2,
   };
 }
 
@@ -50,19 +166,35 @@ export async function saveTestResult(
 
   const addTestResult = dependencies.addTestResult ?? createFirestoreTestResultAdder(db);
   const getServerTimestamp = dependencies.getServerTimestamp ?? serverTimestamp;
-  const document: TestResultDocument = {
-    ...draft,
-    participantName: emptyStringToNull(draft.participantName),
-    centerName: normalizeCenterName(draft.centerName),
-    centerKey: createCenterKey(draft.centerKey ?? draft.centerName),
-    centerSource: draft.centerName ? draft.centerSource : 'none',
-    createdAt: getServerTimestamp(),
-    schemaVersion: 1,
-  };
+  const createdAt = getServerTimestamp();
+  const document: TestResultDocument = isV2Draft(draft)
+    ? serializeV2(draft, createdAt)
+    : serializeV1(draft, createdAt);
 
   try {
     const created = await addTestResult(document);
     return { ok: true, resultId: created.id };
+  } catch (error) {
+    return { ok: false, reason: 'write-failed', error };
+  }
+}
+
+export async function updateTestResultDreamChoice(
+  resultId: string,
+  dreamChoice: DreamChoice,
+  dependencies: UpdateTestResultDreamChoiceDependencies = {},
+): Promise<SaveTestResultResult> {
+  const db = dependencies.db === undefined ? firestore : dependencies.db;
+
+  if (!db) {
+    return { ok: false, reason: 'firebase-not-configured' };
+  }
+
+  const updateDreamChoice = dependencies.updateDreamChoice ?? createFirestoreDreamChoiceUpdater(db);
+
+  try {
+    await updateDreamChoice(resultId, normalizeDreamChoice(dreamChoice));
+    return { ok: true, resultId };
   } catch (error) {
     return { ok: false, reason: 'write-failed', error };
   }

@@ -132,12 +132,9 @@
   box-shadow: 0 4px 0 var(--duo-green-dark);
 }
 
-.empty-dot {
-  display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: #afafaf;
+.option-card-neutral {
+  border-style: dashed;
+  background: #fafafa;
 }
 
 .question-footer {

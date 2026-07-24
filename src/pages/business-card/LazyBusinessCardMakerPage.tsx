@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { BusinessCardData } from './BusinessCardPreview';
+import type { BusinessCardMakerPageProps } from './BusinessCardMakerPage';
 
 const BusinessCardMakerPage = lazy(async () => {
   const module = await import('./BusinessCardMakerPage');
@@ -15,15 +15,10 @@ function BusinessCardLoadingFallback() {
   );
 }
 
-type LazyBusinessCardMakerPageProps = {
-  readonly focusRequest: number;
-  readonly initialCardData?: BusinessCardData;
-};
-
-export function LazyBusinessCardMakerPage({ focusRequest, initialCardData }: LazyBusinessCardMakerPageProps) {
+export function LazyBusinessCardMakerPage(props: BusinessCardMakerPageProps) {
   return (
     <Suspense fallback={<BusinessCardLoadingFallback />}>
-      <BusinessCardMakerPage focusRequest={focusRequest} initialCardData={initialCardData} />
+      <BusinessCardMakerPage {...props} />
     </Suspense>
   );
 }

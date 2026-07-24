@@ -32,7 +32,7 @@ export function QuizIntro({ answeredCount, totalQuestions, progress, userName }:
       <div className="intro-copy">
         <p className="section-kicker">{totalQuestions}문항</p>
         <h1>{userName ? `${userName}의 미래 직업 찾기` : '나에게 잘 맞는 미래 직업 찾기'}</h1>
-        <p>{totalQuestions}문항에 답하면 나에게 잘 맞는 직업과 이유를 볼 수 있어요.</p>
+        <p>두 가지 모두 좋거나 모두 별로여도 괜찮아요. 정답은 없으니 조금이라도 더 해보고 싶은 쪽을 골라 주세요.</p>
       </div>
 
       <div className="progress-block">
@@ -42,15 +42,7 @@ export function QuizIntro({ answeredCount, totalQuestions, progress, userName }:
           </span>
           <strong>{progress}%</strong>
         </div>
-        <div
-          className="progress-track"
-          role="progressbar"
-          aria-label="검사 진행률"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-          aria-valuetext={`${answeredCount} / ${totalQuestions}, ${progress}%`}
-        >
+        <div className="progress-track" aria-hidden="true">
           <div style={{ width: `${progress}%` }} />
         </div>
       </div>

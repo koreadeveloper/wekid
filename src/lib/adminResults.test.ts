@@ -6,6 +6,8 @@ import {
   createAdminResultSummary,
   detectSimilarCenterGroups,
   filterResults,
+  getAdminAnswerDetails,
+  getDreamChoiceLabel,
   getResultDurationMinutes,
   isSuspectedTestResult,
   paginateAdminResults,
@@ -103,6 +105,66 @@ const edgeRecords: StoredTestResultRecord[] = [
     schemaVersion: 1,
   },
 ];
+
+const v2Record: StoredTestResultRecord = {
+  id: 'v2',
+  participantName: '김탐험',
+  centerName: '강남 청소년센터',
+  centerKey: '강남 청소년센터',
+  centerSource: 'manual',
+  startedAt: new Date('2026-07-05T00:00:00.000Z'),
+  completedAt: new Date('2026-07-05T00:05:00.000Z'),
+  questionnaireVersion: 2,
+  answerSnapshots: [{
+    questionId: 1,
+    questionText: '체험 수업에서 더 해보고 싶은 것은?',
+    choice: 'A',
+    optionLabel: '별과 우주를 관찰하며 궁금한 점 알아보기',
+  }],
+  fieldResults: [{
+    fieldId: 'research',
+    label: '호기심 많은 탐구자 — 과학·연구',
+    score: 0.9,
+    scoreBand: 'very-high',
+    evidence: ['별과 우주를 관찰하며 궁금한 점 알아보기'],
+    recommendedCareers: [],
+  }],
+  recommendedFieldResults: [{
+    fieldId: 'research',
+    label: '호기심 많은 탐구자 — 과학·연구',
+    score: 0.9,
+    scoreBand: 'very-high',
+    evidence: [],
+    recommendedCareers: [],
+  }],
+  dreamChoice: { kind: 'catalog', careerName: '유튜버' },
+  resultSummary: '여러 방향을 탐험했어요.',
+  createdAt: new Date('2026-07-05T00:05:01.000Z'),
+  schemaVersion: 2,
+  answers: [],
+  scores: {},
+  topCareer: '',
+  recommendedCareers: [],
+};
+
+describe('v2 result helpers', () => {
+  it('returns a final dream and readable snapshot answers', () => {
+    expect(getDreamChoiceLabel(v2Record)).toBe('유튜버 (목록 선택)');
+    expect(getAdminAnswerDetails(v2Record)[0]).toMatchObject({
+      questionText: '체험 수업에서 더 해보고 싶은 것은?',
+      optionLabel: '별과 우주를 관찰하며 궁금한 점 알아보기',
+    });
+  });
+
+  it('exports questionnaire version, fields, recommendations, and dream choice', () => {
+    const csv = toResultsCsv([v2Record]);
+
+    expect(csv).toContain('설문버전');
+    expect(csv).toContain('최종꿈');
+    expect(csv).toContain('호기심 많은 탐구자 — 과학·연구');
+    expect(csv).toContain('모든분야점수JSON');
+  });
+});
 
 describe('createAdminResultSummary', () => {
   it('groups results by center and top career', () => {
@@ -241,6 +303,14 @@ describe('createAdminResultAnalysis', () => {
     expect(analysis.scoreAverages[0]).toEqual({ scoreKey: 'artistic', average: 2.5, total: 5 });
   });
 
+  it('includes all v2 field scores in the aggregate analysis', () => {
+    const analysis = createAdminResultAnalysis([v2Record]);
+
+    expect(analysis.scoreAverages).toContainEqual({
+      scoreKey: '호기심 많은 탐구자 — 과학·연구', average: 0.9, total: 0.9,
+    });
+  });
+
   it('excludes invalid durations and handles null center values', () => {
     const analysis = createAdminResultAnalysis(edgeRecords);
     const summary = createAdminResultSummary(edgeRecords, new Date('2026-07-07T00:00:00.000Z'));
@@ -266,8 +336,8 @@ describe('toResultsCsv', () => {
     const csv = toResultsCsv(records);
 
     expect(csv.startsWith(CSV_UTF8_BOM)).toBe(true);
-    expect(csv).toContain('문서ID,저장일,검사시작,검사완료,소요분,이름,센터,센터키,센터입력경로,대표직업,추천직업,답변수,요약,점수JSON,테스트의심여부,필터메모,소요시간초,대표직업Raw,추천직업Raw');
-    expect(csv).toContain('1,2026-07-04T00:05:01.000Z,2026-07-04T00:00:00.000Z,2026-07-04T00:05:00.000Z,5.0,김탐험,강남 청소년센터,강남 청소년센터,manual,사진작가,목공예가,0,관찰을 좋아해요.');
+    expect(csv).toContain('설문버전,대표직업,추천직업,추천분야,최종꿈,최종꿈유형,답변수,답변스냅샷JSON');
+    expect(csv).toContain('5.0,김탐험,,강남 청소년센터,강남 청소년센터,manual,1,사진작가,목공예가');
   });
 
   it('escapes comma, quote, newline, null, and JSON values for Excel-friendly CSV', () => {
@@ -277,7 +347,7 @@ describe('toResultsCsv', () => {
     expect(csv).toContain('"쉼표, 센터"');
     expect(csv).toContain(',교사 / 사회복지사,');
     expect(csv).toContain('"쉼표, 따옴표 ""테스트""\n줄바꿈 포함"');
-    expect(csv).toContain('no-center,2026-07-01T00:02:01.000Z,2026-07-01T00:00:00.000Z,2026-07-01T00:02:00.000Z,2.0,,,,none,작가');
+    expect(csv).toContain('no-center,2026-07-01T00:02:01.000Z,2026-07-01T00:00:00.000Z,2026-07-01T00:02:00.000Z,2.0,,,,,none,1,작가');
     expect(csv).toContain('"{""social"":5,""care"":3}",예,,270,"{""name"":""상담가""}"');
   });
 
